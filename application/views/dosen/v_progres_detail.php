@@ -1,134 +1,231 @@
-<?php 
-// Pastikan variabel $progres sudah berisi data dan $skripsi berisi detail skripsi
-if ($this->session->flashdata('pesan_sukses')) {
-    echo '<div class="alert-info" style="background-color: #d4edda; color: #155724;">' . $this->session->flashdata('pesan_sukses') . '</div>';
-}
-if ($this->session->flashdata('pesan_error')) {
-    echo '<div class="alert-info" style="background-color: #f8d7da; color: #721c24;">' . $this->session->flashdata('pesan_error') . '</div>';
-}
-if ($this->session->flashdata('pesan_info')) {
-    echo '<div class="alert-info" style="background-color: #ffc107; color: #343a40;">' . $this->session->flashdata('pesan_info') . '</div>';
-}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
 
-$dosen_pembimbing = $is_p1 ? $skripsi['pembimbing1'] : $skripsi['pembimbing2'];
-?>
+            <?php if ($this->session->flashdata('pesan_sukses')): ?>
+                <div class="alert alert-success alert-dismissible">
+                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                    <h5><i class="icon fas fa-check"></i> Berhasil!</h5>
+                    <?php echo $this->session->flashdata('pesan_sukses'); ?>
+                </div>
+            <?php endif; ?>
 
-<h3>Progres Bimbingan: <?php echo $skripsi['judul']; ?></h3>
-<p>Mahasiswa: **<?php echo $skripsi['npm']; ?>**</p>
-<p>Posisi Anda: **Pembimbing <?php echo $is_p1 ? '1' : '2'; ?>**</p>
+            <?php if ($this->session->flashdata('pesan_error')): ?>
+                <div class="alert alert-danger alert-dismissible">
+                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                    <h5><i class="icon fas fa-ban"></i> Gagal!</h5>
+                    <?php echo $this->session->flashdata('pesan_error'); ?>
+                </div>
+            <?php endif; ?>
 
-<table style="width: 100%;">
-    <thead>
-        <tr>
-            <th>Bab</th>
-            <th>Tgl Upload</th>
-            <th>Cek Plagiat</th> <th>Status P1</th>
-            <th>Status P2</th>
-            <th>File Progres</th>
-            <th>Koreksi & Status</th>
-        </tr>
-    </thead>
-    <tbody>
-        <?php if (empty($progres)): ?>
-        <tr><td colspan="7" style="text-align: center;">Mahasiswa belum mengunggah progres.</td></tr>
-        <?php else: ?>
-            <?php foreach ($progres as $p): 
-                // --- Logic Plagiarisme ---
-                $plagiat = $this->M_Dosen->get_plagiarisme_result($p['id']);
-                $plagiat_status = $plagiat ? $plagiat['status'] : 'Menunggu';
-                $plagiat_percent = $plagiat ? $plagiat['persentase_kemiripan'] . '%' : '-';
-                $plagiat_color = $plagiat_status == 'Lulus' ? 'var(--color-success)' : ($plagiat_status == 'Tolak' ? 'var(--color-danger)' : 'orange');
-
-                // --- Logic Koreksi ---
-                $komentar_field = $is_p1 ? 'komentar_dosen1' : 'komentar_dosen2';
-                $progres_field = $is_p1 ? 'progres_dosen1' : 'progres_dosen2';
-            ?>
-            <tr>
-                <td>BAB <?php echo $p['bab']; ?></td>
-                <td><?php echo date('d M Y', strtotime($p['created_at'])); ?></td>
-                
-                <td style="color: <?php echo $plagiat_color; ?>; font-weight: bold;">
-                    <?php echo $plagiat_status; ?> (<?php echo $plagiat_percent; ?>)
-                    <?php if ($plagiat && $plagiat_status != 'Menunggu'): ?>
-                        <br><a href="<?php echo base_url('uploads/laporan_plagiarisme/' . $plagiat['dokumen_laporan']); ?>" target="_blank" style="font-size: 0.8em; font-weight: normal;"><i class="fas fa-file-pdf"></i> Laporan</a>
-                    <?php endif; ?>
-                </td>
-
-                <td style="color: <?php echo ($p['progres_dosen1'] == 100) ? 'var(--color-success)' : (($p['progres_dosen1'] == 50) ? 'orange' : 'var(--color-danger)'); ?>;"><?php echo $p['nilai_dosen1']; ?> (<?php echo $p['progres_dosen1']; ?>%)</td>
-                <td style="color: <?php echo ($p['progres_dosen2'] == 100) ? 'var(--color-success)' : (($p['progres_dosen2'] == 50) ? 'orange' : 'var(--color-danger)'); ?>;"><?php echo $p['nilai_dosen2']; ?> (<?php echo $p['progres_dosen2']; ?>%)</td>
-
-                <td><a href="<?php echo base_url('uploads/progres/' . $p['file']); ?>" target="_blank"><i class="fas fa-download"></i> File</a></td>
-                
-                <td>
-                    <?php if ($plagiat_status == 'Lulus' || $plagiat_status == 'Tolak'): ?>
-                        <button onclick="document.getElementById('form_<?php echo $p['id']; ?>').style.display='block'" class="btn btn-secondary" style="padding: 8px 15px;">Beri Koreksi</button>
-                    <?php else: ?>
-                        <span style="color: orange;">Menunggu Cek Plagiat</span>
-                    <?php endif; ?>
-
-                    <div id="form_<?php echo $p['id']; ?>" style="display:none; border: 1px solid #ccc; padding: 15px; margin-top: 10px; background-color: #f9f9f9; border-radius: 8px;">
-                        <?php echo form_open('dosen/submit_koreksi'); ?>
-                            <input type="hidden" name="id_progres" value="<?php echo $p['id']; ?>">
-                            <input type="hidden" name="id_skripsi" value="<?php echo $skripsi['id']; ?>">
-                            <input type="hidden" name="is_p1" value="<?php echo $is_p1 ? 1 : 0; ?>">
-                            
-                            <?php
-                            $saran_komentar = [
-                                "Revisi Bab Pendahuluan: Fokus pada gap penelitian.",
-                                "Tinjauan Pustaka: Tambahkan 5 referensi terbaru (5 tahun terakhir).",
-                                "Metode Penelitian: Jelaskan langkah pengujian/validasi data lebih rinci.",
-                                "Hasil dan Pembahasan: Perlu interpretasi hasil yang lebih mendalam.",
-                                "Bab ini sudah baik, segera lanjutkan ke Bab berikutnya (ACC).",
-                                "Perbaiki tata bahasa dan format penulisan (Typo)."
-                            ];
-                            ?>
-
-                            <label>Saran Cepat:</label>
-                            <select onchange="document.getElementById('komentar_<?php echo $p['id']; ?>').value += this.value + '\n'" style="width: 100%; padding: 8px; margin-bottom: 10px;">
-                                <option value="">-- Pilih Saran Cepat --</option>
-                                <?php foreach ($saran_komentar as $saran): ?>
-                                    <option value="<?php echo $saran; ?>"><?php echo $saran; ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                            
-                            <label>Komentar/Revisi:</label>
-                            <textarea name="komentar" id="komentar_<?php echo $p['id']; ?>" style="width: 100%; height: 100px; margin-bottom: 10px;"><?php echo $p[$komentar_field]; ?></textarea>
-                            
-                            <label>Status Progres:</label>
-                            <select name="status_progres" required style="width: 100%; padding: 8px; margin-bottom: 15px;">
-                                <option value="0" <?php echo set_select('status_progres', '0', $p[$progres_field] == 0); ?>>0% (Revisi)</option>
-                                <option value="50" <?php echo set_select('status_progres', '50', $p[$progres_field] == 50); ?>>50% (ACC Sebagian)</option>
-                                <option value="100" <?php echo set_select('status_progres', '100', $p[$progres_field] == 100); ?>>100% (ACC Penuh)</option>
-                            </select>
-                            
-                            <button type="submit" class="btn btn-success" style="width: 100%;">Simpan Koreksi</button>
-                        <?php echo form_close(); ?>
+            <div class="callout callout-info shadow-sm">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h5 class="text-primary"><i class="fas fa-book-reader mr-1"></i> <?php echo $skripsi['judul']; ?></h5>
+                        <p class="mb-0">
+                            <strong>Mahasiswa:</strong> <?php echo $skripsi['nama_mhs']; ?> (<?php echo $skripsi['npm']; ?>)
+                        </p>
                     </div>
-                </td>
-            </tr>
-            <?php endforeach; ?>
-        <?php endif; ?>
-    </tbody>
-</table>
+                    <div class="col-md-4 text-md-right align-self-center">
+                        <span class="badge badge-warning text-md p-2">
+                            <i class="fas fa-user-tag"></i> Anda sebagai: Pembimbing <?php echo $is_p1 ? '1' : '2'; ?>
+                        </span>
+                    </div>
+                </div>
+            </div>
 
-<?php
-// Tampilkan tombol ACC Sempro
-$is_ready_sempro = FALSE;
-if (!empty($progres)) {
-    $last_bab = end($progres);
-    if ($last_bab['bab'] == 3 && $last_bab['progres_dosen1'] == 100 && $last_bab['progres_dosen2'] == 100) {
-        $is_ready_sempro = TRUE;
-    }
-}
-?>
+            <div class="card card-primary card-outline">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-history mr-1"></i> Riwayat Bimbingan</h3>
+                </div>
+                
+                <div class="card-body table-responsive p-0">
+                    <table class="table table-hover table-striped text-nowrap">
+                        <thead>
+                            <tr class="bg-light text-center">
+                                <th style="width: 10%">Bab</th>
+                                <th style="width: 15%">Tanggal</th>
+                                <th style="width: 15%">Cek Plagiat</th>
+                                <th style="width: 15%">Status P1</th>
+                                <th style="width: 15%">Status P2</th>
+                                <th style="width: 10%">File</th>
+                                <th style="width: 20%">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($progres)): ?>
+                                <tr>
+                                    <td colspan="7" class="text-center py-5 text-muted">
+                                        <i class="fas fa-folder-open fa-3x mb-3" style="opacity: 0.3;"></i><br>
+                                        Mahasiswa belum mengunggah progres bimbingan.
+                                    </td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($progres as $p): 
+                                    // --- Logic Variables ---
+                                    $plagiat = $this->M_Dosen->get_plagiarisme_result($p['id']);
+                                    $plagiat_status = $plagiat ? $plagiat['status'] : 'Menunggu';
+                                    $plagiat_percent = $plagiat ? $plagiat['persentase_kemiripan'] . '%' : '-';
+                                    
+                                    $komentar_field = $is_p1 ? 'komentar_dosen1' : 'komentar_dosen2';
+                                    $progres_field = $is_p1 ? 'progres_dosen1' : 'progres_dosen2';
+                                    $nilai_field = $is_p1 ? 'nilai_dosen1' : 'nilai_dosen2';
+                                ?>
+                                <tr>
+                                    <td class="align-middle text-center">
+                                        <span class="badge badge-secondary px-3 py-2">BAB <?php echo $p['bab']; ?></span>
+                                    </td>
+                                    <td class="align-middle text-center text-muted small">
+                                        <?php echo date('d M Y', strtotime($p['created_at'])); ?>
+                                    </td>
+                                    
+                                    <td class="align-middle text-center">
+                                        <?php if ($plagiat_status == 'Lulus'): ?>
+                                            <span class="badge badge-success"><i class="fas fa-check"></i> Lulus (<?php echo $plagiat_percent; ?>)</span>
+                                        <?php elseif ($plagiat_status == 'Tolak'): ?>
+                                            <span class="badge badge-danger"><i class="fas fa-times"></i> Ditolak</span>
+                                        <?php else: ?>
+                                            <span class="badge badge-warning text-white"><i class="fas fa-clock"></i> Menunggu Operator</span>
+                                        <?php endif; ?>
+                                        
+                                        <?php if ($plagiat && $plagiat_status != 'Menunggu'): ?>
+                                            <br><a href="<?php echo base_url('uploads/laporan_plagiarisme/' . $plagiat['dokumen_laporan']); ?>" target="_blank" class="text-xs"><i class="fas fa-external-link-alt"></i> Cek Laporan</a>
+                                        <?php endif; ?>
+                                    </td>
 
-<?php if ($is_ready_sempro): ?>
-<div style="margin-top: 25px; padding: 20px; border: 2px solid var(--color-success); background-color: #e9f7ef; border-radius: 12px;">
-    <h4>Aksi Lanjut: Mahasiswa Siap Sempro</h4>
-    <p>Mahasiswa telah menyelesaikan bimbingan Bab 1-3 dengan status ACC Penuh dari kedua pembimbing.</p>
-    
-    <a href="https://sita.contoh.ac.id/pendaftaran" target="_blank" class="btn btn-success" style="margin-top: 10px;">
-        ✅ Instruksikan Mahasiswa Daftar Sempro (ke SITA)
-    </a>
+                                    <td class="align-middle text-center">
+                                        <?php 
+                                        $badge = 'secondary'; 
+                                        if ($p['progres_dosen1'] == 100) $badge = 'success';
+                                        elseif ($p['progres_dosen1'] == 50) $badge = 'warning';
+                                        elseif ($p['nilai_dosen1'] == 'Revisi') $badge = 'danger';
+                                        ?>
+                                        <span class="badge badge-<?php echo $badge; ?>"><?php echo $p['nilai_dosen1'] ?: '-'; ?></span>
+                                    </td>
+
+                                    <td class="align-middle text-center">
+                                        <?php 
+                                        $badge = 'secondary'; 
+                                        if ($p['progres_dosen2'] == 100) $badge = 'success';
+                                        elseif ($p['progres_dosen2'] == 50) $badge = 'warning';
+                                        elseif ($p['nilai_dosen2'] == 'Revisi') $badge = 'danger';
+                                        ?>
+                                        <span class="badge badge-<?php echo $badge; ?>"><?php echo $p['nilai_dosen2'] ?: '-'; ?></span>
+                                    </td>
+
+                                    <td class="align-middle text-center">
+                                        <a href="<?php echo base_url('uploads/progres/' . $p['file']); ?>" target="_blank" class="btn btn-default btn-sm shadow-sm">
+                                            <i class="fas fa-file-pdf text-danger"></i> PDF
+                                        </a>
+                                    </td>
+                                    
+                                    <td class="align-middle text-center">
+                                        <?php if ($plagiat_status == 'Lulus' || $plagiat_status == 'Tolak'): ?>
+                                            <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modal-koreksi-<?php echo $p['id']; ?>">
+                                                <i class="fas fa-edit"></i> Beri Koreksi
+                                            </button>
+                                        <?php else: ?>
+                                            <span class="text-muted text-sm font-italic">Tunggu Plagiasi</span>
+                                        <?php endif; ?>
+
+                                        <div class="modal fade" id="modal-koreksi-<?php echo $p['id']; ?>" tabindex="-1" role="dialog">
+                                            <div class="modal-dialog modal-lg" role="document">
+                                                <div class="modal-content text-left">
+                                                    <div class="modal-header bg-primary">
+                                                        <h5 class="modal-title"><i class="fas fa-edit mr-1"></i> Koreksi Bimbingan: BAB <?php echo $p['bab']; ?></h5>
+                                                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                                                            <span aria-hidden="true">&times;</span>
+                                                        </button>
+                                                    </div>
+                                                    
+                                                    <?php echo form_open('dosen/submit_koreksi'); ?>
+                                                    <div class="modal-body">
+                                                        <input type="hidden" name="id_progres" value="<?php echo $p['id']; ?>">
+                                                        <input type="hidden" name="id_skripsi" value="<?php echo $skripsi['id']; ?>">
+                                                        <input type="hidden" name="is_p1" value="<?php echo $is_p1 ? 1 : 0; ?>">
+
+                                                        <div class="row">
+                                                            <div class="col-md-4">
+                                                                <label>Saran Cepat (Template):</label>
+                                                                <select class="form-control" onchange="document.getElementById('komentar_<?php echo $p['id']; ?>').value += this.value + '\n\n'">
+                                                                    <option value="">-- Pilih Template --</option>
+                                                                    <option value="Revisi Bab Pendahuluan: Fokus pada gap penelitian.">Revisi Pendahuluan</option>
+                                                                    <option value="Tinjauan Pustaka: Tambahkan 5 referensi terbaru (5 tahun terakhir).">Refrensi Kurang</option>
+                                                                    <option value="Metode Penelitian: Jelaskan langkah pengujian data lebih rinci.">Metode Kurang Jelas</option>
+                                                                    <option value="Hasil dan Pembahasan: Perlu interpretasi hasil yang lebih mendalam.">Pembahasan Dangkal</option>
+                                                                    <option value="Perbaiki tata bahasa dan format penulisan (Typo).">Banyak Typo</option>
+                                                                    <option value="Bab ini sudah baik, segera lanjutkan ke Bab berikutnya (ACC).">ACC Lanjut</option>
+                                                                </select>
+                                                                <small class="text-muted">Pilih untuk menambahkan teks otomatis.</small>
+                                                            </div>
+                                                            <div class="col-md-8">
+                                                                <div class="form-group">
+                                                                    <label>Komentar Detail / Revisi:</label>
+                                                                    <textarea name="komentar" id="komentar_<?php echo $p['id']; ?>" class="form-control" rows="6" placeholder="Tuliskan detail revisi di sini..."><?php echo $p[$komentar_field]; ?></textarea>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <hr>
+
+                                                        <div class="form-group">
+                                                            <label>Status Keputusan:</label>
+                                                            <div class="d-flex">
+                                                                <div class="custom-control custom-radio mr-4">
+                                                                    <input class="custom-control-input" type="radio" id="status0_<?php echo $p['id']; ?>" name="status_progres" value="0" <?php echo ($p[$progres_field] == 0) ? 'checked' : ''; ?>>
+                                                                    <label for="status0_<?php echo $p['id']; ?>" class="custom-control-label text-danger font-weight-bold">Perlu Revisi (0%)</label>
+                                                                </div>
+                                                                <div class="custom-control custom-radio mr-4">
+                                                                    <input class="custom-control-input" type="radio" id="status50_<?php echo $p['id']; ?>" name="status_progres" value="50" <?php echo ($p[$progres_field] == 50) ? 'checked' : ''; ?>>
+                                                                    <label for="status50_<?php echo $p['id']; ?>" class="custom-control-label text-warning font-weight-bold">ACC Sebagian (50%)</label>
+                                                                </div>
+                                                                <div class="custom-control custom-radio">
+                                                                    <input class="custom-control-input" type="radio" id="status100_<?php echo $p['id']; ?>" name="status_progres" value="100" <?php echo ($p[$progres_field] == 100) ? 'checked' : ''; ?>>
+                                                                    <label for="status100_<?php echo $p['id']; ?>" class="custom-control-label text-success font-weight-bold">ACC Penuh (100%)</label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                    </div>
+                                                    <div class="modal-footer justify-content-between">
+                                                        <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
+                                                        <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i> Simpan Hasil Koreksi</button>
+                                                    </div>
+                                                    <?php echo form_close(); ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <?php
+            $is_ready_sempro = FALSE;
+            if (!empty($progres)) {
+                $last_bab = end($progres); // Ambil elemen terakhir
+                // Logika Sempro: Bab 3 sudah ACC 100% oleh KEDUA pembimbing
+                if ($last_bab['bab'] == 3 && $last_bab['progres_dosen1'] == 100 && $last_bab['progres_dosen2'] == 100) {
+                    $is_ready_sempro = TRUE;
+                }
+            }
+            ?>
+
+            <?php if ($is_ready_sempro): ?>
+            <div class="callout callout-success shadow-sm mt-3">
+                <h5><i class="fas fa-graduation-cap mr-1"></i> Mahasiswa Siap Seminar Proposal!</h5>
+                <p>Mahasiswa ini telah menyelesaikan bimbingan BAB 1 sampai BAB 3 dengan status <strong>ACC Penuh</strong> dari kedua pembimbing.</p>
+                <hr>
+                <a href="https://sita.contoh.ac.id/pendaftaran" target="_blank" class="btn btn-success">
+                    <i class="fas fa-check-double mr-1"></i> Instruksikan Daftar Sempro di SITA
+                </a>
+            </div>
+            <?php endif; ?>
+
+        </div>
+    </div>
 </div>
-<?php endif; ?>

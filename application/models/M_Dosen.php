@@ -25,9 +25,11 @@ class M_Dosen extends CI_Model {
 
     public function get_skripsi_details($id_skripsi)
     {
-        $this->db->select('S.*, M.npm');
+        // UPDATE: Menambahkan select M.telepon untuk notifikasi WA
+        $this->db->select('S.*, M.npm, M.telepon, A.nama AS nama_mhs'); 
         $this->db->from('skripsi S');
         $this->db->join('data_mahasiswa M', 'S.id_mahasiswa = M.id', 'inner');
+        $this->db->join('mstr_akun A', 'M.id = A.id', 'inner');
         $this->db->where('S.id', $id_skripsi);
         return $this->db->get()->row_array();
     }
@@ -76,23 +78,109 @@ class M_Dosen extends CI_Model {
     {
         return $this->db->get_where('hasil_plagiarisme', ['id_progres' => $id_progres])->row_array();
     }
-    
-    // public function insert_plagiarisme_mockup($id_progres)
-    // {
-    //     // === MOCKUP LOGIC ===
-    //     // Ambang batas kelulusan kita tetapkan 25%.
-    //     $kemiripan = rand(10, 40); // Hasil acak antara 10% dan 40%
-    //     $status = ($kemiripan <= 25) ? 'Lulus' : 'Tolak';
 
-    //     $data = [
-    //         'id_progres' => $id_progres,
-    //         'tanggal_cek' => date('Y-m-d'),
-    //         'persentase_kemiripan' => $kemiripan,
-    //         'status' => $status,
-    //         'dokumen_laporan' => 'laporan_plagiarisme_' . $id_progres . '.pdf' // Dummy file
-    //     ];
-        
-    //     $this->db->insert('hasil_plagiarisme', $data);
-    //     return $data; // Kembalikan data yang diinsert
-    // }
+    public function submit_koreksi()
+    {
+        $id_progres = $this->input->post('id_progres');
+        $is_p1 = $this->input->post('is_p1');
+        $komentar = $this->input->post('komentar');
+        $status_progres = $this->input->post('status_progres'); // Nilai: 0, 50, 100
+        $id_skripsi = $this->input->post('id_skripsi');
+
+        $plagiat_result = $this->M_Dosen->get_plagiarisme_result($id_progres);
+
+        if (!$plagiat_result || $plagiat_result['status'] == 'Menunggu') {
+            $this->session->set_flashdata('pesan_error', 'Gagal: Hasil cek plagiarisme masih Menunggu.');
+            redirect('dosen/progres_detail/' . $id_skripsi);
+        }
+
+        if ($plagiat_result['status'] == 'Tolak') {
+            $status_progres = 0;
+            $komentar .= "\n[Sistem] : Hasil Plagiarisme Ditolak (" . $plagiat_result['persentase_kemiripan'] . "%). Wajib Revisi!";
+            $this->M_Log->record('Plagiarisme', 'Otomatis menetapkan status revisi karena persentase plagiat tinggi.', $id_progres);
+        }
+
+        $data = [];
+        if ($is_p1) {
+            $data['komentar_dosen1'] = $komentar;
+            $data['progres_dosen1'] = $status_progres;
+            $data['nilai_dosen1'] = ($status_progres == 100) ? 'ACC' : (($status_progres == 50) ? 'ACC Sebagian' : 'Revisi');
+        } else {
+            $data['komentar_dosen2'] = $komentar;
+            $data['progres_dosen2'] = $status_progres;
+            $data['nilai_dosen2'] = ($status_progres == 100) ? 'ACC' : (($status_progres == 50) ? 'ACC Sebagian' : 'Revisi');
+        }
+
+        if ($this->M_Dosen->update_progres($id_progres, $data)) {
+            $this->session->set_flashdata('pesan_sukses', 'Koreksi dan status progres berhasil disimpan!');
+            
+            // Ambil data progres terbaru
+            $progres_terkini = $this->M_Dosen->get_progres_by_id($id_progres);
+            
+            $dosen_label = $is_p1 ? 'P1' : 'P2';
+            $status_text = ($status_progres == 100) ? 'ACC Penuh' : (($status_progres == 50) ? 'ACC Sebagian' : 'Revisi');
+            
+            // Catat Log
+            $this->M_Log->record('Koreksi', 'Memberikan status **' . $status_text . '** Bab ' . $progres_terkini['bab'] . ' sebagai ' . $dosen_label, $id_progres);
+
+            // ============================================================
+            // INTEGRASI FONNTE: FORMAT PESAN BARU (SESUAI REQUEST)
+            // ============================================================
+            
+            $this->load->helper('fonnte');
+
+            $skripsi_info = $this->M_Dosen->get_skripsi_details($id_skripsi);
+            $nomor_hp = isset($skripsi_info['telepon']) ? $skripsi_info['telepon'] : null;
+            
+            if (!empty($nomor_hp)) {
+                $nama_mhs = $skripsi_info['nama_mhs'];
+                $judul_skripsi = $skripsi_info['judul'];
+                $nama_dosen = $this->session->userdata('nama');
+                $role_pembimbing = ($is_p1) ? "Pembimbing 1" : "Pembimbing 2";
+                $bab = $progres_terkini['bab'];
+
+                // Format Pesan WA Cantik
+                $pesan_wa = "🔔 Komentar Progres Skripsi\n";
+                $pesan_wa .= "👨‍🎓 Nama: $nama_mhs\n";
+                $pesan_wa .= "📘 Judul: $judul_skripsi\n";
+                $pesan_wa .= "📄 BAB $bab\n";
+                $pesan_wa .= "📝 $nama_dosen ($role_pembimbing) telah memberikan komentar.\n";
+                $pesan_wa .= "Silakan cek sistem untuk melihat detailnya.\n\n";
+                $pesan_wa .= "> Sent via Sistem Monitoring Skripsi";
+
+                // Kirim
+                kirim_wa_fonnte($nomor_hp, $pesan_wa);
+            }
+            // ============================================================
+
+            // Cek Sempro
+            if ($progres_terkini['bab'] == 3 && $progres_terkini['progres_dosen1'] == 100 && $progres_terkini['progres_dosen2'] == 100) {
+                $this->session->set_flashdata('pesan_info', 'Mahasiswa siap Seminar Proposal. Segera arahkan Mahasiswa untuk mendaftar di SITA.');
+            }
+
+        } else {
+            $this->session->set_flashdata('pesan_error', 'Gagal menyimpan koreksi.');
+        }
+
+        redirect('dosen/progres_detail/' . $id_skripsi);
+    }
 }
+
+// public function insert_plagiarisme_mockup($id_progres)
+// {
+//     // === MOCKUP LOGIC ===
+//     // Ambang batas kelulusan kita tetapkan 25%.
+//     $kemiripan = rand(10, 40); // Hasil acak antara 10% dan 40%
+//     $status = ($kemiripan <= 25) ? 'Lulus' : 'Tolak';
+
+//     $data = [
+//         'id_progres' => $id_progres,
+//         'tanggal_cek' => date('Y-m-d'),
+//         'persentase_kemiripan' => $kemiripan,
+//         'status' => $status,
+//         'dokumen_laporan' => 'laporan_plagiarisme_' . $id_progres . '.pdf' // Dummy file
+//     ];
+
+//     $this->db->insert('hasil_plagiarisme', $data);
+//     return $data; // Kembalikan data yang diinsert
+// }

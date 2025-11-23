@@ -63,16 +63,14 @@ class Dosen extends CI_Controller
         $plagiat_result = $this->M_Dosen->get_plagiarisme_result($id_progres);
 
         if (!$plagiat_result || $plagiat_result['status'] == 'Menunggu') {
-            // Karena hasil mockup langsung muncul, ini hanya guard jika ada error
-            $this->session->set_flashdata('pesan_error', 'Gagal: Hasil cek plagiarisme masih Menunggu. Mohon tunggu laporan selesai.');
+            $this->session->set_flashdata('pesan_error', 'Gagal: Hasil cek plagiarisme masih Menunggu.');
             redirect('dosen/progres_detail/' . $id_skripsi);
         }
 
         if ($plagiat_result['status'] == 'Tolak') {
-            // Jika Tolak, Dosen hanya bisa memberi status Revisi (0%)
             $status_progres = 0;
-            $komentar .= "\n[Sistem] : Hasil Plagiarisme Ditolak (" . $plagiat_result['persentase_kemiripan'] . "%). Wajib Revisi dan Cek Ulang!";
-            $this->M_Log->record('Plagiarisme', 'Otomatis menetapkan status revisi karena persentase plagiat (' . $plagiat_result['persentase_kemiripan'] . '%) melebihi ambang batas.', $id_progres);
+            $komentar .= "\n[Sistem] : Hasil Plagiarisme Ditolak (" . $plagiat_result['persentase_kemiripan'] . "%). Wajib Revisi!";
+            $this->M_Log->record('Plagiarisme', 'Otomatis menetapkan status revisi karena persentase plagiat tinggi.', $id_progres);
         }
 
         $data = [];
@@ -88,17 +86,56 @@ class Dosen extends CI_Controller
 
         if ($this->M_Dosen->update_progres($id_progres, $data)) {
             $this->session->set_flashdata('pesan_sukses', 'Koreksi dan status progres berhasil disimpan!');
+            
+            // Ambil data progres terbaru untuk keperluan Log & WA
+            $progres_terkini = $this->M_Dosen->get_progres_by_id($id_progres);
+            
             $dosen_label = $is_p1 ? 'P1' : 'P2';
             $status_text = ($status_progres == 100) ? 'ACC Penuh' : (($status_progres == 50) ? 'ACC Sebagian' : 'Revisi');
+            
+            // Catat Log
             $this->M_Log->record('Koreksi', 'Memberikan status **' . $status_text . '** Bab ' . $progres_terkini['bab'] . ' sebagai ' . $dosen_label, $id_progres);
 
-            // Cek jika Bab 3 sudah di ACC penuh oleh kedua pembimbing
-            $progres_terkini = $this->M_Dosen->get_progres_by_id($id_progres);
-            if ($progres_terkini['bab'] == 3 && $progres_terkini['progres_dosen1'] == 100 && $progres_terkini['progres_dosen2'] == 100) {
-                // Memberikan notifikasi bahwa mahasiswa sudah siap Sempro
-                $this->session->set_flashdata('pesan_info', 'Mahasiswa siap Seminar Proposal. Segera arahkan Mahasiswa untuk mendaftar di SITA.');
-                // Tambahkan kode untuk mengaktifkan tombol ACC Sempro di dashboard
+            // ============================================================
+            // INTEGRASI FONNTE: KIRIM NOTIFIKASI WA KE MAHASISWA
+            // ============================================================
+            
+            // Load Helper
+            $this->load->helper('fonnte');
+
+            // Ambil data detail skripsi untuk dapat No HP & Nama Mahasiswa
+            $skripsi_info = $this->M_Dosen->get_skripsi_details($id_skripsi);
+            
+            $nomor_hp = isset($skripsi_info['telepon']) ? $skripsi_info['telepon'] : null;
+            
+            if (!empty($nomor_hp)) {
+                $nama_mhs = $skripsi_info['nama_mhs'];
+                $nama_dosen = $this->session->userdata('nama');
+                $bab = $progres_terkini['bab'];
+                $status_pesan = strtoupper($status_text);
+                
+                // Batasi panjang komentar di WA agar tidak terlalu panjang
+                $preview_komentar = (strlen($komentar) > 100) ? substr($komentar, 0, 100) . "..." : $komentar;
+
+                // Format Pesan WA
+                $pesan_wa = "*NOTIFIKASI BIMBINGAN SKRIPSI*\n\n";
+                $pesan_wa .= "Halo $nama_mhs,\n";
+                $pesan_wa .= "Dosen pembimbing Anda ($nama_dosen) baru saja memberikan tanggapan untuk progres *BAB $bab*.\n\n";
+                $pesan_wa .= "Status: *$status_pesan*\n";
+                $pesan_wa .= "Komentar: _" . $preview_komentar . "_\n\n";
+                $pesan_wa .= "Silakan login ke sistem WBS untuk melihat detail revisi lengkap.\n";
+                $pesan_wa .= "Terima kasih.";
+
+                // Kirim via Helper
+                kirim_wa_fonnte($nomor_hp, $pesan_wa);
             }
+            // ============================================================
+
+            // Cek Sempro
+            if ($progres_terkini['bab'] == 3 && $progres_terkini['progres_dosen1'] == 100 && $progres_terkini['progres_dosen2'] == 100) {
+                $this->session->set_flashdata('pesan_info', 'Mahasiswa siap Seminar Proposal. Segera arahkan Mahasiswa untuk mendaftar di SITA.');
+            }
+
         } else {
             $this->session->set_flashdata('pesan_error', 'Gagal menyimpan koreksi.');
         }
@@ -110,7 +147,6 @@ class Dosen extends CI_Controller
 
     public function monitoring_prodi()
     {
-        // Cek hanya Kaprodi yang bisa mengakses
         if ($this->session->userdata('is_kaprodi') != 1) {
             $this->session->set_flashdata('pesan_error', 'Akses ditolak. Fitur ini hanya untuk Kaprodi.');
             redirect('dosen/bimbingan_list');

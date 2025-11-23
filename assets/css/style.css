@@ -23,10 +23,11 @@ body {
     font-family: var(--font-family-base);
     line-height: 1.6;
     color: var(--color-dark);
-    background-color: var(--color-light); /* Background soft light grey */
+    background-color: var(--color-light); 
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    margin: 0; /* Pastikan margin body 0 */
 }
 
 a {
@@ -39,18 +40,18 @@ a:hover {
     color: #0056b3;
 }
 
-/* --- 2. Layout Structure --- */
+/* --- 2. Layout Structure (DIBERSIHKAN AGAR FULL WIDTH) --- */
 
 .main-wrapper {
     display: flex;
-    flex: 1; /* Konten mengisi sisa ruang */
-    width: 95%; /* Lebih lebar */
-    max-width: 1400px;
-    margin: 20px auto;
+    flex: 1; 
+    width: 100%;        /* UBAH: Jadi 100% agar nempel tepi */
+    max-width: none;    /* UBAH: Hapus batas lebar maksimal */
+    margin: 0;          /* UBAH: Hapus margin agar tidak ada jarak */
     background-color: #ffffff;
-    border-radius: 12px; /* Sudut membulat modern */
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); /* Shadow halus */
-    overflow: hidden; /* Penting untuk border-radius */
+    border-radius: 0;   /* UBAH: Hapus radius sudut */
+    box-shadow: none;   /* UBAH: Hapus shadow agar menyatu */
+    overflow: hidden; 
 }
 
 /* --- 3. Header & Navigation --- */
@@ -60,12 +61,15 @@ header {
     color: var(--color-light);
     padding: 15px 0;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 100;      /* Tambahan: Agar header di atas konten */
+    position: relative;
 }
 
 header .nav-container {
-    width: 95%;
-    max-width: 1400px;
-    margin: 0 auto;
+    width: 100%;       /* UBAH: Full width mengikuti layout */
+    max-width: none;   /* UBAH: Hapus batas */
+    margin: 0;
+    padding: 0 20px;   /* Tambahan: Padding kiri-kanan agar rapi */
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -97,6 +101,7 @@ header nav a:hover {
     background-color: var(--color-light);
     border-right: 1px solid #e0e0e0;
     flex-shrink: 0;
+    min-height: 100%; /* Pastikan tinggi mengikuti wrapper */
 }
 
 .sidebar h3 {
@@ -105,7 +110,7 @@ header nav a:hover {
     color: var(--color-dark);
     margin-bottom: 20px;
     padding-bottom: 5px;
-    border-bottom: 2px solid var(--color-primary); /* Aksen tegas */
+    border-bottom: 2px solid var(--color-primary); 
 }
 
 .sidebar ul {
@@ -144,6 +149,7 @@ header nav a:hover {
 .content-area {
     flex-grow: 1;
     padding: 30px;
+    overflow-x: auto; /* Tambahan: Agar tabel lebar bisa di-scroll */
 }
 
 .content-area h2 {
@@ -237,13 +243,13 @@ table tbody tr:hover {
     border: 1px solid transparent;
 }
 
-.alert-info[style*="#d4edda"] { /* Sukses (Green) */
+.alert-info[style*="#d4edda"] { 
     background-color: #d4edda !important;
     color: #155724 !important;
     border-color: #c3e6cb !important;
 }
 
-.alert-info[style*="#f8d7da"] { /* Error (Red) */
+.alert-info[style*="#f8d7da"] { 
     background-color: #f8d7da !important;
     color: #721c24 !important;
     border-color: #f5c6cb !important;
@@ -257,5 +263,6 @@ footer {
     background-color: var(--color-dark);
     color: var(--color-secondary);
     font-size: 0.9em;
-    margin-top: auto; /* Memastikan footer selalu di bawah */
+    margin-top: auto;
+    border-top: 1px solid #dee2e6; /* Tambahan garis atas footer agar jelas batasnya */
 }

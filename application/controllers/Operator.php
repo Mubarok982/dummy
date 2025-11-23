@@ -16,10 +16,56 @@ class Operator extends CI_Controller {
 
     // --- Manajemen Akun (CRUD) ---
 
-    public function manajemen_akun()
+   public function manajemen_akun()
     {
         $data['title'] = 'Manajemen Akun';
-        $data['users'] = $this->M_Data->get_all_users_with_details();
+        $this->load->library('pagination');
+
+        // 1. Ambil Filter dari URL
+        $role = $this->input->get('role');
+        $prodi = $this->input->get('prodi');
+        $keyword = $this->input->get('keyword');
+
+        // 2. Konfigurasi Pagination
+        $config['base_url'] = base_url('operator/manajemen_akun');
+        $config['total_rows'] = $this->M_Data->count_all_users($role, $prodi, $keyword);
+        $config['per_page'] = 15; // Batas 15 data per halaman
+        
+        // Agar filter tetap ada saat pindah halaman (PENTING!)
+        $config['reuse_query_string'] = TRUE;
+        $config['page_query_string'] = TRUE;
+        $config['query_string_segment'] = 'page';
+
+        // Styling Pagination AdminLTE (Bootstrap 4)
+        $config['full_tag_open']    = '<ul class="pagination pagination-sm m-0 float-right">';
+        $config['full_tag_close']   = '</ul>';
+        $config['first_link']       = '<i class="fas fa-angle-double-left"></i>';
+        $config['last_link']        = '<i class="fas fa-angle-double-right"></i>';
+        $config['first_tag_open']   = '<li class="page-item">';
+        $config['first_tag_close']  = '</li>';
+        $config['prev_link']        = '<i class="fas fa-angle-left"></i>';
+        $config['prev_tag_open']    = '<li class="page-item">';
+        $config['prev_tag_close']   = '</li>';
+        $config['next_link']        = '<i class="fas fa-angle-right"></i>';
+        $config['next_tag_open']    = '<li class="page-item">';
+        $config['next_tag_close']   = '</li>';
+        $config['last_tag_open']    = '<li class="page-item">';
+        $config['last_tag_close']   = '</li>';
+        $config['cur_tag_open']     = '<li class="page-item active"><span class="page-link">';
+        $config['cur_tag_close']    = '</span></li>';
+        $config['num_tag_open']     = '<li class="page-item">';
+        $config['num_tag_close']    = '</li>';
+        $config['attributes']       = array('class' => 'page-link');
+
+        $this->pagination->initialize($config);
+
+        // 3. Ambil data sesuai halaman aktif
+        $page = $this->input->get('page') ? $this->input->get('page') : 0;
+        $data['users'] = $this->M_Data->get_all_users_with_details($role, $prodi, $keyword, $config['per_page'], $page);
+        
+        $data['pagination'] = $this->pagination->create_links();
+        $data['total_rows'] = $config['total_rows'];
+        $data['start_index'] = $page;
 
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
@@ -196,7 +242,50 @@ class Operator extends CI_Controller {
     public function monitoring_progres()
     {
         $data['title'] = 'Laporan Monitoring Progres Bimbingan';
-        $data['laporan'] = $this->M_Data->get_laporan_progres_semua_mhs();
+        $this->load->library('pagination');
+
+        // 1. Ambil Filter dari URL (GET)
+        $prodi = $this->input->get('prodi');
+        $keyword = $this->input->get('keyword');
+
+        // 2. Konfigurasi Pagination
+        $config['base_url'] = base_url('operator/monitoring_progres');
+        $config['total_rows'] = $this->M_Data->count_laporan_progres($prodi, $keyword);
+        $config['per_page'] = 15; // Batas 15 data per halaman
+        
+        // Agar parameter filter tidak hilang saat klik halaman 2, 3, dst
+        $config['reuse_query_string'] = TRUE;
+        $config['page_query_string'] = TRUE;
+        $config['query_string_segment'] = 'page';
+
+        // Styling Pagination AdminLTE
+        $config['full_tag_open']    = '<ul class="pagination pagination-sm m-0 float-right">';
+        $config['full_tag_close']   = '</ul>';
+        $config['first_link']       = '<i class="fas fa-angle-double-left"></i>';
+        $config['last_link']        = '<i class="fas fa-angle-double-right"></i>';
+        $config['first_tag_open']   = '<li class="page-item">';
+        $config['first_tag_close']  = '</li>';
+        $config['prev_link']        = '<i class="fas fa-angle-left"></i>';
+        $config['prev_tag_open']    = '<li class="page-item">';
+        $config['prev_tag_close']   = '</li>';
+        $config['next_link']        = '<i class="fas fa-angle-right"></i>';
+        $config['next_tag_open']    = '<li class="page-item">';
+        $config['next_tag_close']   = '</li>';
+        $config['cur_tag_open']     = '<li class="page-item active"><span class="page-link">';
+        $config['cur_tag_close']    = '</span></li>';
+        $config['num_tag_open']     = '<li class="page-item">';
+        $config['num_tag_close']    = '</li>';
+        $config['attributes']       = array('class' => 'page-link');
+
+        $this->pagination->initialize($config);
+
+        // 3. Ambil Data
+        $page = $this->input->get('page') ? $this->input->get('page') : 0;
+        $data['laporan'] = $this->M_Data->get_laporan_progres($prodi, $keyword, $config['per_page'], $page);
+        
+        $data['pagination'] = $this->pagination->create_links();
+        $data['total_rows'] = $config['total_rows'];
+        $data['start_index'] = $page;
 
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
@@ -207,12 +296,52 @@ class Operator extends CI_Controller {
     public function kinerja_dosen()
     {
         $data['title'] = 'Laporan Kinerja Dosen Pembimbing';
-        $data['dosen_list'] = $this->M_Data->get_dosen_pembimbing_list(); // Dapatkan semua dosen
+        $this->load->library('pagination');
+
+        // 1. Filter
+        $keyword = $this->input->get('keyword');
+
+        // 2. Konfigurasi Pagination
+        $config['base_url'] = base_url('operator/kinerja_dosen');
+        $config['total_rows'] = $this->M_Data->count_dosen_pembimbing($keyword);
+        $config['per_page'] = 9; // Tampilkan 9 Kartu per halaman (3 baris x 3 kolom)
         
-        // Loop untuk mengambil ringkasan aktivitas per dosen
+        $config['reuse_query_string'] = TRUE;
+        $config['page_query_string'] = TRUE;
+        $config['query_string_segment'] = 'page';
+
+        // Styling Pagination (AdminLTE Style)
+        $config['full_tag_open']    = '<ul class="pagination pagination-sm m-0 float-right">';
+        $config['full_tag_close']   = '</ul>';
+        $config['first_link']       = '<i class="fas fa-angle-double-left"></i>';
+        $config['last_link']        = '<i class="fas fa-angle-double-right"></i>';
+        $config['first_tag_open']   = '<li class="page-item">';
+        $config['first_tag_close']  = '</li>';
+        $config['prev_link']        = '<i class="fas fa-angle-left"></i>';
+        $config['prev_tag_open']    = '<li class="page-item">';
+        $config['prev_tag_close']   = '</li>';
+        $config['next_link']        = '<i class="fas fa-angle-right"></i>';
+        $config['next_tag_open']    = '<li class="page-item">';
+        $config['next_tag_close']   = '</li>';
+        $config['cur_tag_open']     = '<li class="page-item active"><span class="page-link">';
+        $config['cur_tag_close']    = '</span></li>';
+        $config['num_tag_open']     = '<li class="page-item">';
+        $config['num_tag_close']    = '</li>';
+        $config['attributes']       = array('class' => 'page-link');
+
+        $this->pagination->initialize($config);
+
+        // 3. Ambil Data
+        $page = $this->input->get('page') ? $this->input->get('page') : 0;
+        $data['dosen_list'] = $this->M_Data->get_dosen_pembimbing_list($keyword, $config['per_page'], $page);
+        
+        // Loop aktivitas (Logika tetap sama)
         foreach ($data['dosen_list'] as $key => $dosen) {
             $data['dosen_list'][$key]['aktivitas'] = $this->M_Log->get_dosen_activity_summary($dosen['id']);
         }
+
+        $data['pagination'] = $this->pagination->create_links();
+        $data['total_rows'] = $config['total_rows'];
 
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
