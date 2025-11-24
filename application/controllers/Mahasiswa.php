@@ -176,4 +176,88 @@ class Mahasiswa extends CI_Controller {
         // --- FINAL REDIRECT ---
         redirect('mahasiswa/progres_skripsi');
     }
+
+    // --- FITUR BIODATA ---
+
+    public function biodata()
+    {
+        $id_user = $this->session->userdata('id');
+        $data['title'] = 'Biodata Saya';
+        
+        // Menggunakan M_Data yang sudah ada karena function get_user_by_id sudah lengkap (JOIN tabel)
+        $this->load->model('M_Data');
+        $data['user'] = $this->M_Data->get_user_by_id($id_user);
+
+        $this->load->view('template/header', $data);
+        $this->load->view('template/sidebar', $data);
+        $this->load->view('mahasiswa/v_biodata', $data);
+        $this->load->view('template/footer');
+    }
+
+    public function update_biodata()
+    {
+        $id_user = $this->session->userdata('id');
+        $this->load->model('M_Data');
+
+        // 1. Konfigurasi Upload
+        $config['upload_path'] = './uploads/profile/';
+        $config['allowed_types'] = 'jpg|jpeg|png';
+        $config['max_size'] = 2048; // 2MB
+        $config['encrypt_name'] = TRUE;
+
+        // Buat folder jika belum ada
+        if (!is_dir($config['upload_path'])) mkdir($config['upload_path'], 0777, true);
+
+        $this->load->library('upload', $config);
+
+        // Data untuk tabel mstr_akun
+        $akun_data = [
+            'nama' => $this->input->post('nama'),
+        ];
+
+        // Cek Upload Foto Profil
+        if (!empty($_FILES['foto']['name'])) {
+            if ($this->upload->do_upload('foto')) {
+                $uploadData = $this->upload->data();
+                $akun_data['foto'] = $uploadData['file_name'];
+            }
+        }
+
+        // Data untuk tabel data_mahasiswa
+        $detail_data = [
+            'jenis_kelamin' => $this->input->post('jenis_kelamin'),
+            'tempat_tgl_lahir' => $this->input->post('tempat_tgl_lahir'),
+            'email' => $this->input->post('email'),
+            'telepon' => $this->input->post('telepon'), // PENTING UNTUK NOTIFIKASI WA
+            'alamat' => $this->input->post('alamat'),
+            'nik' => $this->input->post('nik'),
+            'nama_ortu_dengan_gelar' => $this->input->post('nama_ortu'),
+        ];
+
+        // Cek Upload TTD (Tanda Tangan)
+        if (!empty($_FILES['ttd']['name'])) {
+            // Ubah path untuk TTD
+            $config['upload_path'] = './uploads/ttd/';
+            if (!is_dir($config['upload_path'])) mkdir($config['upload_path'], 0777, true);
+            
+            $this->upload->initialize($config); // Re-initialize config
+
+            if ($this->upload->do_upload('ttd')) {
+                $uploadData = $this->upload->data();
+                $detail_data['ttd'] = $uploadData['file_name'];
+            }
+        }
+
+        // Eksekusi Update via M_Data
+        if ($this->M_Data->update_user($id_user, $akun_data, 'mahasiswa', $detail_data)) {
+            $this->session->set_flashdata('pesan_sukses', 'Biodata berhasil diperbarui!');
+            
+            // Update Session Nama jika berubah
+            $this->session->set_userdata('nama', $akun_data['nama']);
+        } else {
+            $this->session->set_flashdata('pesan_error', 'Gagal memperbarui biodata.');
+        }
+
+        redirect('mahasiswa/biodata');
+    }
 }

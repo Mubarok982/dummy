@@ -60,10 +60,10 @@ class M_Data extends CI_Model
         return $this->db->get()->result_array();
     }
 
-    // Fungsi untuk mendapatkan detail akun berdasarkan ID
     public function get_user_by_id($id)
     {
-        $this->db->select('A.*, D.*, M.*');
+        $this->db->select('A.*, D.*, M.*, D.prodi AS prodi_dsn, M.prodi AS prodi_mhs');
+        
         $this->db->from('mstr_akun A');
         $this->db->join('data_dosen D', 'A.id = D.id', 'left');
         $this->db->join('data_mahasiswa M', 'A.id = M.id', 'left');

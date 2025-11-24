@@ -161,4 +161,69 @@ class Dosen extends CI_Controller
         $this->load->view('dosen/v_monitoring_prodi', $data);
         $this->load->view('template/footer');
     }
+
+    // --- FITUR PROFIL DOSEN ---
+
+    public function profil()
+    {
+        $id_user = $this->session->userdata('id');
+        $data['title'] = 'Profil Dosen';
+        
+        $this->load->model('M_Data');
+        $data['user'] = $this->M_Data->get_user_by_id($id_user);
+
+        $this->load->view('template/header', $data);
+        $this->load->view('template/sidebar', $data);
+        $this->load->view('dosen/v_profil', $data); // View khusus dosen
+        $this->load->view('template/footer');
+    }
+
+    public function update_profil()
+    {
+        $id_user = $this->session->userdata('id');
+        $this->load->model('M_Data');
+
+        // Konfigurasi Upload
+        $config['upload_path'] = './uploads/profile/';
+        $config['allowed_types'] = 'jpg|jpeg|png';
+        $config['max_size'] = 2048;
+        $config['encrypt_name'] = TRUE;
+
+        if (!is_dir($config['upload_path'])) mkdir($config['upload_path'], 0777, true);
+        $this->load->library('upload', $config);
+
+        $akun_data = ['nama' => $this->input->post('nama')];
+        
+        // Upload Foto
+        if (!empty($_FILES['foto']['name'])) {
+            if ($this->upload->do_upload('foto')) {
+                $uploadData = $this->upload->data();
+                $akun_data['foto'] = $uploadData['file_name'];
+            }
+        }
+
+        // Data Detail Dosen (Tidak banyak yang bisa diubah selain TTD)
+        $detail_data = [];
+
+        // Upload TTD
+        if (!empty($_FILES['ttd']['name'])) {
+            $config['upload_path'] = './uploads/ttd/';
+            if (!is_dir($config['upload_path'])) mkdir($config['upload_path'], 0777, true);
+            $this->upload->initialize($config);
+
+            if ($this->upload->do_upload('ttd')) {
+                $uploadData = $this->upload->data();
+                $detail_data['ttd'] = $uploadData['file_name'];
+            }
+        }
+
+        if ($this->M_Data->update_user($id_user, $akun_data, 'dosen', $detail_data)) {
+            $this->session->set_flashdata('pesan_sukses', 'Profil berhasil diperbarui!');
+            $this->session->set_userdata('nama', $akun_data['nama']);
+        } else {
+            $this->session->set_flashdata('pesan_error', 'Gagal memperbarui profil.');
+        }
+
+        redirect('dosen/profil');
+    }
 }
