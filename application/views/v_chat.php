@@ -7,12 +7,12 @@
         border-radius: 10px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         overflow: hidden;
-        display: flex; /* Pastikan container flex */
+        display: flex;
     }
 
     /* Sidebar Kontak */
     .kontak-list {
-        width: 30%; /* Lebar sidebar fix */
+        width: 30%;
         height: 100%;
         background: #fff;
         border-right: 1px solid #e0e0e0;
@@ -53,7 +53,7 @@
 
     /* Area Chat Kanan */
     .chat-wrapper {
-        width: 70%; /* Sisa lebar untuk chat */
+        width: 70%;
         height: 100%;
         position: relative;
     }
@@ -65,12 +65,11 @@
         flex-direction: column;
     }
 
-    /* Placeholder Screen */
     #chatPlaceholder {
         position: absolute;
         top: 0; left: 0; width: 100%; height: 100%;
         background: #f8f9fa;
-        z-index: 10; /* Di atas chat box */
+        z-index: 10;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -159,7 +158,6 @@
     }
     .btn-send:hover { color: #00a884; }
 
-    /* Preview Upload */
     #preview-container {
         display: none;
         padding: 10px;
@@ -177,20 +175,24 @@
                     <div class="input-group-prepend">
                         <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-muted"></i></span>
                     </div>
-                    <input type="text" class="form-control border-left-0" placeholder="Cari atau mulai chat baru">
+                    <input type="text" id="searchContact" class="form-control border-left-0" placeholder="Cari kontak...">
                 </div>
             </div>
             
-            <div class="kontak-scroll">
+            <div class="kontak-scroll" id="kontakListContainer">
                 <?php foreach ($kontak as $k): ?>
                 <div class="kontak-link" data-id="<?php echo $k['id']; ?>" data-nama="<?php echo $k['nama']; ?>">
                     <img src="https://ui-avatars.com/api/?name=<?php echo urlencode($k['nama']); ?>&background=random" class="kontak-avatar">
                     <div style="overflow: hidden;">
-                        <h6 class="mb-0 font-weight-bold"><?php echo $k['nama']; ?></h6>
+                        <h6 class="mb-0 font-weight-bold contact-name"><?php echo $k['nama']; ?></h6>
                         <small class="text-muted text-truncate d-block" style="max-width: 200px;"><?php echo $k['sub_info']; ?></small>
                     </div>
                 </div>
                 <?php endforeach; ?>
+                
+                <div id="noContactFound" class="text-center p-3 text-muted" style="display: none;">
+                    <small>Kontak tidak ditemukan</small>
+                </div>
             </div>
         </div>
 
@@ -199,7 +201,7 @@
             <div id="chatPlaceholder">
                 <img src="https://img.icons8.com/clouds/200/000000/chat.png" style="opacity: 0.6;">
                 <h4 class="font-weight-light mt-3">WBS Chat System</h4>
-                <p class="text-muted">Pilih kontak untuk mulai berdiskusi secara real-time.</p>
+                <p class="text-muted">Pilih kontak untuk mulai berdiskusi.</p>
             </div>
 
             <div id="chatBox" class="chat-area" style="display: none !important;">
@@ -256,9 +258,30 @@ $(document).ready(function() {
     let idLawan = null;
     let intervalChat = null;
 
+    // --- FITUR PENCARIAN KONTAK (FILTERING) ---
+    $('#searchContact').on('keyup', function() {
+        var value = $(this).val().toLowerCase();
+        var visibleItems = 0;
+
+        $('#kontakListContainer .kontak-link').filter(function() {
+            // Cari berdasarkan nama di dalam h6.contact-name
+            var match = $(this).find('.contact-name').text().toLowerCase().indexOf(value) > -1;
+            $(this).toggle(match);
+            if (match) visibleItems++;
+        });
+
+        // Tampilkan pesan jika tidak ada hasil
+        if (visibleItems === 0) {
+            $('#noContactFound').show();
+        } else {
+            $('#noContactFound').hide();
+        }
+    });
+
     // 1. KLIK KONTAK
-    $('.kontak-link').click(function() {
-        // UI Active State
+    // Gunakan 'on' agar tetap jalan meski elemen baru (walaupun ini statis)
+    $(document).on('click', '.kontak-link', function(e) {
+        e.preventDefault();
         $('.kontak-link').removeClass('active');
         $(this).addClass('active');
 
@@ -270,19 +293,18 @@ $(document).ready(function() {
         $('#namaLawanBicara').text(nama);
         $('#headerAvatar').attr('src', 'https://ui-avatars.com/api/?name=' + encodeURIComponent(nama) + '&background=random');
 
-        // LOGIKA GANTI TAMPILAN (PENTING)
+        // Ganti Tampilan
         $('#chatPlaceholder').fadeOut(200, function() {
-            $('#chatBox').css('display', 'flex').hide().fadeIn(200); // Pastikan display flex agar layout benar
+            $('#chatBox').css('display', 'flex').hide().fadeIn(200);
         });
 
-        loadPesan(true); // True = scroll ke bawah
+        loadPesan(true); 
 
-        // Polling Realtime
         if (intervalChat) clearInterval(intervalChat);
         intervalChat = setInterval(function() { loadPesan(false); }, 3000);
     });
 
-    // 2. LOAD PESAN DARI SERVER
+    // 2. LOAD PESAN
     function loadPesan(autoScroll) {
         if(!idLawan) return;
 
@@ -317,20 +339,16 @@ $(document).ready(function() {
         $('#preview-container').slideUp();
     });
 
-   // 5. Kirim Pesan (AJAX PERBAIKAN)
+    // 4. KIRIM PESAN
     $('#formKirim').submit(function(e) {
         e.preventDefault();
         
         let pesan = $('#pesanInput').val();
         let gambar = $('#fileGambar').val();
 
-        // Validasi di sisi Client
-        if(pesan.trim() == "" && gambar == "") {
-            alert("Harap isi pesan atau pilih gambar!");
-            return;
-        }
+        if(pesan.trim() == "" && gambar == "") return;
 
-        // Efek UI Loading (Opsional)
+        // UI Optimistic Update
         let btnSend = $('.btn-send');
         let originalIcon = btnSend.html();
         btnSend.html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
@@ -343,25 +361,22 @@ $(document).ready(function() {
             data: formData,
             contentType: false, 
             processData: false,
-            dataType: "json", // Wajib JSON agar bisa baca status
+            dataType: "json",
             success: function(response) {
                 if (response.status) {
-                    // JIKA SUKSES
                     $('#pesanInput').val(''); 
                     $('#fileGambar').val(''); 
                     $('#preview-container').hide();
-                    loadPesan(true); // Refresh Chat
+                    loadPesan(true); 
                 } else {
-                    // JIKA GAGAL (Tampilkan Error dari Controller)
                     alert("Gagal Kirim: " + response.msg);
                 }
             },
             error: function(xhr, status, error) {
                 console.error(xhr.responseText);
-                alert("Terjadi kesalahan server (Error 500). Cek Console browser.");
+                alert("Terjadi kesalahan koneksi.");
             },
             complete: function() {
-                // Kembalikan tombol kirim
                 btnSend.html(originalIcon).prop('disabled', false);
             }
         });

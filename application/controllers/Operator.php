@@ -16,7 +16,7 @@ class Operator extends CI_Controller {
 
     // --- Manajemen Akun (CRUD) ---
 
-   public function manajemen_akun()
+    public function manajemen_akun()
     {
         $data['title'] = 'Manajemen Akun';
         $this->load->library('pagination');
@@ -31,12 +31,12 @@ class Operator extends CI_Controller {
         $config['total_rows'] = $this->M_Data->count_all_users($role, $prodi, $keyword);
         $config['per_page'] = 15; // Batas 15 data per halaman
         
-        // Agar filter tetap ada saat pindah halaman (PENTING!)
+        // Agar filter tetap ada saat pindah halaman
         $config['reuse_query_string'] = TRUE;
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
 
-        // Styling Pagination AdminLTE (Bootstrap 4)
+        // Styling Pagination AdminLTE
         $config['full_tag_open']    = '<ul class="pagination pagination-sm m-0 float-right">';
         $config['full_tag_close']   = '</ul>';
         $config['first_link']       = '<i class="fas fa-angle-double-left"></i>';
@@ -73,8 +73,134 @@ class Operator extends CI_Controller {
         $this->load->view('template/footer');
     }
     
-    // (Fungsi Tambah, Edit, Hapus akan dibuat sesuai kebutuhan di View)
+    public function tambah_akun()
+    {
+        $data['title'] = 'Tambah Akun Baru';
+        
+        $this->form_validation->set_rules('username', 'Username', 'required|is_unique[mstr_akun.username]|trim');
+        $this->form_validation->set_rules('password', 'Password', 'required|min_length[3]');
+        $this->form_validation->set_rules('nama', 'Nama', 'required');
+        $this->form_validation->set_rules('role', 'Role', 'required');
+
+        if ($this->form_validation->run() == FALSE) {
+            $this->load->view('template/header', $data);
+            $this->load->view('template/sidebar', $data);
+            $this->load->view('operator/v_tambah_edit_akun', $data);
+            $this->load->view('template/footer');
+        } else {
+            $role = $this->input->post('role');
+            
+            $akun_data = [
+                'username' => $this->input->post('username'),
+                'password' => $this->input->post('password'), 
+                'nama'     => $this->input->post('nama'),
+                'role'     => $role,
+            ];
+
+            $detail_data = [];
+
+            if ($role == 'dosen') {
+                $detail_data = [
+                    'nidk' => $this->input->post('nidk'),
+                    'prodi' => $this->input->post('prodi_dosen'),
+                    'is_kaprodi' => $this->input->post('is_kaprodi') ? 1 : 0
+                ];
+            } elseif ($role == 'mahasiswa') {
+                $detail_data = [
+                    'npm' => $this->input->post('npm'),
+                    'prodi' => $this->input->post('prodi_mhs'),
+                    'angkatan' => $this->input->post('angkatan'),
+                    'status_beasiswa' => 'Tidak Aktif',
+                    'status_mahasiswa' => 'Murni',
+                    'ttd' => 'dummy_ttd.png',
+                    'dokumen_identitas' => 'dummy_doc.pdf',
+                    'sertifikat_office_puskom' => 'dummy_cert.pdf',
+                    'sertifikat_btq_ibadah' => 'dummy_cert.pdf',
+                    'sertifikat_bahasa' => 'dummy_cert.pdf',
+                    'sertifikat_kompetensi_ujian_komprehensif' => 'dummy_cert.pdf',
+                    'sertifikat_semaba_ppk_masta' => 'dummy_cert.pdf',
+                    'sertifikat_kkn' => 'dummy_cert.pdf',
+                ];
+            }
+
+            if ($this->M_Data->insert_user($akun_data, $detail_data, $role)) {
+                $this->session->set_flashdata('pesan_sukses', 'Akun ' . $role . ' berhasil ditambahkan!');
+                $this->M_Log->record('Akun', 'Menambahkan akun baru: ' . $role . ' (' . $akun_data['nama'] . ')');
+            } else {
+                $this->session->set_flashdata('pesan_error', 'Gagal menambahkan akun. Cek log database.');
+            }
+            redirect('operator/manajemen_akun');
+        }
+    }
     
+    public function edit_akun($id)
+    {
+        $data['user'] = $this->M_Data->get_user_by_id($id);
+        
+        if (!$data['user']) {
+            redirect('operator/manajemen_akun');
+        }
+
+        $data['title'] = 'Edit Akun: ' . $data['user']['nama'];
+        
+        $this->form_validation->set_rules('nama', 'Nama', 'required');
+        $this->form_validation->set_rules('role', 'Role', 'required');
+        
+        if ($this->input->post('password')) {
+            $this->form_validation->set_rules('password', 'Password', 'min_length[3]');
+        }
+
+        if ($this->form_validation->run() == FALSE) {
+            $this->load->view('template/header', $data);
+            $this->load->view('template/sidebar', $data);
+            $this->load->view('operator/v_tambah_edit_akun', $data);
+            $this->load->view('template/footer');
+        } else {
+            $role = $this->input->post('role');
+            $akun_data = [
+                'nama' => $this->input->post('nama'),
+                'role' => $role,
+            ];
+            
+            if ($this->input->post('password')) {
+                $akun_data['password'] = $this->input->post('password');
+            }
+
+            $detail_data = [];
+
+            if ($role == 'dosen') {
+                $detail_data = [
+                    'nidk' => $this->input->post('nidk'),
+                    'prodi' => $this->input->post('prodi_dosen'),
+                    'is_kaprodi' => $this->input->post('is_kaprodi') ? 1 : 0
+                ];
+            } elseif ($role == 'mahasiswa') {
+                $detail_data = [
+                    'npm' => $this->input->post('npm'),
+                    'prodi' => $this->input->post('prodi_mhs'),
+                    'angkatan' => $this->input->post('angkatan'),
+                ];
+            }
+
+            if ($this->M_Data->update_user($id, $akun_data, $detail_data, $role)) {
+                $this->session->set_flashdata('pesan_sukses', 'Akun ' . $role . ' berhasil diperbarui!');
+            } else {
+                $this->session->set_flashdata('pesan_error', 'Gagal memperbarui akun.');
+            }
+            redirect('operator/manajemen_akun');
+        }
+    }
+
+    public function delete_akun($id)
+    {
+        if ($this->M_Data->delete_user($id)) {
+            $this->session->set_flashdata('pesan_sukses', 'Akun berhasil dihapus!');
+        } else {
+            $this->session->set_flashdata('pesan_error', 'Gagal menghapus akun.');
+        }
+        redirect('operator/manajemen_akun');
+    }
+
     // --- Penugasan Pembimbing ---
 
     public function penugasan_pembimbing()
@@ -105,140 +231,8 @@ class Operator extends CI_Controller {
         redirect('operator/penugasan_pembimbing');
     }
 
-    public function tambah_akun()
-    {
-        $data['title'] = 'Tambah Akun Baru';
-        
-        // Aturan validasi (Disini kita biarkan 'password' tidak di-hash)
-        $this->form_validation->set_rules('username', 'Username', 'required|is_unique[mstr_akun.username]|trim');
-        $this->form_validation->set_rules('password', 'Password', 'required|min_length[3]');
-        $this->form_validation->set_rules('nama', 'Nama', 'required');
-        $this->form_validation->set_rules('role', 'Role', 'required');
+    // --- Monitoring Progres ---
 
-        if ($this->form_validation->run() == FALSE) {
-            $this->load->view('template/header', $data);
-            $this->load->view('template/sidebar', $data);
-            $this->load->view('operator/v_tambah_edit_akun', $data); // Menggunakan view yang sama
-            $this->load->view('template/footer');
-        } else {
-            $role = $this->input->post('role');
-            
-            // Data mstr_akun
-            $akun_data = [
-                'username' => $this->input->post('username'),
-                'password' => $this->input->post('password'), // Masih plain text
-                'nama'     => $this->input->post('nama'),
-                'role'     => $role,
-            ];
-
-            $detail_data = [];
-
-            if ($role == 'dosen') {
-                $detail_data = [
-                    'nidk' => $this->input->post('nidk'),
-                    'prodi' => $this->input->post('prodi_dosen'),
-                    'is_kaprodi' => $this->input->post('is_kaprodi') ? 1 : 0
-                ];
-            } elseif ($role == 'mahasiswa') {
-                $detail_data = [
-                    'npm' => $this->input->post('npm'),
-                    'prodi' => $this->input->post('prodi_mhs'),
-                    'angkatan' => $this->input->post('angkatan'),
-                    'status_beasiswa' => 'Tidak Aktif', // Default
-                    'status_mahasiswa' => 'Murni',      // Default
-                    'ttd' => 'dummy_ttd.png',           // Dummy file
-                    'dokumen_identitas' => 'dummy_doc.pdf', // Dummy file
-                    'sertifikat_office_puskom' => 'dummy_cert.pdf', // Dummy file
-                    'sertifikat_btq_ibadah' => 'dummy_cert.pdf',    // Dummy file
-                    'sertifikat_bahasa' => 'dummy_cert.pdf',        // Dummy file
-                    'sertifikat_kompetensi_ujian_komprehensif' => 'dummy_cert.pdf', // Dummy file
-                    'sertifikat_semaba_ppk_masta' => 'dummy_cert.pdf',           // Dummy file
-                    'sertifikat_kkn' => 'dummy_cert.pdf',                       // Dummy file
-                ];
-            }
-
-            if ($this->M_Data->insert_user($akun_data, $detail_data, $role)) {
-                $this->session->set_flashdata('pesan_sukses', 'Akun ' . $role . ' berhasil ditambahkan!');
-                $this->M_Log->record('Akun', 'Menambahkan akun baru: ' . $role . ' (' . $akun_data['nama'] . ')');
-            } else {
-                $this->session->set_flashdata('pesan_error', 'Gagal menambahkan akun. Cek log database.');
-            }
-            redirect('operator/manajemen_akun');
-        }
-    }
-    
-    public function edit_akun($id)
-    {
-        $data['user'] = $this->M_Data->get_user_by_id($id);
-        
-        if (!$data['user']) {
-            redirect('operator/manajemen_akun'); // Akun tidak ditemukan
-        }
-
-        $data['title'] = 'Edit Akun: ' . $data['user']['nama'];
-        
-        $this->form_validation->set_rules('nama', 'Nama', 'required');
-        $this->form_validation->set_rules('role', 'Role', 'required');
-        // Validasi password hanya jika diisi
-        if ($this->input->post('password')) {
-            $this->form_validation->set_rules('password', 'Password', 'min_length[3]');
-        }
-
-        if ($this->form_validation->run() == FALSE) {
-            $this->load->view('template/header', $data);
-            $this->load->view('template/sidebar', $data);
-            $this->load->view('operator/v_tambah_edit_akun', $data);
-            $this->load->view('template/footer');
-        } else {
-            $role = $this->input->post('role');
-            $akun_data = [
-                'nama' => $this->input->post('nama'),
-                'role' => $role,
-            ];
-            
-            // Update password hanya jika diisi
-            if ($this->input->post('password')) {
-                $akun_data['password'] = $this->input->post('password'); // Plain text
-            }
-
-            $detail_data = [];
-
-            if ($role == 'dosen') {
-                $detail_data = [
-                    'nidk' => $this->input->post('nidk'),
-                    'prodi' => $this->input->post('prodi_dosen'),
-                    'is_kaprodi' => $this->input->post('is_kaprodi') ? 1 : 0
-                ];
-            } elseif ($role == 'mahasiswa') {
-                $detail_data = [
-                    'npm' => $this->input->post('npm'),
-                    'prodi' => $this->input->post('prodi_mhs'),
-                    'angkatan' => $this->input->post('angkatan'),
-                    // field lain diabaikan karena fokus di bimbingan
-                ];
-            }
-
-            if ($this->M_Data->update_user($id, $akun_data, $detail_data, $role)) {
-                $this->session->set_flashdata('pesan_sukses', 'Akun ' . $role . ' berhasil diperbarui!');
-            } else {
-                $this->session->set_flashdata('pesan_error', 'Gagal memperbarui akun.');
-            }
-            redirect('operator/manajemen_akun');
-        }
-    }
-
-    public function delete_akun($id)
-    {
-        if ($this->M_Data->delete_user($id)) {
-            $this->session->set_flashdata('pesan_sukses', 'Akun berhasil dihapus!');
-        } else {
-            $this->session->set_flashdata('pesan_error', 'Gagal menghapus akun.');
-        }
-        redirect('operator/manajemen_akun');
-    }
-
-    // --- Monitoring ---
-    // (Akan diimplementasikan di tahap selanjutnya)
     public function monitoring_progres()
     {
         $data['title'] = 'Laporan Monitoring Progres Bimbingan';
@@ -251,9 +245,8 @@ class Operator extends CI_Controller {
         // 2. Konfigurasi Pagination
         $config['base_url'] = base_url('operator/monitoring_progres');
         $config['total_rows'] = $this->M_Data->count_laporan_progres($prodi, $keyword);
-        $config['per_page'] = 15; // Batas 15 data per halaman
+        $config['per_page'] = 10; 
         
-        // Agar parameter filter tidak hilang saat klik halaman 2, 3, dst
         $config['reuse_query_string'] = TRUE;
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
@@ -271,6 +264,8 @@ class Operator extends CI_Controller {
         $config['next_link']        = '<i class="fas fa-angle-right"></i>';
         $config['next_tag_open']    = '<li class="page-item">';
         $config['next_tag_close']   = '</li>';
+        $config['last_tag_open']    = '<li class="page-item">';
+        $config['last_tag_close']   = '</li>';
         $config['cur_tag_open']     = '<li class="page-item active"><span class="page-link">';
         $config['cur_tag_close']    = '</span></li>';
         $config['num_tag_open']     = '<li class="page-item">';
@@ -293,24 +288,25 @@ class Operator extends CI_Controller {
         $this->load->view('template/footer');
     }
 
+    // --- Kinerja Dosen ---
+
     public function kinerja_dosen()
     {
         $data['title'] = 'Laporan Kinerja Dosen Pembimbing';
         $this->load->library('pagination');
 
-        // 1. Filter
         $keyword = $this->input->get('keyword');
 
-        // 2. Konfigurasi Pagination
+        // 1. Konfigurasi Pagination
         $config['base_url'] = base_url('operator/kinerja_dosen');
         $config['total_rows'] = $this->M_Data->count_dosen_pembimbing($keyword);
-        $config['per_page'] = 9; // Tampilkan 9 Kartu per halaman (3 baris x 3 kolom)
+        $config['per_page'] = 10; // Batas 10 data
         
         $config['reuse_query_string'] = TRUE;
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
 
-        // Styling Pagination (AdminLTE Style)
+        // Styling Pagination
         $config['full_tag_open']    = '<ul class="pagination pagination-sm m-0 float-right">';
         $config['full_tag_close']   = '</ul>';
         $config['first_link']       = '<i class="fas fa-angle-double-left"></i>';
@@ -323,6 +319,8 @@ class Operator extends CI_Controller {
         $config['next_link']        = '<i class="fas fa-angle-right"></i>';
         $config['next_tag_open']    = '<li class="page-item">';
         $config['next_tag_close']   = '</li>';
+        $config['last_tag_open']    = '<li class="page-item">';
+        $config['last_tag_close']   = '</li>';
         $config['cur_tag_open']     = '<li class="page-item active"><span class="page-link">';
         $config['cur_tag_close']    = '</span></li>';
         $config['num_tag_open']     = '<li class="page-item">';
@@ -331,23 +329,59 @@ class Operator extends CI_Controller {
 
         $this->pagination->initialize($config);
 
-        // 3. Ambil Data
+        // 2. Ambil Data
         $page = $this->input->get('page') ? $this->input->get('page') : 0;
         $data['dosen_list'] = $this->M_Data->get_dosen_pembimbing_list($keyword, $config['per_page'], $page);
         
-        // Loop aktivitas (Logika tetap sama)
+        // Hitung total aktivitas
         foreach ($data['dosen_list'] as $key => $dosen) {
-            $data['dosen_list'][$key]['aktivitas'] = $this->M_Log->get_dosen_activity_summary($dosen['id']);
+            $aktivitas = $this->M_Log->get_dosen_activity_summary($dosen['id']);
+            $data['dosen_list'][$key]['aktivitas'] = $aktivitas;
+            $total = 0;
+            foreach($aktivitas as $act) { $total += $act['total_aksi']; }
+            $data['dosen_list'][$key]['total_aksi'] = $total;
         }
 
         $data['pagination'] = $this->pagination->create_links();
         $data['total_rows'] = $config['total_rows'];
+        $data['start_index'] = $page;
+        $data['per_page'] = $config['per_page'];
 
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
         $this->load->view('operator/v_kinerja_dosen', $data);
         $this->load->view('template/footer');
     }
+
+    // FITUR CSV
+    public function kinerja_dosen_csv()
+    {
+        $keyword = $this->input->get('keyword');
+        $dosen_list = $this->M_Data->get_dosen_pembimbing_list($keyword, NULL, NULL);
+
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="Laporan_Kinerja_Dosen_'.date('Y-m-d').'.csv"');
+
+        $output = fopen('php://output', 'w');
+        fputcsv($output, array('No', 'Nama Dosen', 'NIDK', 'Total Aktivitas Koreksi'));
+
+        $no = 1;
+        foreach ($dosen_list as $dosen) {
+            $aktivitas = $this->M_Log->get_dosen_activity_summary($dosen['id']);
+            $total = 0;
+            foreach($aktivitas as $act) { $total += $act['total_aksi']; }
+
+            fputcsv($output, array(
+                $no++, 
+                $dosen['nama'], 
+                "'".$dosen['nidk'], 
+                $total
+            ));
+        }
+        fclose($output);
+    }
+
+    // --- Plagiarisme ---
 
     public function cek_plagiarisme_list()
     {
@@ -365,8 +399,6 @@ class Operator extends CI_Controller {
         $status_baru = ($action == 'acc') ? 'Lulus' : 'Tolak';
         
         $this->M_Data->update_plagiarisme_status($id_plagiat, $status_baru);
-        
-        // Catat Log
         $this->M_Log->record('Plagiarisme', 'Memverifikasi cek plagiat ID: ' . $id_plagiat . ' dengan status: ' . $status_baru, $id_plagiat);
 
         $this->session->set_flashdata('pesan_sukses', 'Verifikasi Plagiarisme berhasil diinput: Status ' . $status_baru . '.');

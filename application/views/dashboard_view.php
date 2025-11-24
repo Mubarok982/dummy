@@ -138,7 +138,7 @@
                             <div class="progress-bar <?php echo $bg_class; ?> progress-bar-striped progress-bar-animated" role="progressbar" style="width: <?php echo $progress_percent; ?>%"></div>
                         </div>
 
-                        <a href="<?php echo base_url('mahasiswa/progres_skripsi'); ?>" class="btn btn-primary btn-block">
+                        <a href="<?php echo base_url('mahasiswa/bimbingan'); ?>" class="btn btn-primary btn-block">
                             <i class="fas fa-upload"></i> Lanjut Bimbingan / Upload File
                         </a>
                     </div>

@@ -52,7 +52,8 @@
     <?php endif; ?>
 
     <?php if ($role == 'dosen'): ?>
-      <li class="nav-header">PEMBIMBING</li>
+
+      <li class="nav-header">DOSEN PEMBIMBING</li>
       <li class="nav-item">
         <a href="<?php echo base_url('dosen/bimbingan_list'); ?>"
           class="nav-link <?php echo ($this->uri->segment(2) == 'bimbingan_list') ? 'active' : ''; ?>">
@@ -60,14 +61,6 @@
           <p>Mahasiswa Bimbingan</p>
         </a>
       </li>
-      <?php if ($this->session->userdata('is_kaprodi') == 1): ?>
-        <li class="nav-item">
-          <a href="<?php echo base_url('dosen/monitoring_prodi'); ?>" class="nav-link bg-warning text-dark">
-            <i class="nav-icon fas fa-eye"></i>
-            <p><b>Monitoring Kaprodi</b></p>
-          </a>
-        </li>
-      <?php endif; ?>
       <li class="nav-item">
         <a href="<?php echo base_url('chat'); ?>"
           class="nav-link <?php echo ($this->uri->segment(1) == 'chat') ? 'active' : ''; ?>">
@@ -75,6 +68,28 @@
           <p>Ruang Diskusi</p>
         </a>
       </li>
+
+      <?php if ($this->session->userdata('is_kaprodi') == 1): ?>
+        <li class="nav-header text-warning">AREA KAPRODI</li>
+
+        <li class="nav-item">
+          <a href="<?php echo base_url('dosen/monitoring_prodi'); ?>"
+            class="nav-link <?php echo ($this->uri->segment(2) == 'monitoring_prodi') ? 'active' : ''; ?>">
+            <i class="nav-icon fas fa-eye text-warning"></i>
+            <p>Monitoring Mahasiswa</p>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="<?php echo base_url('dosen/kinerja_dosen'); ?>"
+            class="nav-link <?php echo ($this->uri->segment(2) == 'kinerja_dosen') ? 'active' : ''; ?>">
+            <i class="nav-icon fas fa-chart-bar text-warning"></i>
+            <p>Kinerja Dosen Prodi</p>
+          </a>
+        </li>
+      <?php endif; ?>
+
+      <li class="nav-header">PENGATURAN</li>
       <li class="nav-item">
         <a href="<?php echo base_url('dosen/profil'); ?>"
           class="nav-link <?php echo ($this->uri->segment(2) == 'profil') ? 'active' : ''; ?>">
@@ -85,7 +100,16 @@
     <?php endif; ?>
 
     <?php if ($role == 'mahasiswa'): ?>
-      <li class="nav-header">SKRIPSI SAYA</li>
+      <li class="nav-header">AKUN SAYA</li>
+      <li class="nav-item">
+        <a href="<?php echo base_url('mahasiswa/biodata'); ?>"
+          class="nav-link <?php echo ($this->uri->segment(2) == 'biodata') ? 'active' : ''; ?>">
+          <i class="nav-icon fas fa-id-card"></i>
+          <p>Biodata Mahasiswa</p>
+        </a>
+      </li>
+
+      <li class="nav-header">PROGRES SKRIPSI</li>
       <li class="nav-item">
         <a href="<?php echo base_url('mahasiswa/pengajuan_judul'); ?>"
           class="nav-link <?php echo ($this->uri->segment(2) == 'pengajuan_judul') ? 'active' : ''; ?>">
@@ -94,24 +118,26 @@
         </a>
       </li>
       <li class="nav-item">
-        <a href="<?php echo base_url('mahasiswa/progres_skripsi'); ?>"
-          class="nav-link <?php echo ($this->uri->segment(2) == 'progres_skripsi') ? 'active' : ''; ?>">
+        <a href="<?php echo base_url('mahasiswa/bimbingan'); ?>"
+          class="nav-link <?php echo ($this->uri->segment(2) == 'bimbingan') ? 'active' : ''; ?>">
           <i class="nav-icon fas fa-upload"></i>
-          <p>Upload & Bimbingan</p>
+          <p>Bimbingan & Upload</p>
         </a>
       </li>
+      <li class="nav-item">
+        <a href="<?php echo base_url('mahasiswa/riwayat_progres'); ?>"
+          class="nav-link <?php echo ($this->uri->segment(2) == 'riwayat_progres') ? 'active' : ''; ?>">
+          <i class="nav-icon fas fa-history"></i>
+          <p>Riwayat Revisi</p>
+        </a>
+      </li>
+
+      <li class="nav-header">KOMUNIKASI</li>
       <li class="nav-item">
         <a href="<?php echo base_url('chat'); ?>"
           class="nav-link <?php echo ($this->uri->segment(1) == 'chat') ? 'active' : ''; ?>">
           <i class="nav-icon fas fa-comments"></i>
           <p>Ruang Diskusi</p>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a href="<?php echo base_url('mahasiswa/biodata'); ?>"
-          class="nav-link <?php echo ($this->uri->segment(2) == 'biodata') ? 'active' : ''; ?>">
-          <i class="nav-icon fas fa-id-card"></i>
-          <p>Biodata Saya</p>
         </a>
       </li>
     <?php endif; ?>

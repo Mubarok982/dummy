@@ -226,4 +226,77 @@ class Dosen extends CI_Controller
 
         redirect('dosen/profil');
     }
+
+    // --- MENU KAPRODI: Kinerja Dosen ---
+    public function kinerja_dosen()
+    {
+        // 1. Security Check: Hanya Kaprodi
+        if ($this->session->userdata('is_kaprodi') != 1) {
+            redirect('dosen/bimbingan_list');
+        }
+
+        $data['title'] = 'Kinerja Dosen Prodi';
+        $this->load->library('pagination');
+        $this->load->model('M_Data'); // Load M_Data jika belum ada di construct
+
+        // 2. Ambil Data Session & Filter
+        $prodi_kaprodi = $this->session->userdata('prodi');
+        $keyword = $this->input->get('keyword');
+
+        // 3. Konfigurasi Pagination
+        $config['base_url'] = base_url('dosen/kinerja_dosen');
+        $config['total_rows'] = $this->M_Dosen->count_dosen_by_prodi($prodi_kaprodi, $keyword);
+        $config['per_page'] = 10;
+        
+        $config['reuse_query_string'] = TRUE;
+        $config['page_query_string'] = TRUE;
+        $config['query_string_segment'] = 'page';
+
+        // Styling Pagination
+        $config['full_tag_open']    = '<ul class="pagination pagination-sm m-0 float-right">';
+        $config['full_tag_close']   = '</ul>';
+        $config['first_link']       = '&laquo;';
+        $config['last_link']        = '&raquo;';
+        $config['first_tag_open']   = '<li class="page-item">';
+        $config['first_tag_close']  = '</li>';
+        $config['prev_link']        = '&lsaquo;';
+        $config['prev_tag_open']    = '<li class="page-item">';
+        $config['prev_tag_close']   = '</li>';
+        $config['next_link']        = '&rsaquo;';
+        $config['next_tag_open']    = '<li class="page-item">';
+        $config['next_tag_close']   = '</li>';
+        $config['last_tag_open']    = '<li class="page-item">';
+        $config['last_tag_close']   = '</li>';
+        $config['cur_tag_open']     = '<li class="page-item active"><span class="page-link">';
+        $config['cur_tag_close']    = '</span></li>';
+        $config['num_tag_open']     = '<li class="page-item">';
+        $config['num_tag_close']    = '</li>';
+        $config['attributes']       = array('class' => 'page-link');
+
+        $this->pagination->initialize($config);
+
+        // 4. Ambil Data Dosen (Filtered by Prodi)
+        $page = $this->input->get('page') ? $this->input->get('page') : 0;
+        $data['dosen_list'] = $this->M_Dosen->get_dosen_by_prodi($prodi_kaprodi, $keyword, $config['per_page'], $page);
+        
+        // 5. Hitung Aktivitas (Sama seperti Operator)
+        foreach ($data['dosen_list'] as $key => $dosen) {
+            $aktivitas = $this->M_Log->get_dosen_activity_summary($dosen['id']);
+            $data['dosen_list'][$key]['aktivitas'] = $aktivitas;
+            
+            $total = 0;
+            foreach($aktivitas as $act) { $total += $act['total_aksi']; }
+            $data['dosen_list'][$key]['total_aksi'] = $total;
+        }
+
+        $data['pagination'] = $this->pagination->create_links();
+        $data['total_rows'] = $config['total_rows'];
+        $data['start_index'] = $page;
+        $data['per_page'] = $config['per_page'];
+
+        $this->load->view('template/header', $data);
+        $this->load->view('template/sidebar', $data);
+        $this->load->view('dosen/v_kinerja_dosen_prodi', $data); // View Baru
+        $this->load->view('template/footer');
+    }
 }

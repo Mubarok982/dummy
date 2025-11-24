@@ -35,13 +35,28 @@ class M_Mahasiswa extends CI_Model {
 
     // --- Progres Bimbingan ---
     
+   // --- PERBAIKAN LOGIKA PENGAMBILAN PROGRES ---
     public function get_progres_by_skripsi($id_skripsi)
     {
-        $npm = $this->db->select('npm')->get_where('data_mahasiswa', ['id' => $id_skripsi])->row('npm');
+        // Langkah 1: Cari tahu dulu Siapa pemilik skripsi ini (Ambil NPM-nya)
+        // Kita JOIN tabel 'skripsi' dengan 'data_mahasiswa'
+        $this->db->select('M.npm');
+        $this->db->from('skripsi S');
+        $this->db->join('data_mahasiswa M', 'S.id_mahasiswa = M.id'); // Hubungkan via ID Mahasiswa
+        $this->db->where('S.id', $id_skripsi);
         
+        $data_mhs = $this->db->get()->row_array();
+
+        // Jika data tidak ditemukan (misal ID skripsi salah), kembalikan array kosong
+        if (!$data_mhs) {
+            return [];
+        }
+
+        $npm_mahasiswa = $data_mhs['npm'];
+
+        // Langkah 2: Ambil progres berdasarkan NPM yang sudah didapat
         $this->db->order_by('bab', 'ASC');
-        // Data di tabel progres_skripsi dihubungkan dengan NPM
-        return $this->db->get_where('progres_skripsi', ['npm' => $npm])->result_array();
+        return $this->db->get_where('progres_skripsi', ['npm' => $npm_mahasiswa])->result_array();
     }
     
     public function insert_progres($data)

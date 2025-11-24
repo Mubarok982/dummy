@@ -164,6 +164,42 @@ class M_Dosen extends CI_Model {
 
         redirect('dosen/progres_detail/' . $id_skripsi);
     }
+
+    // --- FITUR KAPRODI: Kinerja Dosen per Prodi ---
+
+    private function _filter_dosen_prodi($prodi, $keyword) {
+        $this->db->from('mstr_akun A');
+        $this->db->join('data_dosen D', 'A.id = D.id');
+        $this->db->where('A.role', 'dosen');
+        $this->db->where('D.prodi', $prodi); // KUNCI: Filter Prodi
+
+        if ($keyword && $keyword != '') {
+            $this->db->group_start();
+                $this->db->like('A.nama', $keyword);
+                $this->db->or_like('D.nidk', $keyword);
+            $this->db->group_end();
+        }
+    }
+
+    public function count_dosen_by_prodi($prodi, $keyword = NULL)
+    {
+        $this->_filter_dosen_prodi($prodi, $keyword);
+        return $this->db->count_all_results();
+    }
+
+    public function get_dosen_by_prodi($prodi, $keyword = NULL, $limit = NULL, $offset = NULL)
+    {
+        $this->db->select('A.id, A.nama, D.nidk, D.prodi');
+        $this->_filter_dosen_prodi($prodi, $keyword);
+        
+        $this->db->order_by('A.nama', 'ASC');
+
+        if ($limit) {
+            $this->db->limit($limit, $offset);
+        }
+        
+        return $this->db->get()->result_array();
+    }
 }
 
 // public function insert_plagiarisme_mockup($id_progres)
