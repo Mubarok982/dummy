@@ -13,27 +13,78 @@
   <style>
     body {
       font-family: 'Poppins', sans-serif;
-      /* Background Gradient Modern */
       background: linear-gradient(135deg, #eef2f3 0%, #8e9eab 100%);
       height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
+      overflow: hidden; /* Penting agar animasi tidak memicu scrollbar */
+      position: relative;
     }
 
+    /* --- BACKGROUND ANIMATION (PARTICLES) --- */
+    .circles {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 0; /* Di belakang card */
+    }
+
+    .circles li {
+      position: absolute;
+      display: block;
+      list-style: none;
+      width: 20px;
+      height: 20px;
+      background: rgba(0, 123, 255, 0.2);
+      animation: animate 25s linear infinite;
+      bottom: -150px;
+      border-radius: 50%; /* Lingkaran */
+    }
+
+    .circles li:nth-child(1) { left: 25%; width: 80px; height: 80px; animation-delay: 0s; }
+    .circles li:nth-child(2) { left: 10%; width: 20px; height: 20px; animation-delay: 2s; animation-duration: 12s; }
+    .circles li:nth-child(3) { left: 70%; width: 20px; height: 20px; animation-delay: 4s; }
+    .circles li:nth-child(4) { left: 40%; width: 60px; height: 60px; animation-delay: 0s; animation-duration: 18s; }
+    .circles li:nth-child(5) { left: 65%; width: 20px; height: 20px; animation-delay: 0s; }
+    .circles li:nth-child(6) { left: 75%; width: 110px; height: 110px; animation-delay: 3s; }
+    .circles li:nth-child(7) { left: 35%; width: 150px; height: 150px; animation-delay: 7s; }
+    .circles li:nth-child(8) { left: 50%; width: 25px; height: 25px; animation-delay: 15s; animation-duration: 45s; }
+    .circles li:nth-child(9) { left: 20%; width: 15px; height: 15px; animation-delay: 2s; animation-duration: 35s; }
+    .circles li:nth-child(10){ left: 85%; width: 150px; height: 150px; animation-delay: 0s; animation-duration: 11s; }
+
+    @keyframes animate {
+        0%{
+            transform: translateY(0) rotate(0deg);
+            opacity: 1;
+            border-radius: 0;
+        }
+        100%{
+            transform: translateY(-1000px) rotate(720deg);
+            opacity: 0;
+            border-radius: 50%;
+        }
+    }
+
+    /* --- LOGIN BOX --- */
     .login-box {
       width: 100%;
-      max-width: 1000px; /* Lebih lebar agar lega */
+      max-width: 1000px;
+      z-index: 1; /* Di depan animasi */
     }
 
     .card {
       border: none;
       border-radius: 20px;
-      box-shadow: 0 15px 35px rgba(0,0,0,0.2); /* Shadow lebih lembut tapi dalam */
+      box-shadow: 0 15px 35px rgba(0,0,0,0.2);
       overflow: hidden;
+      background: rgba(255, 255, 255, 0.95); /* Sedikit transparan */
+      backdrop-filter: blur(10px); /* Efek glassmorphism halus */
     }
 
-    /* --- BAGIAN KIRI (GAMBAR) --- */
     .login-image {
         background: url('<?php echo base_url('assets/image/bg.jpg'); ?>') center center no-repeat;
         background-size: cover;
@@ -41,7 +92,6 @@
         position: relative;
     }
     
-    /* Overlay Gradient Biru Elegan */
     .overlay {
         position: absolute;
         top: 0; left: 0; right: 0; bottom: 0;
@@ -60,21 +110,12 @@
     .overlay p { font-weight: 300; opacity: 0.9; font-size: 1.1rem; }
     .overlay .separator { width: 50px; height: 4px; background: #fff; margin: 20px 0; border-radius: 2px; }
 
-    /* --- BAGIAN KANAN (FORM) --- */
-    .login-card-body {
-        padding: 50px;
-    }
-
-    .login-header {
-        margin-bottom: 40px;
-    }
+    .login-card-body { padding: 50px; }
+    .login-header { margin-bottom: 40px; }
     .login-header h4 { color: #333; font-weight: 700; }
     .login-header span { color: #007bff; }
 
-    /* Input Styles */
-    .input-group {
-        margin-bottom: 25px;
-    }
+    .input-group { margin-bottom: 25px; }
     .form-control {
         height: 50px;
         background-color: #f4f6f9;
@@ -97,7 +138,6 @@
         padding-right: 20px;
     }
 
-    /* Tombol Login */
     .btn-primary {
         height: 50px;
         border-radius: 10px;
@@ -116,7 +156,6 @@
 
     .alert { border-radius: 10px; font-size: 0.9rem; }
 
-    /* Responsive */
     @media (max-width: 768px) {
         .login-image { display: none; }
         .login-card-body { padding: 30px; }
@@ -124,6 +163,19 @@
   </style>
 </head>
 <body class="hold-transition">
+
+<ul class="circles">
+    <li></li>
+    <li></li>
+    <li></li>
+    <li></li>
+    <li></li>
+    <li></li>
+    <li></li>
+    <li></li>
+    <li></li>
+    <li></li>
+</ul>
 
 <div class="login-box animate__animated animate__fadeInUp">
   <div class="card">
