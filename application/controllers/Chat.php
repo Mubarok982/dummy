@@ -25,10 +25,7 @@ class Chat extends CI_Controller {
         $this->load->view('template/footer');
     }
 
-    // --- API UNTUK AJAX ---
 
-    // Ambil isi percakapan (Load Realtime)
-   // --- UPDATE: Load Pesan dengan Gambar ---
     public function load_pesan()
     {
         $id_saya = $this->session->userdata('id');

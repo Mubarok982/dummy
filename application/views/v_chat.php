@@ -65,6 +65,7 @@
         flex-direction: column;
     }
 
+    /* Placeholder Screen */
     #chatPlaceholder {
         position: absolute;
         top: 0; left: 0; width: 100%; height: 100%;
@@ -77,7 +78,7 @@
     }
 
     .chat-header {
-        padding: 10px 20px;
+        padding: 15px 20px; /* Padding sedikit diperbesar agar proporsional */
         background: #f0f2f5;
         border-bottom: 1px solid #d1d7db;
         display: flex;
@@ -158,6 +159,7 @@
     }
     .btn-send:hover { color: #00a884; }
 
+    /* Preview Upload */
     #preview-container {
         display: none;
         padding: 10px;
@@ -208,11 +210,9 @@
                 
                 <div class="chat-header">
                     <div class="d-flex align-items-center">
-                        <img src="" class="kontak-avatar" id="headerAvatar" style="width: 40px; height: 40px;">
-                        <div>
+                        <img src="" class="kontak-avatar" id="headerAvatar" style="width: 45px; height: 45px;"> <div>
                             <h6 class="mb-0 font-weight-bold" id="namaLawanBicara">User Name</h6>
-                            <small class="text-success"><i class="fas fa-circle" style="font-size: 8px;"></i> Online</small>
-                        </div>
+                            </div>
                     </div>
                 </div>
 
@@ -264,13 +264,11 @@ $(document).ready(function() {
         var visibleItems = 0;
 
         $('#kontakListContainer .kontak-link').filter(function() {
-            // Cari berdasarkan nama di dalam h6.contact-name
             var match = $(this).find('.contact-name').text().toLowerCase().indexOf(value) > -1;
             $(this).toggle(match);
             if (match) visibleItems++;
         });
 
-        // Tampilkan pesan jika tidak ada hasil
         if (visibleItems === 0) {
             $('#noContactFound').show();
         } else {
@@ -279,7 +277,6 @@ $(document).ready(function() {
     });
 
     // 1. KLIK KONTAK
-    // Gunakan 'on' agar tetap jalan meski elemen baru (walaupun ini statis)
     $(document).on('click', '.kontak-link', function(e) {
         e.preventDefault();
         $('.kontak-link').removeClass('active');
@@ -288,7 +285,6 @@ $(document).ready(function() {
         idLawan = $(this).data('id');
         let nama = $(this).data('nama');
         
-        // Set Data Header
         $('#id_penerima').val(idLawan);
         $('#namaLawanBicara').text(nama);
         $('#headerAvatar').attr('src', 'https://ui-avatars.com/api/?name=' + encodeURIComponent(nama) + '&background=random');
@@ -348,7 +344,6 @@ $(document).ready(function() {
 
         if(pesan.trim() == "" && gambar == "") return;
 
-        // UI Optimistic Update
         let btnSend = $('.btn-send');
         let originalIcon = btnSend.html();
         btnSend.html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
