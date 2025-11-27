@@ -2,10 +2,10 @@
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Host: 127.0.0.1
--- Waktu pembuatan: 22 Nov 2025 pada 18.05
--- Versi server: 10.4.32-MariaDB
--- Versi PHP: 8.0.30
+-- Host: localhost
+-- Generation Time: Nov 27, 2025 at 03:45 PM
+-- Server version: 10.4.32-MariaDB
+-- PHP Version: 8.0.30
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -24,7 +24,7 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `apresiasi_ujian_skripsi`
+-- Table structure for table `apresiasi_ujian_skripsi`
 --
 
 CREATE TABLE `apresiasi_ujian_skripsi` (
@@ -37,7 +37,7 @@ CREATE TABLE `apresiasi_ujian_skripsi` (
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `data_dosen`
+-- Table structure for table `data_dosen`
 --
 
 CREATE TABLE `data_dosen` (
@@ -50,7 +50,7 @@ CREATE TABLE `data_dosen` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data untuk tabel `data_dosen`
+-- Dumping data for table `data_dosen`
 --
 
 INSERT INTO `data_dosen` (`id`, `nidk`, `prodi`, `ttd`, `is_kaprodi`, `is_praktisi`) VALUES
@@ -72,12 +72,13 @@ INSERT INTO `data_dosen` (`id`, `nidk`, `prodi`, `ttd`, `is_kaprodi`, `is_prakti
 (18, '199208245', 'Teknik Informatika S1', '2637a992681eb93c8483b384833bf849.png', 0, 0),
 (19, '219108337', 'Teknik Informatika S1', '6f267ec3a76eb80d10fec72de91c931d.png', 0, 0),
 (9003, '12345678', 'Teknik Informatika S1', 'ttd_9003_1763569882.png', 0, 0),
-(9005, 'dosen2', 'Teknik Informatika S1', 'ttd_9005_1763575493.jpg', 0, 0);
+(9005, 'dosen2', 'Teknik Informatika S1', 'ttd_9005_1763575493.jpg', 0, 0),
+(9999, '11223344', 'Teknik Informatika S1', NULL, 1, 0);
 
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `data_mahasiswa`
+-- Table structure for table `data_mahasiswa`
 --
 
 CREATE TABLE `data_mahasiswa` (
@@ -108,7 +109,7 @@ CREATE TABLE `data_mahasiswa` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data untuk tabel `data_mahasiswa`
+-- Dumping data for table `data_mahasiswa`
 --
 
 INSERT INTO `data_mahasiswa` (`id`, `npm`, `jenis_kelamin`, `email`, `telepon`, `angkatan`, `prodi`, `is_skripsi`, `alamat`, `status_beasiswa`, `status_mahasiswa`, `ttd`, `nik`, `tempat_tgl_lahir`, `nama_ortu_dengan_gelar`, `kelas`, `dokumen_identitas`, `sertifikat_toefl_niit`, `sertifikat_office_puskom`, `sertifikat_btq_ibadah`, `sertifikat_bahasa`, `sertifikat_kompetensi_ujian_komprehensif`, `sertifikat_semaba_ppk_masta`, `sertifikat_kkn`) VALUES
@@ -118,7 +119,7 @@ INSERT INTO `data_mahasiswa` (`id`, `npm`, `jenis_kelamin`, `email`, `telepon`, 
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `hasil_plagiarisme`
+-- Table structure for table `hasil_plagiarisme`
 --
 
 CREATE TABLE `hasil_plagiarisme` (
@@ -131,7 +132,7 @@ CREATE TABLE `hasil_plagiarisme` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data untuk tabel `hasil_plagiarisme`
+-- Dumping data for table `hasil_plagiarisme`
 --
 
 INSERT INTO `hasil_plagiarisme` (`id`, `id_progres`, `tanggal_cek`, `persentase_kemiripan`, `status`, `dokumen_laporan`) VALUES
@@ -140,7 +141,7 @@ INSERT INTO `hasil_plagiarisme` (`id`, `id_progres`, `tanggal_cek`, `persentase_
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `jenis_ujian_skripsi`
+-- Table structure for table `jenis_ujian_skripsi`
 --
 
 CREATE TABLE `jenis_ujian_skripsi` (
@@ -150,7 +151,7 @@ CREATE TABLE `jenis_ujian_skripsi` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data untuk tabel `jenis_ujian_skripsi`
+-- Dumping data for table `jenis_ujian_skripsi`
 --
 
 INSERT INTO `jenis_ujian_skripsi` (`id`, `nama`, `rumus`) VALUES
@@ -166,7 +167,7 @@ INSERT INTO `jenis_ujian_skripsi` (`id`, `nama`, `rumus`) VALUES
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `log_aktivitas`
+-- Table structure for table `log_aktivitas`
 --
 
 CREATE TABLE `log_aktivitas` (
@@ -180,7 +181,7 @@ CREATE TABLE `log_aktivitas` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data untuk tabel `log_aktivitas`
+-- Dumping data for table `log_aktivitas`
 --
 
 INSERT INTO `log_aktivitas` (`id`, `id_user`, `user_role`, `kategori`, `deskripsi`, `id_data_terkait`, `timestamp`) VALUES
@@ -194,7 +195,7 @@ INSERT INTO `log_aktivitas` (`id`, `id_user`, `user_role`, `kategori`, `deskrips
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `mahasiswa_skripsi`
+-- Table structure for table `mahasiswa_skripsi`
 --
 
 CREATE TABLE `mahasiswa_skripsi` (
@@ -206,7 +207,7 @@ CREATE TABLE `mahasiswa_skripsi` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data untuk tabel `mahasiswa_skripsi`
+-- Dumping data for table `mahasiswa_skripsi`
 --
 
 INSERT INTO `mahasiswa_skripsi` (`npm`, `nama`, `prodi`, `semester`, `periode`) VALUES
@@ -215,7 +216,7 @@ INSERT INTO `mahasiswa_skripsi` (`npm`, `nama`, `prodi`, `semester`, `periode`) 
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `mstr_akun`
+-- Table structure for table `mstr_akun`
 --
 
 CREATE TABLE `mstr_akun` (
@@ -228,7 +229,7 @@ CREATE TABLE `mstr_akun` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data untuk tabel `mstr_akun`
+-- Dumping data for table `mstr_akun`
 --
 
 INSERT INTO `mstr_akun` (`id`, `username`, `password`, `nama`, `foto`, `role`) VALUES
@@ -257,12 +258,13 @@ INSERT INTO `mstr_akun` (`id`, `username`, `password`, `nama`, `foto`, `role`) V
 (9004, 'rizqy', 'rizqy', 'Mahasiswa Dummy', '123_1763570025.jpeg', 'mahasiswa'),
 (9005, 'dosen2', '$2y$10$ACGWvWH5gHzJKvR3VPzPc.i4.k7LhFwNFL2EG329TpDJz4nDHQt6q', 'Dosen Baru, M.Kom', 'dosen_9005_1763575493.png', 'dosen'),
 (9011, 'indra', 'qwerty', 'Ahmad Abdillah Indragiri', NULL, 'mahasiswa'),
-(9012, 'wibran', 'qwerty', 'Wibran', NULL, 'dosen');
+(9012, 'wibran', 'qwerty', 'Wibran', NULL, 'dosen'),
+(9999, 'kaprodi', '123456', 'Bpk. Kaprodi TI, M.Kom', 'default.png', 'dosen');
 
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `mstr_komponen_nilai_ujian_skripsi`
+-- Table structure for table `mstr_komponen_nilai_ujian_skripsi`
 --
 
 CREATE TABLE `mstr_komponen_nilai_ujian_skripsi` (
@@ -280,7 +282,7 @@ CREATE TABLE `mstr_komponen_nilai_ujian_skripsi` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data untuk tabel `mstr_komponen_nilai_ujian_skripsi`
+-- Dumping data for table `mstr_komponen_nilai_ujian_skripsi`
 --
 
 INSERT INTO `mstr_komponen_nilai_ujian_skripsi` (`id`, `keterangan`, `keterangan_berita_acara`, `gambar`, `bobot`, `bobot_berita_acara`, `jenis_nilai`, `status`, `id_jenis_ujian_skripsi`, `jenis_indikator`, `urutan`) VALUES
@@ -310,7 +312,7 @@ INSERT INTO `mstr_komponen_nilai_ujian_skripsi` (`id`, `keterangan`, `keterangan
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `progres_skripsi`
+-- Table structure for table `progres_skripsi`
 --
 
 CREATE TABLE `progres_skripsi` (
@@ -330,7 +332,7 @@ CREATE TABLE `progres_skripsi` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data untuk tabel `progres_skripsi`
+-- Dumping data for table `progres_skripsi`
 --
 
 INSERT INTO `progres_skripsi` (`id`, `npm`, `bab`, `file`, `komentar_dosen1`, `komentar_dosen2`, `created_at`, `nilai_dosen1`, `nilai_dosen2`, `progres_dosen1`, `progres_dosen2`, `is_published_to_sita`, `published_at`) VALUES
@@ -348,7 +350,7 @@ INSERT INTO `progres_skripsi` (`id`, `npm`, `bab`, `file`, `komentar_dosen1`, `k
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `saran_ujian_skripsi`
+-- Table structure for table `saran_ujian_skripsi`
 --
 
 CREATE TABLE `saran_ujian_skripsi` (
@@ -361,7 +363,7 @@ CREATE TABLE `saran_ujian_skripsi` (
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `skripsi`
+-- Table structure for table `skripsi`
 --
 
 CREATE TABLE `skripsi` (
@@ -379,7 +381,7 @@ CREATE TABLE `skripsi` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data untuk tabel `skripsi`
+-- Dumping data for table `skripsi`
 --
 
 INSERT INTO `skripsi` (`id`, `id_mahasiswa`, `tema`, `judul`, `pembimbing1`, `pembimbing2`, `tgl_pengajuan_judul`, `skema`, `naskah`, `nilai_akhir`, `status_sempro`) VALUES
@@ -389,7 +391,7 @@ INSERT INTO `skripsi` (`id`, `id_mahasiswa`, `tema`, `judul`, `pembimbing1`, `pe
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `syarat_pendadaran`
+-- Table structure for table `syarat_pendadaran`
 --
 
 CREATE TABLE `syarat_pendadaran` (
@@ -417,7 +419,7 @@ CREATE TABLE `syarat_pendadaran` (
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `syarat_sempro`
+-- Table structure for table `syarat_sempro`
 --
 
 CREATE TABLE `syarat_sempro` (
@@ -434,7 +436,7 @@ CREATE TABLE `syarat_sempro` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data untuk tabel `syarat_sempro`
+-- Dumping data for table `syarat_sempro`
 --
 
 INSERT INTO `syarat_sempro` (`id`, `naskah`, `id_ujian_skripsi`, `fotokopi_daftar_nilai`, `fotokopi_krs`, `buku_kendali_bimbingan`, `lembar_revisi_ba_dan_tanda_terima_laporan_kp`, `bukti_seminar_teman`, `status`, `catatan`) VALUES
@@ -443,7 +445,7 @@ INSERT INTO `syarat_sempro` (`id`, `naskah`, `id_ujian_skripsi`, `fotokopi_dafta
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `tbl_nilai_ujian_skripsi`
+-- Table structure for table `tbl_nilai_ujian_skripsi`
 --
 
 CREATE TABLE `tbl_nilai_ujian_skripsi` (
@@ -457,7 +459,31 @@ CREATE TABLE `tbl_nilai_ujian_skripsi` (
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `ujian_skripsi`
+-- Table structure for table `tbl_pesan`
+--
+
+CREATE TABLE `tbl_pesan` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `id_pengirim` bigint(20) UNSIGNED NOT NULL,
+  `id_penerima` bigint(20) UNSIGNED NOT NULL,
+  `pesan` text DEFAULT NULL COMMENT 'Isi pesan teks',
+  `gambar` varchar(255) DEFAULT NULL COMMENT 'Nama file gambar jika ada',
+  `waktu` timestamp NOT NULL DEFAULT current_timestamp(),
+  `is_read` tinyint(1) NOT NULL DEFAULT 0 COMMENT '0=Belum Dibaca, 1=Sudah Dibaca'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `tbl_pesan`
+--
+
+INSERT INTO `tbl_pesan` (`id`, `id_pengirim`, `id_penerima`, `pesan`, `gambar`, `waktu`, `is_read`) VALUES
+(1, 9004, 9003, 'woyy', NULL, '2025-11-27 14:35:12', 0),
+(2, 9003, 9004, '', '7d096a9bcb4af2bef3df378ecaa2e47d.jpg', '2025-11-27 14:38:00', 0);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `ujian_skripsi`
 --
 
 CREATE TABLE `ujian_skripsi` (
@@ -476,7 +502,7 @@ CREATE TABLE `ujian_skripsi` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data untuk tabel `ujian_skripsi`
+-- Dumping data for table `ujian_skripsi`
 --
 
 INSERT INTO `ujian_skripsi` (`id`, `id_skripsi`, `tanggal`, `tanggal_daftar`, `ruang`, `penguji1`, `penguji2`, `penguji3`, `id_jenis_ujian_skripsi`, `persetujuan_pembimbing1`, `persetujuan_pembimbing2`, `status`) VALUES
@@ -485,7 +511,7 @@ INSERT INTO `ujian_skripsi` (`id`, `id_skripsi`, `tanggal`, `tanggal_daftar`, `r
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `validasi_syarat_pendadaran`
+-- Table structure for table `validasi_syarat_pendadaran`
 --
 
 CREATE TABLE `validasi_syarat_pendadaran` (
@@ -501,7 +527,7 @@ CREATE TABLE `validasi_syarat_pendadaran` (
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `validasi_syarat_sempro`
+-- Table structure for table `validasi_syarat_sempro`
 --
 
 CREATE TABLE `validasi_syarat_sempro` (
@@ -519,7 +545,7 @@ CREATE TABLE `validasi_syarat_sempro` (
 --
 
 --
--- Indeks untuk tabel `apresiasi_ujian_skripsi`
+-- Indexes for table `apresiasi_ujian_skripsi`
 --
 ALTER TABLE `apresiasi_ujian_skripsi`
   ADD PRIMARY KEY (`id`),
@@ -527,14 +553,14 @@ ALTER TABLE `apresiasi_ujian_skripsi`
   ADD KEY `fk_apresisasi_ujian_skripsi` (`id_ujian_skripsi`);
 
 --
--- Indeks untuk tabel `data_dosen`
+-- Indexes for table `data_dosen`
 --
 ALTER TABLE `data_dosen`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `nidk` (`nidk`);
 
 --
--- Indeks untuk tabel `data_mahasiswa`
+-- Indexes for table `data_mahasiswa`
 --
 ALTER TABLE `data_mahasiswa`
   ADD PRIMARY KEY (`id`),
@@ -543,53 +569,53 @@ ALTER TABLE `data_mahasiswa`
   ADD KEY `npm` (`npm`);
 
 --
--- Indeks untuk tabel `hasil_plagiarisme`
+-- Indexes for table `hasil_plagiarisme`
 --
 ALTER TABLE `hasil_plagiarisme`
   ADD PRIMARY KEY (`id`),
   ADD KEY `fk_plagiarisme_progres` (`id_progres`);
 
 --
--- Indeks untuk tabel `jenis_ujian_skripsi`
+-- Indexes for table `jenis_ujian_skripsi`
 --
 ALTER TABLE `jenis_ujian_skripsi`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indeks untuk tabel `log_aktivitas`
+-- Indexes for table `log_aktivitas`
 --
 ALTER TABLE `log_aktivitas`
   ADD PRIMARY KEY (`id`),
   ADD KEY `fk_log_user` (`id_user`);
 
 --
--- Indeks untuk tabel `mahasiswa_skripsi`
+-- Indexes for table `mahasiswa_skripsi`
 --
 ALTER TABLE `mahasiswa_skripsi`
   ADD PRIMARY KEY (`npm`);
 
 --
--- Indeks untuk tabel `mstr_akun`
+-- Indexes for table `mstr_akun`
 --
 ALTER TABLE `mstr_akun`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `username` (`username`);
 
 --
--- Indeks untuk tabel `mstr_komponen_nilai_ujian_skripsi`
+-- Indexes for table `mstr_komponen_nilai_ujian_skripsi`
 --
 ALTER TABLE `mstr_komponen_nilai_ujian_skripsi`
   ADD PRIMARY KEY (`id`),
   ADD KEY `fk_mst_komponen_jenis_skripsi` (`id_jenis_ujian_skripsi`);
 
 --
--- Indeks untuk tabel `progres_skripsi`
+-- Indexes for table `progres_skripsi`
 --
 ALTER TABLE `progres_skripsi`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indeks untuk tabel `saran_ujian_skripsi`
+-- Indexes for table `saran_ujian_skripsi`
 --
 ALTER TABLE `saran_ujian_skripsi`
   ADD PRIMARY KEY (`id`),
@@ -597,7 +623,7 @@ ALTER TABLE `saran_ujian_skripsi`
   ADD KEY `fk_saran_ujian_skripsi` (`id_ujian_skripsi`);
 
 --
--- Indeks untuk tabel `skripsi`
+-- Indexes for table `skripsi`
 --
 ALTER TABLE `skripsi`
   ADD PRIMARY KEY (`id`),
@@ -606,21 +632,21 @@ ALTER TABLE `skripsi`
   ADD KEY `pembimbing2` (`pembimbing2`);
 
 --
--- Indeks untuk tabel `syarat_pendadaran`
+-- Indexes for table `syarat_pendadaran`
 --
 ALTER TABLE `syarat_pendadaran`
   ADD PRIMARY KEY (`id`),
   ADD KEY `id_ujian_skripsi` (`id_ujian_skripsi`);
 
 --
--- Indeks untuk tabel `syarat_sempro`
+-- Indexes for table `syarat_sempro`
 --
 ALTER TABLE `syarat_sempro`
   ADD PRIMARY KEY (`id`),
   ADD KEY `id_ujian_skripsi` (`id_ujian_skripsi`);
 
 --
--- Indeks untuk tabel `tbl_nilai_ujian_skripsi`
+-- Indexes for table `tbl_nilai_ujian_skripsi`
 --
 ALTER TABLE `tbl_nilai_ujian_skripsi`
   ADD PRIMARY KEY (`id`),
@@ -629,7 +655,13 @@ ALTER TABLE `tbl_nilai_ujian_skripsi`
   ADD KEY `tbl_nilai_sempro_ibfk_4` (`id_komponen_nilai`);
 
 --
--- Indeks untuk tabel `ujian_skripsi`
+-- Indexes for table `tbl_pesan`
+--
+ALTER TABLE `tbl_pesan`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `ujian_skripsi`
 --
 ALTER TABLE `ujian_skripsi`
   ADD PRIMARY KEY (`id`),
@@ -640,163 +672,169 @@ ALTER TABLE `ujian_skripsi`
   ADD KEY `penguji3` (`penguji3`);
 
 --
--- Indeks untuk tabel `validasi_syarat_pendadaran`
+-- Indexes for table `validasi_syarat_pendadaran`
 --
 ALTER TABLE `validasi_syarat_pendadaran`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `unique_syarat_field` (`id_syarat_pendadaran`,`nama_field_syarat`);
 
 --
--- Indeks untuk tabel `validasi_syarat_sempro`
+-- Indexes for table `validasi_syarat_sempro`
 --
 ALTER TABLE `validasi_syarat_sempro`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `unique_syarat_field` (`id_syarat_sempro`,`nama_field_syarat`);
 
 --
--- AUTO_INCREMENT untuk tabel yang dibuang
+-- AUTO_INCREMENT for dumped tables
 --
 
 --
--- AUTO_INCREMENT untuk tabel `apresiasi_ujian_skripsi`
+-- AUTO_INCREMENT for table `apresiasi_ujian_skripsi`
 --
 ALTER TABLE `apresiasi_ujian_skripsi`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT untuk tabel `hasil_plagiarisme`
+-- AUTO_INCREMENT for table `hasil_plagiarisme`
 --
 ALTER TABLE `hasil_plagiarisme`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
--- AUTO_INCREMENT untuk tabel `jenis_ujian_skripsi`
+-- AUTO_INCREMENT for table `jenis_ujian_skripsi`
 --
 ALTER TABLE `jenis_ujian_skripsi`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
--- AUTO_INCREMENT untuk tabel `log_aktivitas`
+-- AUTO_INCREMENT for table `log_aktivitas`
 --
 ALTER TABLE `log_aktivitas`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
--- AUTO_INCREMENT untuk tabel `mstr_akun`
+-- AUTO_INCREMENT for table `mstr_akun`
 --
 ALTER TABLE `mstr_akun`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9013;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10000;
 
 --
--- AUTO_INCREMENT untuk tabel `mstr_komponen_nilai_ujian_skripsi`
+-- AUTO_INCREMENT for table `mstr_komponen_nilai_ujian_skripsi`
 --
 ALTER TABLE `mstr_komponen_nilai_ujian_skripsi`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
--- AUTO_INCREMENT untuk tabel `progres_skripsi`
+-- AUTO_INCREMENT for table `progres_skripsi`
 --
 ALTER TABLE `progres_skripsi`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
--- AUTO_INCREMENT untuk tabel `saran_ujian_skripsi`
+-- AUTO_INCREMENT for table `saran_ujian_skripsi`
 --
 ALTER TABLE `saran_ujian_skripsi`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT untuk tabel `skripsi`
+-- AUTO_INCREMENT for table `skripsi`
 --
 ALTER TABLE `skripsi`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
--- AUTO_INCREMENT untuk tabel `syarat_pendadaran`
+-- AUTO_INCREMENT for table `syarat_pendadaran`
 --
 ALTER TABLE `syarat_pendadaran`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT untuk tabel `syarat_sempro`
+-- AUTO_INCREMENT for table `syarat_sempro`
 --
 ALTER TABLE `syarat_sempro`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
--- AUTO_INCREMENT untuk tabel `tbl_nilai_ujian_skripsi`
+-- AUTO_INCREMENT for table `tbl_nilai_ujian_skripsi`
 --
 ALTER TABLE `tbl_nilai_ujian_skripsi`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT untuk tabel `ujian_skripsi`
+-- AUTO_INCREMENT for table `tbl_pesan`
+--
+ALTER TABLE `tbl_pesan`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- AUTO_INCREMENT for table `ujian_skripsi`
 --
 ALTER TABLE `ujian_skripsi`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
--- AUTO_INCREMENT untuk tabel `validasi_syarat_pendadaran`
+-- AUTO_INCREMENT for table `validasi_syarat_pendadaran`
 --
 ALTER TABLE `validasi_syarat_pendadaran`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT untuk tabel `validasi_syarat_sempro`
+-- AUTO_INCREMENT for table `validasi_syarat_sempro`
 --
 ALTER TABLE `validasi_syarat_sempro`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- Ketidakleluasaan untuk tabel pelimpahan (Dumped Tables)
+-- Constraints for dumped tables
 --
 
 --
--- Ketidakleluasaan untuk tabel `apresiasi_ujian_skripsi`
+-- Constraints for table `apresiasi_ujian_skripsi`
 --
 ALTER TABLE `apresiasi_ujian_skripsi`
   ADD CONSTRAINT `fk_apresisasi_penguji` FOREIGN KEY (`id_penguji`) REFERENCES `data_dosen` (`id`) ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_apresisasi_ujian_skripsi` FOREIGN KEY (`id_ujian_skripsi`) REFERENCES `ujian_skripsi` (`id`) ON UPDATE CASCADE;
 
 --
--- Ketidakleluasaan untuk tabel `data_dosen`
+-- Constraints for table `data_dosen`
 --
 ALTER TABLE `data_dosen`
   ADD CONSTRAINT `data_dosen_ibfk_1` FOREIGN KEY (`id`) REFERENCES `mstr_akun` (`id`);
 
 --
--- Ketidakleluasaan untuk tabel `data_mahasiswa`
+-- Constraints for table `data_mahasiswa`
 --
 ALTER TABLE `data_mahasiswa`
   ADD CONSTRAINT `data_mahasiswa_ibfk_1` FOREIGN KEY (`id`) REFERENCES `mstr_akun` (`id`);
 
 --
--- Ketidakleluasaan untuk tabel `hasil_plagiarisme`
+-- Constraints for table `hasil_plagiarisme`
 --
 ALTER TABLE `hasil_plagiarisme`
   ADD CONSTRAINT `fk_plagiarisme_progres` FOREIGN KEY (`id_progres`) REFERENCES `progres_skripsi` (`id`) ON DELETE CASCADE;
 
 --
--- Ketidakleluasaan untuk tabel `log_aktivitas`
+-- Constraints for table `log_aktivitas`
 --
 ALTER TABLE `log_aktivitas`
   ADD CONSTRAINT `fk_log_user` FOREIGN KEY (`id_user`) REFERENCES `mstr_akun` (`id`) ON DELETE CASCADE;
 
 --
--- Ketidakleluasaan untuk tabel `mstr_komponen_nilai_ujian_skripsi`
+-- Constraints for table `mstr_komponen_nilai_ujian_skripsi`
 --
 ALTER TABLE `mstr_komponen_nilai_ujian_skripsi`
   ADD CONSTRAINT `fk_mst_komponen_jenis_skripsi` FOREIGN KEY (`id_jenis_ujian_skripsi`) REFERENCES `jenis_ujian_skripsi` (`id`) ON UPDATE CASCADE;
 
 --
--- Ketidakleluasaan untuk tabel `saran_ujian_skripsi`
+-- Constraints for table `saran_ujian_skripsi`
 --
 ALTER TABLE `saran_ujian_skripsi`
   ADD CONSTRAINT `fk_saran_penguji` FOREIGN KEY (`id_penguji`) REFERENCES `data_dosen` (`id`) ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_saran_ujian_skripsi` FOREIGN KEY (`id_ujian_skripsi`) REFERENCES `ujian_skripsi` (`id`) ON UPDATE CASCADE;
 
 --
--- Ketidakleluasaan untuk tabel `skripsi`
+-- Constraints for table `skripsi`
 --
 ALTER TABLE `skripsi`
   ADD CONSTRAINT `skripsi_ibfk_1` FOREIGN KEY (`id_mahasiswa`) REFERENCES `data_mahasiswa` (`id`),
@@ -804,19 +842,19 @@ ALTER TABLE `skripsi`
   ADD CONSTRAINT `skripsi_ibfk_3` FOREIGN KEY (`pembimbing2`) REFERENCES `data_dosen` (`id`);
 
 --
--- Ketidakleluasaan untuk tabel `syarat_pendadaran`
+-- Constraints for table `syarat_pendadaran`
 --
 ALTER TABLE `syarat_pendadaran`
   ADD CONSTRAINT `syarat_pendadaran_ibfk_1` FOREIGN KEY (`id_ujian_skripsi`) REFERENCES `ujian_skripsi` (`id`);
 
 --
--- Ketidakleluasaan untuk tabel `syarat_sempro`
+-- Constraints for table `syarat_sempro`
 --
 ALTER TABLE `syarat_sempro`
   ADD CONSTRAINT `syarat_sempro_ibfk_1` FOREIGN KEY (`id_ujian_skripsi`) REFERENCES `ujian_skripsi` (`id`);
 
 --
--- Ketidakleluasaan untuk tabel `tbl_nilai_ujian_skripsi`
+-- Constraints for table `tbl_nilai_ujian_skripsi`
 --
 ALTER TABLE `tbl_nilai_ujian_skripsi`
   ADD CONSTRAINT `tbl_nilai_ujian_skripsi_ibfk_2` FOREIGN KEY (`id_ujian_skripsi`) REFERENCES `ujian_skripsi` (`id`) ON UPDATE CASCADE,
@@ -824,7 +862,7 @@ ALTER TABLE `tbl_nilai_ujian_skripsi`
   ADD CONSTRAINT `tbl_nilai_ujian_skripsi_ibfk_4` FOREIGN KEY (`id_komponen_nilai`) REFERENCES `mstr_komponen_nilai_ujian_skripsi` (`id`) ON UPDATE CASCADE;
 
 --
--- Ketidakleluasaan untuk tabel `ujian_skripsi`
+-- Constraints for table `ujian_skripsi`
 --
 ALTER TABLE `ujian_skripsi`
   ADD CONSTRAINT `fk_ujian_jenis` FOREIGN KEY (`id_jenis_ujian_skripsi`) REFERENCES `jenis_ujian_skripsi` (`id`) ON UPDATE CASCADE,
@@ -834,13 +872,13 @@ ALTER TABLE `ujian_skripsi`
   ADD CONSTRAINT `ujian_skripsi_ibfk_3` FOREIGN KEY (`penguji2`) REFERENCES `data_dosen` (`id`);
 
 --
--- Ketidakleluasaan untuk tabel `validasi_syarat_pendadaran`
+-- Constraints for table `validasi_syarat_pendadaran`
 --
 ALTER TABLE `validasi_syarat_pendadaran`
   ADD CONSTRAINT `validasi_syarat_pendadaran_ibfk_1` FOREIGN KEY (`id_syarat_pendadaran`) REFERENCES `syarat_pendadaran` (`id`) ON DELETE CASCADE;
 
 --
--- Ketidakleluasaan untuk tabel `validasi_syarat_sempro`
+-- Constraints for table `validasi_syarat_sempro`
 --
 ALTER TABLE `validasi_syarat_sempro`
   ADD CONSTRAINT `validasi_syarat_sempro_ibfk_1` FOREIGN KEY (`id_syarat_sempro`) REFERENCES `syarat_sempro` (`id`) ON DELETE CASCADE;
