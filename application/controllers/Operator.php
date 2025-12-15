@@ -6,37 +6,31 @@ class Operator extends CI_Controller {
     public function __construct()
     {
         parent::__construct();
-        // Cek akses: hanya Operator yang boleh mengakses controller ini
         if ($this->session->userdata('role') != 'operator' || !$this->session->userdata('is_login')) {
             redirect('auth/login');
         }
         $this->load->model('M_Data');
         $this->load->model('M_Log');
+        $this->load->model('operator/M_Skripsi_Opt', 'MSkripsi'); // LOAD MODEL BARU UNTUK SKRIPSI OPERATOR
     }
-
-    // --- Manajemen Akun (CRUD) ---
 
     public function manajemen_akun()
     {
         $data['title'] = 'Manajemen Akun';
         $this->load->library('pagination');
 
-        // 1. Ambil Filter dari URL
         $role = $this->input->get('role');
         $prodi = $this->input->get('prodi');
         $keyword = $this->input->get('keyword');
 
-        // 2. Konfigurasi Pagination
         $config['base_url'] = base_url('operator/manajemen_akun');
         $config['total_rows'] = $this->M_Data->count_all_users($role, $prodi, $keyword);
-        $config['per_page'] = 15; // Batas 15 data per halaman
+        $config['per_page'] = 15;
         
-        // Agar filter tetap ada saat pindah halaman
         $config['reuse_query_string'] = TRUE;
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
 
-        // Styling Pagination AdminLTE
         $config['full_tag_open']    = '<ul class="pagination pagination-sm m-0 float-right">';
         $config['full_tag_close']   = '</ul>';
         $config['first_link']       = '<i class="fas fa-angle-double-left"></i>';
@@ -59,7 +53,6 @@ class Operator extends CI_Controller {
 
         $this->pagination->initialize($config);
 
-        // 3. Ambil data sesuai halaman aktif
         $page = $this->input->get('page') ? $this->input->get('page') : 0;
         $data['users'] = $this->M_Data->get_all_users_with_details($role, $prodi, $keyword, $config['per_page'], $page);
         
@@ -201,8 +194,6 @@ class Operator extends CI_Controller {
         redirect('operator/manajemen_akun');
     }
 
-    // --- Penugasan Pembimbing ---
-
     public function penugasan_pembimbing()
     {
         $data['title'] = 'Penugasan Pembimbing Skripsi';
@@ -231,18 +222,14 @@ class Operator extends CI_Controller {
         redirect('operator/penugasan_pembimbing');
     }
 
-    // --- Monitoring Progres ---
-
     public function monitoring_progres()
     {
         $data['title'] = 'Laporan Monitoring Progres Bimbingan';
         $this->load->library('pagination');
 
-        // 1. Ambil Filter dari URL (GET)
         $prodi = $this->input->get('prodi');
         $keyword = $this->input->get('keyword');
 
-        // 2. Konfigurasi Pagination
         $config['base_url'] = base_url('operator/monitoring_progres');
         $config['total_rows'] = $this->M_Data->count_laporan_progres($prodi, $keyword);
         $config['per_page'] = 10; 
@@ -251,7 +238,6 @@ class Operator extends CI_Controller {
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
 
-        // Styling Pagination AdminLTE
         $config['full_tag_open']    = '<ul class="pagination pagination-sm m-0 float-right">';
         $config['full_tag_close']   = '</ul>';
         $config['first_link']       = '<i class="fas fa-angle-double-left"></i>';
@@ -274,7 +260,6 @@ class Operator extends CI_Controller {
 
         $this->pagination->initialize($config);
 
-        // 3. Ambil Data
         $page = $this->input->get('page') ? $this->input->get('page') : 0;
         $data['laporan'] = $this->M_Data->get_laporan_progres($prodi, $keyword, $config['per_page'], $page);
         
@@ -288,8 +273,6 @@ class Operator extends CI_Controller {
         $this->load->view('template/footer');
     }
 
-    // --- Kinerja Dosen ---
-
     public function kinerja_dosen()
     {
         $data['title'] = 'Laporan Kinerja Dosen Pembimbing';
@@ -297,16 +280,14 @@ class Operator extends CI_Controller {
 
         $keyword = $this->input->get('keyword');
 
-        // 1. Konfigurasi Pagination
         $config['base_url'] = base_url('operator/kinerja_dosen');
         $config['total_rows'] = $this->M_Data->count_dosen_pembimbing($keyword);
-        $config['per_page'] = 10; // Batas 10 data
+        $config['per_page'] = 10;
         
         $config['reuse_query_string'] = TRUE;
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
 
-        // Styling Pagination
         $config['full_tag_open']    = '<ul class="pagination pagination-sm m-0 float-right">';
         $config['full_tag_close']   = '</ul>';
         $config['first_link']       = '<i class="fas fa-angle-double-left"></i>';
@@ -329,11 +310,9 @@ class Operator extends CI_Controller {
 
         $this->pagination->initialize($config);
 
-        // 2. Ambil Data
         $page = $this->input->get('page') ? $this->input->get('page') : 0;
         $data['dosen_list'] = $this->M_Data->get_dosen_pembimbing_list($keyword, $config['per_page'], $page);
         
-        // Hitung total aktivitas
         foreach ($data['dosen_list'] as $key => $dosen) {
             $aktivitas = $this->M_Log->get_dosen_activity_summary($dosen['id']);
             $data['dosen_list'][$key]['aktivitas'] = $aktivitas;
@@ -353,7 +332,6 @@ class Operator extends CI_Controller {
         $this->load->view('template/footer');
     }
 
-    // FITUR CSV
     public function kinerja_dosen_csv()
     {
         $keyword = $this->input->get('keyword');
@@ -381,8 +359,6 @@ class Operator extends CI_Controller {
         fclose($output);
     }
 
-    // --- Plagiarisme ---
-
     public function cek_plagiarisme_list()
     {
         $data['title'] = 'Cek Plagiarisme (Input Hasil Manual)';
@@ -403,5 +379,45 @@ class Operator extends CI_Controller {
 
         $this->session->set_flashdata('pesan_sukses', 'Verifikasi Plagiarisme berhasil diinput: Status ' . $status_baru . '.');
         redirect('operator/cek_plagiarisme_list');
+    }
+
+    // =======================================================================
+    // --- FITUR BARU: PERSETUJUAN DOSEN PEMBIMBING (KAPRODI FLOW) ---
+    // =======================================================================
+
+    public function acc_dospem()
+    {
+        $data['title'] = 'Persetujuan Dosen Pembimbing';
+        
+        $data['pengajuan'] = $this->MSkripsi->get_pengajuan_dospem_menunggu();
+        
+        $this->load->view('template/header', $data);
+        $this->load->view('template/sidebar', $data);
+        $this->load->view('operator/v_acc_dospem', $data);
+        $this->load->view('template/footer');
+    }
+
+    public function proses_acc_dospem($id_skripsi, $action)
+    {
+        if ($action == 'setujui') {
+            $status = 'diterima';
+            $message = 'Pengajuan Dosen Pembimbing berhasil disetujui. Mahasiswa dapat memulai bimbingan.';
+        } elseif ($action == 'tolak') {
+            $status = 'ditolak';
+            $message = 'Pengajuan Dosen Pembimbing berhasil ditolak. Mahasiswa harus mengajukan ulang.';
+        } else {
+            $this->session->set_flashdata('pesan_error', 'Aksi tidak valid.');
+            redirect('operator/acc_dospem');
+        }
+
+        $data_update = [
+            'status_acc_kaprodi' => $status,
+            'tgl_acc_kaprodi' => date('Y-m-d H:i:s')
+        ];
+
+        $this->MSkripsi->update_skripsi($id_skripsi, $data_update);
+        
+        $this->session->set_flashdata('pesan_sukses', $message);
+        redirect('operator/acc_dospem');
     }
 }

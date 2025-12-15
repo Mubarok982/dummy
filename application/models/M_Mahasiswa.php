@@ -69,4 +69,34 @@ class M_Mahasiswa extends CI_Model {
         $this->db->where('id', $id_progres);
         return $this->db->update('progres_skripsi', $data);
     }
+
+public function simpan_draft_skripsi($data)
+{
+    $this->db->insert('progres_skripsi', $data);
+}
+
+// Fungsi untuk mengambil riwayat progres skripsi mahasiswa
+public function get_riwayat_progres($npm)
+{
+    // Ambil data progres, diurutkan dari yang terbaru atau berdasarkan Bab
+    $this->db->where('npm', $npm);
+    $this->db->order_by('bab', 'ASC');
+    $this->db->order_by('tgl_upload', 'DESC');
+    $query = $this->db->get('progres_skripsi');
+    return $query->result();
+}
+
+// application/models/M_Mahasiswa.php
+
+public function get_skripsi_by_mhs($id_mahasiswa)
+{
+    // Pastikan Anda memilih kolom status_acc_kaprodi di sini
+    $this->db->select('S.*, A1.nama AS nama_p1, A2.nama AS nama_p2');
+    $this->db->from('skripsi S');
+    $this->db->join('mstr_akun A1', 'S.pembimbing1 = A1.id', 'left');
+    $this->db->join('mstr_akun A2', 'S.pembimbing2 = A2.id', 'left');
+    $this->db->where('S.id_mahasiswa', $id_mahasiswa);
+    return $this->db->get()->row_array();
+}
+
 }

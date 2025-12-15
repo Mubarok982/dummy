@@ -1,3 +1,8 @@
+<?php
+// Tentukan apakah form upload dan chat dengan dospem boleh ditampilkan
+$is_acc_diterima = (isset($skripsi['status_acc_kaprodi']) && $skripsi['status_acc_kaprodi'] == 'diterima');
+?>
+
 <div class="container-fluid">
     
     <?php if ($this->session->flashdata('pesan_sukses')): ?>
@@ -27,9 +32,9 @@
                             <b>Pembimbing 2</b> <a class="float-right"><?php echo $skripsi['nama_p2']; ?></a>
                         </li>
                         <li class="list-group-item">
-                            <b>Status Saat Ini</b> 
-                            <a class="float-right badge badge-info">
-                                <?php echo ($last_progres) ? 'BAB ' . $last_progres['bab'] : 'Belum Mulai'; ?>
+                            <b>Status Kaprodi</b> 
+                            <a class="float-right badge badge-<?php echo $is_acc_diterima ? 'success' : 'warning'; ?>">
+                                <?php echo strtoupper($skripsi['status_acc_kaprodi']); ?>
                             </a>
                         </li>
                     </ul>
@@ -39,67 +44,202 @@
                     </a>
                 </div>
             </div>
+            
+            <div class="card card-primary card-outline shadow">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-comments mr-2"></i> Ruang Diskusi</h3>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        <?php if (in_array($valid_recipients['kaprodi'], $valid_recipients)): ?>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span><i class="fas fa-user-tie mr-2 text-primary"></i> Kaprodi</span>
+                                <a href="<?php echo base_url('chat?id_lawan=' . $valid_recipients['kaprodi']); ?>" class="badge badge-info"><i class="fas fa-comment"></i> Chat</a>
+                            </li>
+                        <?php endif; ?>
+                        
+                        <?php if ($is_acc_diterima): ?>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span><i class="fas fa-user-graduate mr-2 text-success"></i> Pembimbing 1</span>
+                                <a href="<?php echo base_url('chat?id_lawan=' . $skripsi['pembimbing1']); ?>" class="badge badge-info"><i class="fas fa-comment"></i> Chat</a>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span><i class="fas fa-user-graduate mr-2 text-success"></i> Pembimbing 2</span>
+                                <a href="<?php echo base_url('chat?id_lawan=' . $skripsi['pembimbing2']); ?>" class="badge badge-info"><i class="fas fa-comment"></i> Chat</a>
+                            </li>
+                        <?php else: ?>
+                            <li class="list-group-item text-muted text-sm">
+                                Chat dengan Dosen Pembimbing akan tersedia setelah pengajuan disetujui Kaprodi.
+                            </li>
+                        <?php endif; ?>
+                    </ul>
+                </div>
+            </div>
         </div>
 
         <div class="col-md-7">
-            <?php 
-            $is_upload_allowed = TRUE;
-            $block_message = '';
             
-            if ($next_bab > 1) {
-                if ($last_progres['progres_dosen1'] != 100 || $last_progres['progres_dosen2'] != 100) {
-                    $is_upload_allowed = FALSE;
-                    $block_message = 'Anda belum bisa melanjutkan ke <b>BAB '.$next_bab.'</b>.<br>Selesaikan revisi <b>BAB '.($next_bab-1).'</b> hingga mendapatkan ACC Penuh dari kedua pembimbing.';
-                }
-            }
-            ?>
-
-            <?php if ($is_upload_allowed): ?>
-                <div class="card card-success shadow">
-                    <div class="card-header">
-                        <h3 class="card-title"><i class="fas fa-cloud-upload-alt mr-2"></i> Upload Progres Bimbingan</h3>
-                    </div>
-                    <?php echo form_open_multipart('mahasiswa/upload_progres_bab'); ?>
-                    <div class="card-body">
-                        <div class="callout callout-success">
-                            <h5>Target: <b>BAB <?php echo $next_bab; ?></b></h5>
-                            <p>Silakan upload file laporan skripsi terbaru Anda dalam format PDF.</p>
-                        </div>
-
-                        <input type="hidden" name="bab" value="<?php echo $next_bab; ?>">
-                        
-                        <div class="form-group">
-                            <label>File Laporan (PDF)</label>
-                            <div class="custom-file">
-                                <input type="file" class="custom-file-input" id="file_progres" name="file_progres" required accept=".pdf">
-                                <label class="custom-file-label" for="file_progres">Pilih file...</label>
-                            </div>
-                            <small class="text-muted mt-1 d-block">* Maksimal ukuran file 5MB.</small>
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <button type="submit" class="btn btn-success float-right font-weight-bold px-4">
-                            <i class="fas fa-paper-plane mr-1"></i> Kirim
-                        </button>
-                    </div>
-                    <?php echo form_close(); ?>
-                </div>
-            <?php else: ?>
+            <?php if (!$is_acc_diterima): ?>
                 <div class="alert alert-warning shadow">
-                    <h5><i class="icon fas fa-lock"></i> Upload Terkunci!</h5>
-                    <p><?php echo $block_message; ?></p>
-                    <hr>
-                    <a href="<?php echo base_url('mahasiswa/riwayat_progres'); ?>" class="btn btn-outline-dark text-dark text-decoration-none">Cek Riwayat Revisi</a>
+                    <h5><i class="icon fas fa-lock"></i> Bimbingan Ditunda!</h5>
+                    <p>Pengajuan Dosen Pembimbing Anda masih berstatus <b><?php echo strtoupper($skripsi['status_acc_kaprodi']); ?></b>.</p>
+                    <p>Anda hanya dapat berkomunikasi dengan Kaprodi untuk saat ini. Mohon tunggu persetujuan sebelum memulai bimbingan dan upload draft skripsi.</p>
                 </div>
+            <?php endif; ?>
+            
+            <?php if ($is_acc_diterima): ?>
+                
+                <?php 
+                $is_upload_allowed = TRUE;
+                $block_message = '';
+                
+                // Logika Kunci BAB Selanjutnya (Flow Lama)
+                if (isset($next_bab) && $next_bab > 1 && isset($last_progres)) {
+                    if ($last_progres['progres_dosen1'] != 100 || $last_progres['progres_dosen2'] != 100) {
+                        $is_upload_allowed = FALSE;
+                        $block_message = 'Anda belum bisa melanjutkan ke <b>BAB '.$next_bab.'</b>.<br>Selesaikan revisi <b>BAB '.($next_bab-1).'</b> hingga mendapatkan ACC Penuh dari kedua pembimbing.';
+                    }
+                }
+                ?>
+                
+                <?php if ($is_upload_allowed): ?>
+                    <div class="card card-success shadow">
+                        <div class="card-header">
+                            <h3 class="card-title"><i class="fas fa-cloud-upload-alt mr-2"></i> Upload Progres Bimbingan (Target BAB)</h3>
+                        </div>
+                        <?php echo form_open_multipart('mahasiswa/upload_progres_bab'); ?>
+                        <div class="card-body">
+                            <div class="callout callout-success">
+                                <h5>Target: <b>BAB <?php echo isset($next_bab) ? $next_bab : 1; ?></b></h5>
+                                <p>Silakan upload file laporan skripsi terbaru Anda dalam format PDF.</p>
+                            </div>
+
+                            <input type="hidden" name="bab" value="<?php echo isset($next_bab) ? $next_bab : 1; ?>">
+                            
+                            <div class="form-group">
+                                <label>File Laporan (PDF)</label>
+                                <div class="custom-file">
+                                    <input type="file" class="custom-file-input" id="file_progres" name="file_progres" required accept=".pdf">
+                                    <label class="custom-file-label" for="file_progres">Pilih file...</label>
+                                </div>
+                                <small class="text-muted mt-1 d-block">* Maksimal ukuran file 5MB.</small>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <button type="submit" class="btn btn-success float-right font-weight-bold px-4">
+                                <i class="fas fa-paper-plane mr-1"></i> Kirim
+                            </button>
+                        </div>
+                        <?php echo form_close(); ?>
+                    </div>
+                <?php else: ?>
+                    <div class="alert alert-warning shadow">
+                        <h5><i class="icon fas fa-lock"></i> Upload Terkunci!</h5>
+                        <p><?php echo $block_message; ?></p>
+                        <hr>
+                        <a href="<?php echo base_url('mahasiswa/riwayat_progres'); ?>" class="btn btn-outline-dark text-dark text-decoration-none">Cek Riwayat Revisi</a>
+                    </div>
+                <?php endif; ?>
+                
+                <hr class="mt-4 mb-4">
+                
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-file-upload mr-2"></i> Upload Draft Skripsi (Revisi Bebas)</h6>
+                    </div>
+                    <div class="card-body">
+                        <?php echo form_open_multipart('mahasiswa/upload_draft'); ?>
+                            
+                            <div class="form-group row">
+                                <label for="bab_bebas" class="col-sm-3 col-form-label">Pilih Bab yang Direvisi</label>
+                                <div class="col-sm-4">
+                                    <select name="bab" id="bab_bebas" class="form-control" required>
+                                        <option value="">-- Pilih Bab --</option>
+                                        <option value="1">BAB 1</option>
+                                        <option value="2">BAB 2</option>
+                                        <option value="3">BAB 3</option>
+                                        <option value="4">BAB 4</option>
+                                        <option value="5">BAB 5</option>
+                                        <option value="6">BAB 6 (Penutup)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group row mt-3">
+                                <label for="draft_file_bebas" class="col-sm-3 col-form-label">File Revisi (PDF)</label>
+                                <div class="col-sm-7">
+                                    <div class="custom-file">
+                                        <input type="file" name="draft_file" class="custom-file-input" id="draft_file_bebas" required accept=".pdf">
+                                        <label class="custom-file-label" for="draft_file_bebas">Pilih file...</label>
+                                    </div>
+                                    <small class="text-danger mt-1 d-block">File harus format PDF, Max 2MB.</small>
+                                </div>
+                            </div>
+
+                            <div class="form-group row mt-3">
+                                <div class="col-sm-9 offset-sm-3">
+                                    <button type="submit" class="btn btn-success"><i class="fas fa-paper-plane"></i> Kirim Revisi Draft</button>
+                                </div>
+                            </div>
+                        <?php echo form_close(); ?>
+                    </div>
+                </div>
+                
             <?php endif; ?>
         </div>
 
     </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-list-alt mr-2"></i> Riwayat Progres Skripsi</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Bab</th>
+                                <th>Tanggal Upload</th>
+                                <th>File</th>
+                                <th>Status P1</th>
+                                <th>Status P2</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (isset($progres_riwayat) && !empty($progres_riwayat)): ?>
+                                <?php foreach ($progres_riwayat as $pr): ?>
+                                    <tr>
+                                        <td>BAB <?= $pr->bab ?></td>
+                                        <td><?= date('d M Y H:i', strtotime($pr->tgl_upload)) ?></td>
+                                        <td><a href="<?= base_url('uploads/progres/' . $pr->file_draft) ?>" target="_blank"><i class="fas fa-file-pdf"></i> Lihat File</a></td>
+                                        <td><?= $pr->status_dosen1 ?? '-' ?></td> 
+                                        <td><?= $pr->status_dosen2 ?? '-' ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr><td colspan="5" class="text-center">Belum ada progres skripsi yang diunggah.</td></tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
-    document.querySelector('.custom-file-input').addEventListener('change', function (e) {
-        var fileName = document.getElementById("file_progres").files[0].name;
+    // Custom script untuk menampilkan nama file pada input custom-file Bootstrap (untuk Form Utama)
+    document.getElementById('file_progres')?.addEventListener('change', function (e) {
+        var fileName = e.target.files[0].name;
+        var nextSibling = e.target.nextElementSibling;
+        nextSibling.innerText = fileName;
+    });
+
+    // Custom script untuk menampilkan nama file pada input custom-file Bootstrap (untuk Form Bebas)
+    document.getElementById('draft_file_bebas')?.addEventListener('change', function (e) {
+        var fileName = e.target.files[0].name;
         var nextSibling = e.target.nextElementSibling;
         nextSibling.innerText = fileName;
     });
