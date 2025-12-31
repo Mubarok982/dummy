@@ -51,13 +51,14 @@ $is_acc_diterima = (isset($skripsi['status_acc_kaprodi']) && $skripsi['status_ac
                 </div>
                 <div class="card-body p-0">
                     <ul class="list-group list-group-flush">
-                        <?php if (in_array($valid_recipients['kaprodi'], $valid_recipients)): ?>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span><i class="fas fa-user-tie mr-2 text-primary"></i> Kaprodi</span>
-                                <a href="<?php echo base_url('chat?id_lawan=' . $valid_recipients['kaprodi']); ?>" class="badge badge-info"><i class="fas fa-comment"></i> Chat</a>
-                            </li>
+                      <?php if (isset($valid_recipients['kaprodi']) && !empty($valid_recipients['kaprodi'])): ?>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-user-tie mr-2 text-primary"></i> Kaprodi</span>
+                            <a href="<?php echo base_url('chat?id_lawan=' . $valid_recipients['kaprodi']); ?>" class="badge badge-info">
+                                <i class="fas fa-comment"></i> Chat
+                            </a>
+                        </li>
                         <?php endif; ?>
-                        
                         <?php if ($is_acc_diterima): ?>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 <span><i class="fas fa-user-graduate mr-2 text-success"></i> Pembimbing 1</span>
@@ -213,7 +214,7 @@ $is_acc_diterima = (isset($skripsi['status_acc_kaprodi']) && $skripsi['status_ac
                                     <tr>
                                         <td>BAB <?= $pr->bab ?></td>
                                         <td><?= date('d M Y H:i', strtotime($pr->tgl_upload)) ?></td>
-                                        <td><a href="<?= base_url('uploads/progres/' . $pr->file_draft) ?>" target="_blank"><i class="fas fa-file-pdf"></i> Lihat File</a></td>
+                                        <td><a href="<?= base_url('uploads/progres/' . $pr->file) ?>" target="_blank"><i class="fas fa-file-pdf"></i> Lihat File</a></td>
                                         <td><?= $pr->status_dosen1 ?? '-' ?></td> 
                                         <td><?= $pr->status_dosen2 ?? '-' ?></td>
                                     </tr>

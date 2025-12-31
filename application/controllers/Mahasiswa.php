@@ -72,47 +72,64 @@ class Mahasiswa extends CI_Controller {
         }
     }
 
-    public function bimbingan()
-    {
-        $id_mahasiswa = $this->session->userdata('id');
-        $data['title'] = 'Bimbingan Skripsi';
-        
-        $data['skripsi'] = $this->M_Mahasiswa->get_skripsi_by_mhs($id_mahasiswa);
+   public function bimbingan()
+{
+    $id_mahasiswa = $this->session->userdata('id');
+    $data['title'] = 'Bimbingan Skripsi';
+    
+    // 1. Ambil data skripsi (Pastikan model sudah melakukan JOIN untuk mendapatkan kolom 'npm')
+    $data['skripsi'] = $this->M_Mahasiswa->get_skripsi_by_mhs($id_mahasiswa);
 
-        if (!$data['skripsi']) {
-            $this->session->set_flashdata('pesan_error', 'Anda belum mengajukan judul skripsi.');
-            redirect('mahasiswa/pengajuan_judul');
-        }
-
-        // --- Logika Status ACC Kaprodi ---
-        $data['status_acc'] = $data['skripsi']['status_acc_kaprodi'];
-        $data['valid_recipients'] = $this->M_Chat->get_valid_chat_recipients_mhs($data['skripsi']['npm']);
-        // --- End Logika Status ACC Kaprodi ---
-
-        $progres = $this->M_Mahasiswa->get_progres_by_skripsi($data['skripsi']['id']);
-        
-        if (empty($progres)) {
-            $data['next_bab'] = 1;
-            $data['last_progres'] = NULL;
-        } else {
-            $last = end($progres); 
-            $data['last_progres'] = $last;
-            
-            if ($last['progres_dosen1'] == 100 && $last['progres_dosen2'] == 100) {
-                $data['next_bab'] = $last['bab'] + 1;
-            } else {
-                $data['next_bab'] = $last['bab'];
-            }
-        }
-
-        $npm = $this->session->userdata('npm');
-        $data['progres_riwayat'] = $this->M_Mahasiswa->get_riwayat_progres($npm); 
-        
-        $this->load->view('template/header', $data);
-        $this->load->view('template/sidebar', $data);
-        $this->load->view('mahasiswa/v_bimbingan', $data);
-        $this->load->view('template/footer');
+    if (!$data['skripsi']) {
+        $this->session->set_flashdata('pesan_error', 'Anda belum mengajukan judul skripsi.');
+        redirect('mahasiswa/pengajuan_judul');
     }
+
+    // --- Logika Status ACC Kaprodi & Chat ---
+    // Gunakan null coalescing operator (??) untuk fallback ke 'menunggu'
+    $data['status_acc'] = $data['skripsi']['status_acc_kaprodi'] ?? 'menunggu';
+    
+    // Pastikan NPM diambil dari skripsi, jika tidak ada fallback ke session
+    $npm_mhs = $data['skripsi']['npm'] ?? $this->session->userdata('npm');
+    
+    // 2. KOREKSI KRITIS: Berikan default array agar View tidak error Undefined Index
+    $recipients = $this->M_Chat->get_valid_chat_recipients_mhs($npm_mhs);
+    $data['valid_recipients'] = $recipients ? $recipients : [
+        'kaprodi'     => null, 
+        'pembimbing1' => null, 
+        'pembimbing2' => null
+    ];
+    // --- End Logika ---
+
+    // 3. Logika Progres (Tambahkan pengecekan isset untuk progres_dosen)
+    $progres = $this->M_Mahasiswa->get_progres_by_skripsi($data['skripsi']['id']);
+    
+    if (empty($progres)) {
+        $data['next_bab'] = 1;
+        $data['last_progres'] = NULL;
+    } else {
+        $last = end($progres); 
+        $data['last_progres'] = $last;
+        
+        // Cek apakah progres dosen ada dan bernilai 100
+        $p1 = $last['progres_dosen1'] ?? 0;
+        $p2 = $last['progres_dosen2'] ?? 0;
+
+        if ($p1 == 100 && $p2 == 100) {
+            $data['next_bab'] = $last['bab'] + 1;
+        } else {
+            $data['next_bab'] = $last['bab'];
+        }
+    }
+
+    // Ambil riwayat progres menggunakan NPM
+    $data['progres_riwayat'] = $this->M_Mahasiswa->get_riwayat_progres($npm_mhs); 
+    
+    $this->load->view('template/header', $data);
+    $this->load->view('template/sidebar', $data);
+    $this->load->view('mahasiswa/v_bimbingan', $data);
+    $this->load->view('template/footer');
+}
 
     public function riwayat_progres()
     {
@@ -326,4 +343,14 @@ class Mahasiswa extends CI_Controller {
 
         redirect('mahasiswa/biodata');
     }
+
+    public function lihat_file($file) {
+    $path = FCPATH . 'uploads/progres/' . $file;
+    if (file_exists($path)) {
+        header('Content-Type: application/pdf');
+        readfile($path);
+    } else {
+        show_404();
+    }
+}
 }
