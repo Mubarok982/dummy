@@ -53,7 +53,7 @@ class M_skripsi_opt extends CI_Model {
         return $this->db->update('hasil_plagiarisme', $data);
     }
 
-    ublic function get_pengajuan_dospem_menunggu()
+    public function get_pengajuan_dospem_menunggu()
     {
         $this->db->select('S.*, A_MHS.nama AS nama_mahasiswa, DM.npm, A1.nama AS nama_p1, A2.nama AS nama_p2');
         $this->db->from('skripsi S');

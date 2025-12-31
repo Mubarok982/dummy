@@ -3,16 +3,21 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class M_Mahasiswa extends CI_Model {
 
-   public function get_skripsi_by_mhs($id_mahasiswa)
-{
-    $this->db->select('S.*, M.npm, A1.nama AS nama_p1, A2.nama AS nama_p2');
-    $this->db->from('skripsi S');
-    $this->db->join('data_mahasiswa M', 'S.id_mahasiswa = M.id'); 
-    $this->db->join('mstr_akun A1', 'S.pembimbing1 = A1.id', 'left');
-    $this->db->join('mstr_akun A2', 'S.pembimbing2 = A2.id', 'left');
-    $this->db->where('S.id_mahasiswa', $id_mahasiswa);
-    return $this->db->get()->row_array();
-}
+    /**
+     * Mengambil data skripsi berdasarkan ID Mahasiswa.
+     * Sudah di-JOIN dengan data_mahasiswa untuk mendapatkan NPM
+     * dan mstr_akun untuk mendapatkan nama pembimbing.
+     */
+    public function get_skripsi_by_mhs($id_mahasiswa)
+    {
+        $this->db->select('S.*, M.npm, A1.nama AS nama_p1, A2.nama AS nama_p2');
+        $this->db->from('skripsi S');
+        $this->db->join('data_mahasiswa M', 'S.id_mahasiswa = M.id'); 
+        $this->db->join('mstr_akun A1', 'S.pembimbing1 = A1.id', 'left');
+        $this->db->join('mstr_akun A2', 'S.pembimbing2 = A2.id', 'left');
+        $this->db->where('S.id_mahasiswa', $id_mahasiswa);
+        return $this->db->get()->row_array();
+    }
     
     public function insert_skripsi($data)
     {
@@ -23,15 +28,18 @@ class M_Mahasiswa extends CI_Model {
     {
         $this->db->where('id_mahasiswa', $id_mahasiswa);
         $update_data = [
-            'tema' => $data['tema'],
-            'judul' => $data['judul'],
-            'pembimbing1' => $data['pembimbing1'],
-            'pembimbing2' => $data['pembimbing2'],
+            'tema'               => $data['tema'],
+            'judul'              => $data['judul'],
+            'pembimbing1'        => $data['pembimbing1'],
+            'pembimbing2'        => $data['pembimbing2'],
+            'status_acc_kaprodi' => 'menunggu' // Status di-reset agar Kaprodi bisa cek ulang
         ];
         return $this->db->update('skripsi', $update_data);
     }
 
-    // --- Progres Bimbingan ---
+    // =======================================================================
+    // --- SEKSI PROGRES BIMBINGAN ---
+    // =======================================================================
     
     public function get_progres_by_skripsi($id_skripsi)
     {
@@ -67,14 +75,16 @@ class M_Mahasiswa extends CI_Model {
 
     public function simpan_draft_skripsi($data)
     {
-        $this->db->insert('progres_skripsi', $data);
+        // Menggunakan kolom 'file' (disesuaikan dengan upload_progres_bab agar konsisten)
+        return $this->db->insert('progres_skripsi', $data);
     }
 
     public function get_riwayat_progres($npm)
     {
         $this->db->where('npm', $npm);
         $this->db->order_by('bab', 'ASC');
-        $this->db->order_by('tgl_upload', 'DESC');
+        // Pastikan kolom tgl_upload atau created_at ada di database
+        $this->db->order_by('tgl_upload', 'DESC'); 
         $query = $this->db->get('progres_skripsi');
         return $query->result();
     }
