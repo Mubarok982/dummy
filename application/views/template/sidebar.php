@@ -21,13 +21,6 @@
         </a>
       </li>
       <li class="nav-item">
-        <a href="<?php echo base_url('operator/penugasan_pembimbing'); ?>"
-          class="nav-link <?php echo ($this->uri->segment(2) == 'penugasan_pembimbing') ? 'active' : ''; ?>">
-          <i class="nav-icon fas fa-user-tie"></i>
-          <p>Atur Pembimbing</p>
-        </a>
-      </li>
-      <li class="nav-item">
         <a href="<?php echo base_url('operator/cek_plagiarisme_list'); ?>"
           class="nav-link <?php echo ($this->uri->segment(2) == 'cek_plagiarisme_list') ? 'active' : ''; ?>">
           <i class="nav-icon fas fa-search"></i>

@@ -299,4 +299,26 @@ class Dosen extends CI_Controller
         $this->load->view('dosen/v_kinerja_dosen_prodi', $data); // View Baru
         $this->load->view('template/footer');
     }
+
+public function setuju_judul($id_skripsi)
+{
+    if ($this->session->userdata('is_kaprodi') != 1) redirect('auth/login');
+    
+    if ($this->M_Dosen->update_status_judul($id_skripsi, 'diterima')) {
+        $this->session->set_flashdata('pesan_sukses', 'Judul dan Pembimbing berhasil disetujui.');
+    }
+    redirect('dosen/monitoring_prodi');
+}
+
+public function tolak_judul($id_skripsi)
+{
+    if ($this->session->userdata('is_kaprodi') != 1) redirect('auth/login');
+
+    if ($this->M_Dosen->update_status_judul($id_skripsi, 'ditolak')) {
+        $this->session->set_flashdata('pesan_error', 'Judul dan Pembimbing ditolak.');
+    }
+    redirect('dosen/monitoring_prodi');
+}
+
+
 }

@@ -12,18 +12,27 @@ class Chat extends CI_Controller {
     }
 
     public function index()
-    {
-        $id_user = $this->session->userdata('id');
-        $role = $this->session->userdata('role');
+{
+    $id_user = $this->session->userdata('id');
+    $role = $this->session->userdata('role');
+    $npm = $this->session->userdata('npm');
 
-        $data['title'] = 'Ruang Diskusi';
+    $data['title'] = 'Ruang Diskusi';
+    
+    if ($role == 'mahasiswa') {
+        // Ambil hanya ID yang diizinkan (Kaprodi & Pembimbing jika sudah ACC)
+        $allowed_ids = $this->M_Chat->get_valid_chat_recipients_mhs($npm);
+        $data['kontak'] = $this->M_Chat->get_kontak_filtered($allowed_ids);
+    } else {
+        // Role dosen/operator tetap melihat kontak normal
         $data['kontak'] = $this->M_Chat->get_kontak_chat($id_user, $role);
-
-        $this->load->view('template/header', $data);
-        $this->load->view('template/sidebar', $data);
-        $this->load->view('v_chat', $data);
-        $this->load->view('template/footer');
     }
+
+    $this->load->view('template/header', $data);
+    $this->load->view('template/sidebar', $data);
+    $this->load->view('v_chat', $data);
+    $this->load->view('template/footer');
+}
 
     public function load_pesan()
     {
@@ -123,4 +132,13 @@ class Chat extends CI_Controller {
             echo json_encode(['status' => false, 'msg' => 'Gagal insert ke database']);
         }
     }
+
+    public function get_kontak_filtered($allowed_ids) {
+    if (empty($allowed_ids)) return [];
+    
+    $this->db->select('id, nama, foto, role');
+    $this->db->from('mstr_akun');
+    $this->db->where_in('id', $allowed_ids);
+    return $this->db->get()->result_array();
+}
 }

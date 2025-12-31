@@ -187,7 +187,9 @@
                     <img src="https://ui-avatars.com/api/?name=<?php echo urlencode($k['nama']); ?>&background=random" class="kontak-avatar">
                     <div style="overflow: hidden;">
                         <h6 class="mb-0 font-weight-bold contact-name"><?php echo $k['nama']; ?></h6>
-                        <small class="text-muted text-truncate d-block" style="max-width: 200px;"><?php echo $k['sub_info']; ?></small>
+                        <small class="text-muted text-truncate d-block" style="max-width: 200px;">
+                            <?php echo $k['sub_info'] ?? ucfirst($k['role']); ?>
+                        </small>
                     </div>
                 </div>
                 <?php endforeach; ?>

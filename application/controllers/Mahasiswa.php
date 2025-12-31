@@ -233,4 +233,25 @@ class Mahasiswa extends CI_Controller {
         $this->load->view('mahasiswa/v_biodata', $data);
         $this->load->view('template/footer');
     }
+
+    public function riwayat_progres()
+{
+    $id_mahasiswa = $this->session->userdata('id');
+    $data['title'] = 'Riwayat Progres';
+    
+    // Ambil data skripsi untuk kebutuhan title/header
+    $data['skripsi'] = $this->M_Mahasiswa->get_skripsi_by_mhs($id_mahasiswa);
+    
+    if (!$data['skripsi']) {
+        redirect('mahasiswa/pengajuan_judul');
+    }
+
+    // Ambil semua data progres berdasarkan ID Skripsi
+    $data['progres'] = $this->M_Mahasiswa->get_progres_by_skripsi($data['skripsi']['id']);
+
+    $this->load->view('template/header', $data);
+    $this->load->view('template/sidebar', $data);
+    $this->load->view('mahasiswa/v_riwayat', $data); // Pastikan file v_riwayat.php ada di folder views/mahasiswa
+    $this->load->view('template/footer');
+}
 }

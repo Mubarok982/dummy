@@ -3,7 +3,6 @@ $prodi = $this->session->userdata('prodi');
 ?>
 
 <div class="container-fluid">
-    
     <div class="row mb-3">
         <div class="col-md-12">
             <div class="callout callout-info shadow-sm bg-white">
@@ -25,16 +24,12 @@ $prodi = $this->session->userdata('prodi');
         <div class="col-12">
             <div class="card card-outline card-purple shadow-sm">
                 <div class="card-header">
-                    <h3 class="card-title mt-1">
-                        <i class="fas fa-list-alt mr-1"></i> Data Mahasiswa
-                    </h3>
+                    <h3 class="card-title mt-1"><i class="fas fa-list-alt mr-1"></i> Data Mahasiswa</h3>
                     <div class="card-tools">
                         <div class="input-group input-group-sm" style="width: 250px;">
                             <input type="text" id="searchMhs" class="form-control float-right" placeholder="Cari Nama / NPM...">
                             <div class="input-group-append">
-                                <button type="submit" class="btn btn-default">
-                                    <i class="fas fa-search"></i>
-                                </button>
+                                <button type="submit" class="btn btn-default"><i class="fas fa-search"></i></button>
                             </div>
                         </div>
                     </div>
@@ -44,13 +39,13 @@ $prodi = $this->session->userdata('prodi');
                     <table class="table table-head-fixed table-hover text-nowrap table-striped" id="tableMonitoring">
                         <thead>
                             <tr class="text-center">
-                                <th style="width: 5%;">No</th>
-                                <th style="width: 10%;">NPM</th>
-                                <th style="width: 20%;" class="text-left">Nama Mahasiswa</th>
-                                <th style="width: 10%;">Angkatan</th>
-                                <th style="width: 25%;" class="text-left">Judul Skripsi</th>
-                                <th style="width: 20%;">Pembimbing</th>
-                                <th style="width: 10%;">Progres Terakhir</th>
+                                <th>No</th>
+                                <th>NPM</th>
+                                <th class="text-left">Nama Mahasiswa</th>
+                                <th>Angkatan</th>
+                                <th class="text-left">Judul Skripsi</th>
+                                <th>Pembimbing</th>
+                                <th>Status / Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -66,61 +61,41 @@ $prodi = $this->session->userdata('prodi');
                                 <tr>
                                     <td class="align-middle text-center"><?php echo $no++; ?></td>
                                     <td class="align-middle text-center"><span class="badge badge-light border"><?php echo $m['npm']; ?></span></td>
-                                    <td class="align-middle">
-                                        <span class="font-weight-bold text-dark"><?php echo $m['nama']; ?></span>
-                                    </td>
+                                    <td class="align-middle font-weight-bold"><?php echo $m['nama']; ?></td>
                                     <td class="align-middle text-center"><?php echo $m['angkatan']; ?></td>
-                                    
-                                    <td class="align-middle text-wrap" style="min-width: 250px;">
+                                    <td class="align-middle text-wrap" style="min-width: 200px;">
                                         <?php if($m['judul']): ?>
-                                            <span class="text-sm"><?php echo $m['judul']; ?></span>
+                                            <small class="d-block"><?php echo $m['judul']; ?></small>
                                         <?php else: ?>
-                                            <span class="badge badge-danger"><i class="fas fa-times-circle"></i> Belum Ada Judul</span>
+                                            <span class="badge badge-danger">Belum Ada Judul</span>
                                         <?php endif; ?>
                                     </td>
-
                                     <td class="align-middle text-sm">
-                                        <?php if($m['p1'] || $m['p2']): ?>
-                                            <div class="text-muted"><i class="fas fa-user-tie text-primary"></i> P1: <?php echo $m['p1'] ?: '-'; ?></div>
-                                            <div class="text-muted"><i class="fas fa-user-tie text-secondary"></i> P2: <?php echo $m['p2'] ?: '-'; ?></div>
-                                        <?php else: ?>
-                                            <span class="text-muted font-italic">- Belum ditentukan -</span>
-                                        <?php endif; ?>
+                                        <div class="text-muted text-xs">P1: <?php echo $m['p1'] ?: '-'; ?></div>
+                                        <div class="text-muted text-xs">P2: <?php echo $m['p2'] ?: '-'; ?></div>
                                     </td>
-
                                     <td class="align-middle text-center">
-                                        <?php 
-                                        // Logic ambil progres
-                                        $progres_terakhir = $this->M_Dosen->get_all_progres_skripsi($m['npm']);
-                                        
-                                        if ($progres_terakhir) {
-                                            $last = end($progres_terakhir);
-                                            
-                                            // Styling Badge Bab
-                                            echo '<div class="mb-1"><span class="badge badge-primary badge-pill px-3">BAB ' . $last['bab'] . '</span></div>';
-                                            
-                                            // Info ACC/Revisi P1 & P2 (Simple)
-                                            $icon1 = ($last['progres_dosen1'] == 100) ? 'text-success fas fa-check-circle' : 'text-warning fas fa-clock';
-                                            $icon2 = ($last['progres_dosen2'] == 100) ? 'text-success fas fa-check-circle' : 'text-warning fas fa-clock';
-                                            
-                                            echo '<small class="text-xs">';
-                                            echo 'P1 <i class="'.$icon1.'"></i> | ';
-                                            echo 'P2 <i class="'.$icon2.'"></i>';
-                                            echo '</small>';
-
-                                        } else {
-                                            echo '<span class="badge badge-secondary">0%</span>';
-                                        }
-                                        ?>
+                                        <?php if($m['id_skripsi']): ?>
+                                            <div class="btn-group">
+                                                <?php if($m['status_acc_kaprodi'] == 'menunggu'): ?>
+                                                    <a href="<?= base_url('dosen/setuju_judul/'.$m['id_skripsi']) ?>" class="btn btn-xs btn-success" onclick="return confirm('Setujui Judul & Pembimbing?')">ACC</a>
+                                                    <a href="<?= base_url('dosen/tolak_judul/'.$m['id_skripsi']) ?>" class="btn btn-xs btn-danger" onclick="return confirm('Tolak Judul?')">Tolak</a>
+                                                <?php else: ?>
+                                                    <span class="badge badge-<?= ($m['status_acc_kaprodi'] == 'diterima') ? 'success' : 'danger' ?> mr-1">
+                                                        <?= strtoupper($m['status_acc_kaprodi']) ?>
+                                                    </span>
+                                                <?php endif; ?>
+                                                <a href="<?= base_url('chat?id_lawan='.$m['id_user']) ?>" class="btn btn-xs btn-info"><i class="fas fa-comment"></i></a>
+                                            </div>
+                                        <?php else: ?>
+                                            <span class="text-muted">-</span>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
                             <?php endif; ?>
                         </tbody>
                     </table>
-                </div>
-                <div class="card-footer clearfix bg-white">
-                    <small class="text-muted float-right">Data diperbarui real-time.</small>
                 </div>
             </div>
         </div>
@@ -131,17 +106,8 @@ $prodi = $this->session->userdata('prodi');
 document.getElementById('searchMhs').addEventListener('keyup', function() {
     var val = this.value.toLowerCase();
     var rows = document.querySelectorAll('#tableMonitoring tbody tr');
-    
     rows.forEach(function(row) {
-        var text = row.textContent.toLowerCase();
-        row.style.display = text.indexOf(val) > -1 ? '' : 'none';
+        row.style.display = row.textContent.toLowerCase().indexOf(val) > -1 ? '' : 'none';
     });
 });
 </script>
-
-<style>
-    /* Custom Scrollbar */
-    .table-responsive::-webkit-scrollbar { width: 6px; height: 6px; }
-    .table-responsive::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
-    .table-responsive::-webkit-scrollbar-thumb:hover { background: #999; }
-</style>

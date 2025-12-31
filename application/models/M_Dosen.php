@@ -50,22 +50,6 @@ class M_Dosen extends CI_Model {
         $this->db->where('id', $id_progres);
         return $this->db->update('progres_skripsi', $data);
     }
-    
-    // --- Kaprodi Monitoring ---
-    
-    public function get_all_mahasiswa_prodi($prodi)
-    {
-        $this->db->select('A.nama, M.npm, M.angkatan, S.judul, P1.nama AS p1, P2.nama AS p2');
-        $this->db->from('data_mahasiswa M');
-        $this->db->join('mstr_akun A', 'M.id = A.id', 'inner');
-        $this->db->join('skripsi S', 'M.id = S.id_mahasiswa', 'left');
-        $this->db->join('mstr_akun P1', 'S.pembimbing1 = P1.id', 'left');
-        $this->db->join('mstr_akun P2', 'S.pembimbing2 = P2.id', 'left');
-        $this->db->where('M.prodi', $prodi);
-        $this->db->where('A.role', 'mahasiswa');
-        $this->db->order_by('M.angkatan', 'ASC');
-        return $this->db->get()->result_array();
-    }
 
     public function count_total_bimbingan($id_dosen)
     {
@@ -200,6 +184,29 @@ class M_Dosen extends CI_Model {
         
         return $this->db->get()->result_array();
     }
+
+    // Tambahkan fungsi ini di dalam class M_Dosen
+
+public function get_all_mahasiswa_prodi($prodi)
+{
+    // Tambahkan S.id_mahasiswa dan S.status_acc_kaprodi ke select
+    $this->db->select('A.nama, A.id as id_user, M.npm, M.angkatan, S.judul, S.status_acc_kaprodi, S.id as id_skripsi, P1.nama AS p1, P2.nama AS p2');
+    $this->db->from('data_mahasiswa M');
+    $this->db->join('mstr_akun A', 'M.id = A.id', 'inner');
+    $this->db->join('skripsi S', 'M.id = S.id_mahasiswa', 'left');
+    $this->db->join('mstr_akun P1', 'S.pembimbing1 = P1.id', 'left');
+    $this->db->join('mstr_akun P2', 'S.pembimbing2 = P2.id', 'left');
+    $this->db->where('M.prodi', $prodi);
+    $this->db->where('A.role', 'mahasiswa');
+    $this->db->order_by('M.angkatan', 'ASC');
+    return $this->db->get()->result_array();
+}
+
+public function update_status_judul($id_skripsi, $status)
+{
+    $this->db->where('id', $id_skripsi);
+    return $this->db->update('skripsi', ['status_acc_kaprodi' => $status]);
+}
 }
 
 // public function insert_plagiarisme_mockup($id_progres)
