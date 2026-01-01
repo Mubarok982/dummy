@@ -145,7 +145,7 @@ class Dosen extends CI_Controller
 
     // --- Monitoring (Khusus Kaprodi) ---
 
-    public function monitoring_prodi()
+  public function monitoring_prodi()
     {
         if ($this->session->userdata('is_kaprodi') != 1) {
             $this->session->set_flashdata('pesan_error', 'Akses ditolak. Fitur ini hanya untuk Kaprodi.');
@@ -153,13 +153,23 @@ class Dosen extends CI_Controller
         }
 
         $prodi = $this->session->userdata('prodi');
-        $data['title'] = 'Monitoring Seluruh Mahasiswa Prodi ' . $prodi;
-        $data['mahasiswa_prodi'] = $this->M_Dosen->get_all_mahasiswa_prodi($prodi);
+        
+        // Ambil data filter dari URL (GET request)
+        $angkatan_filter = $this->input->get('angkatan');
+
+        $data['title'] = 'Monitoring Mahasiswa Prodi ' . $prodi;
+        
+        // Ambil list angkatan untuk dropdown
+        $data['list_angkatan'] = $this->M_Dosen->get_list_angkatan($prodi);
+        $data['selected_angkatan'] = $angkatan_filter; // Untuk menandai dropdown yang dipilih
+
+        // Ambil data mahasiswa dengan filter
+        $data['mahasiswa_prodi'] = $this->M_Dosen->get_all_mahasiswa_prodi($prodi, $angkatan_filter);
 
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
         $this->load->view('dosen/v_monitoring_prodi', $data);
-        $this->load->view('template/footer');
+        $this->load->view('template/footer'); // Pastikan footer view sudah dikosongkan isinya seperti request sebelumnya
     }
 
     // --- FITUR PROFIL DOSEN ---

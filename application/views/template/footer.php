@@ -14,7 +14,6 @@
 <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
 
 <script>
-  // Script tambahan agar alert hilang otomatis dalam 3 detik
   window.setTimeout(function() {
     $(".alert-info").fadeTo(500, 0).slideUp(500, function(){
       $(this).remove(); 

@@ -207,6 +207,16 @@ public function update_status_judul($id_skripsi, $status)
     $this->db->where('id', $id_skripsi);
     return $this->db->update('skripsi', ['status_acc_kaprodi' => $status]);
 }
+
+public function get_list_angkatan($prodi)
+    {
+        $this->db->distinct();
+        $this->db->select('angkatan');
+        $this->db->from('data_mahasiswa');
+        $this->db->where('prodi', $prodi);
+        $this->db->order_by('angkatan', 'DESC');
+        return $this->db->get()->result_array();
+    }
 }
 
 // public function insert_plagiarisme_mockup($id_progres)
