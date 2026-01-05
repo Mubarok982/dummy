@@ -18,7 +18,13 @@ class Dashboard extends CI_Controller {
     }
 
     public function index()
-    {
+    // Di dalam method index() controller Dashboard
+   
+    {   
+         if ($this->session->userdata('is_kaprodi') == 1) {
+        $prodi = $this->session->userdata('prodi');
+        $data['stats_kaprodi'] = $this->M_Dosen->get_stats_kaprodi($prodi);
+    }
         $data['title'] = 'Dashboard Utama';
         $role = $this->session->userdata('role');
         $id_user = $this->session->userdata('id');

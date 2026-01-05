@@ -5,6 +5,7 @@ class M_Dosen extends CI_Model {
 
     // --- Daftar Bimbingan ---
 
+   // --- Daftar Bimbingan ---
     public function get_mahasiswa_bimbingan($id_dosen)
     {
         $this->db->select('S.id AS id_skripsi, S.judul, M.npm, A.nama AS nama_mhs, A.id AS id_mhs, 
@@ -17,7 +18,13 @@ class M_Dosen extends CI_Model {
         
         // Filter di mana dosen ini adalah Pembimbing 1 atau Pembimbing 2
         $this->db->where("S.pembimbing1 = $id_dosen OR S.pembimbing2 = $id_dosen");
-        $this->db->order_by('A.nama', 'ASC');
+        
+        // --- LOGIKA PENGURUTAN TERBARU ---
+        // Prioritas 1: Mahasiswa yang id_skripsi-nya paling besar (artinya baru saja di-assign pembimbing)
+        // Jika ingin berdasarkan aktivitas terakhir, kita perlu kolom timestamp 'updated_at' di tabel skripsi.
+        // Tapi untuk sekarang, sorting by ID Skripsi DESC sudah cukup untuk menampilkan mahasiswa bimbingan 'terbaru' masuk.
+        $this->db->order_by('S.id', 'DESC'); 
+        
         return $this->db->get()->result_array();
     }
 
@@ -217,6 +224,45 @@ public function get_list_angkatan($prodi)
         $this->db->order_by('angkatan', 'DESC');
         return $this->db->get()->result_array();
     }
+
+    // Tambahkan fungsi ini di dalam class M_Dosen
+
+public function get_stats_kaprodi($prodi)
+{
+    $stats = []; // Inisialisasi array biar aman
+
+    // 1. Total Dosen di Prodi
+    $stats['total_dosen'] = $this->db->where('prodi', $prodi)->get('data_dosen')->num_rows();
+
+    // 2. Total Mahasiswa di Prodi
+    $stats['total_mhs'] = $this->db->where('prodi', $prodi)->get('data_mahasiswa')->num_rows();
+
+    // 3. Statistik Judul (Menunggu ACC)
+    $this->db->from('skripsi S');
+    $this->db->join('data_mahasiswa M', 'S.id_mahasiswa = M.id');
+    $this->db->where('M.prodi', $prodi);
+    $this->db->where('S.status_acc_kaprodi', 'menunggu');
+    $stats['judul_pending'] = $this->db->count_all_results();
+
+    // 4. Statistik Progress Per BAB
+    $stats['bab_stats'] = [];
+    for ($i = 1; $i <= 5; $i++) {
+        // PERBAIKAN DI SINI: Tambahkan 'P.' sebelum npm
+        $this->db->select('COUNT(DISTINCT(P.npm)) as total'); 
+        $this->db->from('progres_skripsi P');
+        $this->db->join('data_mahasiswa M', 'P.npm = M.npm');
+        $this->db->where('M.prodi', $prodi);
+        $this->db->where('P.bab', $i);
+        $this->db->where('P.progres_dosen1', 100);
+        $this->db->where('P.progres_dosen2', 100);
+        $result = $this->db->get()->row();
+        
+        // Pastikan tidak error jika result kosong
+        $stats['bab_stats'][$i] = isset($result->total) ? $result->total : 0;
+    }
+
+    return $stats;
+}
 }
 
 // public function insert_plagiarisme_mockup($id_progres)

@@ -36,28 +36,52 @@ class M_Chat extends CI_Model {
     }
 
     public function get_kontak_chat($id_user, $role_user) {
-        if ($role_user == 'dosen') {
-            // Cek apakah user ini Kaprodi
-            $check = $this->db->get_where('data_dosen', ['id' => $id_user, 'is_kaprodi' => 1])->row();
-            
-            if ($check) {
-                // KAPRODI: Lihat semua mahasiswa di prodinya
-                $this->db->select('A.id, A.nama, A.foto, M.npm as sub_info');
-                $this->db->from('mstr_akun A');
-                $this->db->join('data_mahasiswa M', 'A.id = M.id');
-                $this->db->where('M.prodi', $check->prodi);
-                $this->db->where('A.id !=', $id_user);
-                return $this->db->get()->result_array();
-            } else {
-                // DOSEN BIASA: Lihat mahasiswa bimbingannya saja
-                $this->db->select('A.id, A.nama, A.foto, M.npm AS sub_info');
-                $this->db->from('skripsi S');
-                $this->db->join('data_mahasiswa M', 'S.id_mahasiswa = M.id');
-                $this->db->join('mstr_akun A', 'M.id = A.id');
-                $this->db->where("(S.pembimbing1 = $id_user OR S.pembimbing2 = $id_user)");
-                return $this->db->get()->result_array();
-            }
-        } 
+      if ($role_user == 'dosen') {
+    // 1. Cek status Kaprodi dan ambil Prodinya
+    $check = $this->db->get_where('data_dosen', ['id' => $id_user, 'is_kaprodi' => 1])->row();
+    
+    // ... bagian awal fungsi
+    if ($check) {
+        // KAPRODI: Lihat SEMUA DOSEN & MAHASISWA di prodinya
+        $prodi_saya = $check->prodi;
+
+        // Tambahkan parameter FALSE di akhir select agar tidak error backtick
+        $this->db->select('A.id, A.nama, A.foto, A.role, 
+                        (CASE 
+                            WHEN A.role = "dosen" THEN D.nidk 
+                            ELSE M.npm 
+                        END) as sub_info', FALSE); 
+        
+        $this->db->from('mstr_akun A');
+        $this->db->join('data_dosen D', 'A.id = D.id', 'left');
+        $this->db->join('data_mahasiswa M', 'A.id = M.id', 'left');
+        
+        // Filter: Harus di prodi yang sama
+        $this->db->group_start();
+            $this->db->where('D.prodi', $prodi_saya);
+            $this->db->or_where('M.prodi', $prodi_saya);
+        $this->db->group_end();
+        
+        $this->db->where('A.id !=', $id_user);
+        $this->db->order_by('A.role', 'ASC');
+        $this->db->order_by('A.nama', 'ASC');
+        
+        return $this->db->get()->result_array();
+    
+    // ... sisa fungsi
+
+    } else {
+        // DOSEN BIASA: Tetap cuma lihat mahasiswa bimbingannya saja
+        $this->db->select('A.id, A.nama, A.foto, A.role, M.npm AS sub_info');
+        $this->db->from('skripsi S');
+        $this->db->join('data_mahasiswa M', 'S.id_mahasiswa = M.id');
+        $this->db->join('mstr_akun A', 'M.id = A.id');
+        $this->db->where("(S.pembimbing1 = $id_user OR S.pembimbing2 = $id_user)");
+        $this->db->group_by('A.id'); // Jaga-jaga kalau ada data double
+        
+        return $this->db->get()->result_array();
+    }
+}
         else if ($role_user == 'mahasiswa') {
             $npm = $this->session->userdata('npm');
             $valid_ids = $this->get_valid_chat_recipients_mhs($npm);
