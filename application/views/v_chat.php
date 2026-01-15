@@ -224,3 +224,6 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 </script>
+
+
+// End of file v_chat.php
