@@ -125,7 +125,7 @@
                                             <td class="align-middle text-muted"><?php echo $user['username']; ?></td>
                                             
                                             <td class="align-middle text-center">
-                                                <?php 
+                                                <?php
                                                 $badge_color = 'secondary';
                                                 if ($user['role'] == 'operator') $badge_color = 'info';
                                                 elseif ($user['role'] == 'dosen') $badge_color = 'primary';
@@ -134,6 +134,9 @@
                                                 <span class="badge badge-<?php echo $badge_color; ?> font-weight-normal px-2 py-1">
                                                     <?php echo ucfirst($user['role']); ?>
                                                 </span>
+                                                <?php if ($user['role'] == 'dosen' && isset($user['is_kaprodi']) && $user['is_kaprodi'] == 1): ?>
+                                                <span class="badge badge-success font-weight-normal px-2 py-1 ml-1">Kaprodi</span>
+                                                <?php endif; ?>
                                             </td>
                                             
                                             <td class="align-middle text-center">

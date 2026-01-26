@@ -10,14 +10,14 @@
     </section>
 
     <section class="content h-100">
-        <div class="container-fluid h-100 pb-3"> 
+        <div class="container-fluid h-100 pb-3">
             <div class="chat-container shadow-sm border">
-                
+
                 <div class="kontak-list">
                     <div class="p-3 bg-light border-bottom">
                         <input type="text" id="searchContact" class="form-control" placeholder="Cari kontak..." autocomplete="off">
                     </div>
-                    
+
                     <div class="kontak-scroll" id="kontakListContainer">
                         <?php if(!empty($kontak)): ?>
                             <?php foreach ($kontak as $k): ?>
@@ -34,7 +34,7 @@
                         <?php else: ?>
                             <div class="text-center p-4 text-muted"><small>Belum ada kontak.</small></div>
                         <?php endif; ?>
-                        
+
                         <div id="noContactFound" class="text-center p-3 text-muted" style="display: none;">
                             <small>Tidak ditemukan</small>
                         </div>
@@ -49,7 +49,7 @@
                     <div id="chatBox" class="chat-area" style="display: none !important;">
                         <div class="chat-header">
                             <div class="d-flex align-items-center">
-                                <img src="" class="kontak-avatar mr-2" id="headerAvatar" style="width: 40px; height: 40px;"> 
+                                <img src="" class="kontak-avatar mr-2" id="headerAvatar" style="width: 40px; height: 40px;">
                                 <div><h6 class="mb-0 font-weight-bold" id="namaLawanBicara">User</h6></div>
                             </div>
                         </div>
@@ -63,13 +63,13 @@
                         <div class="chat-footer">
                             <form id="formKirim" enctype="multipart/form-data" style="width: 100%; display: flex;">
                                 <input type="hidden" id="id_penerima" name="id_penerima">
-                                
+
                                 <label for="fileGambar" class="btn btn-secondary mr-2 mb-0">
                                     Img <input type="file" id="fileGambar" name="gambar" accept="image/*" style="display: none;">
                                 </label>
 
                                 <input type="text" id="pesanInput" name="pesan" class="form-control" placeholder="Ketik pesan..." autocomplete="off">
-                                
+
                                 <button type="submit" class="btn btn-primary ml-2 btn-send">
                                     Kirim
                                 </button>
@@ -90,15 +90,15 @@
     .kontak-link { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; align-items: center; }
     .kontak-link:hover, .kontak-link.active { background: #f0f0f0; }
     .kontak-avatar { width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; }
-    
+
     .chat-wrapper { width: 70%; position: relative; background: #f8f9fa; }
     .chat-area { height: 100%; display: flex; flex-direction: column; }
     #chatPlaceholder { position: absolute; top:0; left:0; width:100%; height:100%; display:flex; justify-content:center; align-items:center; z-index:5; background:#fff;}
-    
+
     .chat-header { padding: 10px; background: #fff; border-bottom: 1px solid #ddd; }
     .chat-messages { flex-grow: 1; overflow-y: auto; padding: 15px; background: #e5ddd5; }
     .chat-footer { padding: 10px; background: #fff; border-top: 1px solid #ddd; }
-    
+
     .bubble { max-width: 70%; padding: 8px 12px; border-radius: 10px; margin-bottom: 10px; font-size: 14px; clear: both; }
     .bubble.me { float: right; background: #dcf8c6; }
     .bubble.you { float: left; background: #fff; }
@@ -108,7 +108,7 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-    
+
     // --- 1. FILTER KONTAK (PURE JS biar lebih aman) ---
     var searchInput = document.getElementById('searchContact');
     if(searchInput){
@@ -120,7 +120,7 @@ document.addEventListener("DOMContentLoaded", function() {
             for (var i = 0; i < items.length; i++) {
                 var nameEl = items[i].getElementsByClassName('contact-name')[0];
                 var txtValue = nameEl.textContent || nameEl.innerText;
-                
+
                 if (txtValue.toUpperCase().indexOf(filter) > -1) {
                     items[i].style.display = ""; // Show
                     visibleCount++;
@@ -148,7 +148,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
                 idLawan = $(this).data('id');
                 let nama = $(this).data('nama');
-                
+
                 $('#id_penerima').val(idLawan);
                 $('#namaLawanBicara').text(nama);
                 $('#headerAvatar').attr('src', 'https://ui-avatars.com/api/?name=' + encodeURIComponent(nama) + '&background=random');
@@ -157,7 +157,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 $('#chatBox').attr('style', 'display: flex !important;');
 
                 loadPesan(true);
-                
+
                 if(intervalChat) clearInterval(intervalChat);
                 intervalChat = setInterval(function() { loadPesan(false); }, 3000);
             });

@@ -61,7 +61,15 @@ class Operator extends CI_Controller {
         $page = $this->input->get('page') ? $this->input->get('page') : 0;
         // Gunakan M_akun_opt
         $data['users'] = $this->M_akun_opt->get_all_users_with_details($role, $prodi, $keyword, $config['per_page'], $page);
-        
+
+        // Tambahkan is_kaprodi untuk dosen
+        foreach ($data['users'] as &$user) {
+            if ($user['role'] == 'dosen') {
+                $dsn = $this->db->get_where('data_dosen', ['id' => $user['id']])->row_array();
+                $user['is_kaprodi'] = $dsn['is_kaprodi'] ?? 0;
+            }
+        }
+
         $data['pagination'] = $this->pagination->create_links();
         $data['total_rows'] = $config['total_rows'];
         $data['start_index'] = $page;
@@ -455,7 +463,7 @@ class Operator extends CI_Controller {
     public function data_mahasiswa()
     {
         $data['title'] = 'Data Mahasiswa & Status Skripsi';
-        
+
         // Panggil fungsi model yang baru dibuat
         $data['mahasiswa'] = $this->M_Data->get_all_mahasiswa_lengkap();
 

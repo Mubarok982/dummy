@@ -40,7 +40,7 @@
 
                             <ul class="list-group list-group-unbordered mb-3">
                                 <li class="list-group-item">
-                                    <b>Program Studi</b> <a class="float-right"><?php echo $user['prodi']; ?></a>
+                                    <b>Program Studi</b> <a class="float-right"><?php echo $user['prodi_dsn']; ?></a>
                                 </li>
                                 <li class="list-group-item">
                                     <b>Jabatan</b> <a class="float-right">

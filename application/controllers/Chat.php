@@ -68,11 +68,11 @@ class Chat extends CI_Controller {
         echo $html;
     }
 
-   public function kirim_pesan()
+    public function kirim_pesan()
     {
         $response = ['status' => false, 'msg' => 'Gagal tidak diketahui'];
         $path = './uploads/chat/';
-        
+
         if (!is_dir($path)) {
             if (!mkdir($path, 0777, true)) {
                 echo json_encode(['status' => false, 'msg' => 'Gagal membuat folder uploads/chat. Cek izin folder!']);
@@ -99,7 +99,7 @@ class Chat extends CI_Controller {
 
         if (!empty($_FILES['gambar']['name'])) {
             $config['upload_path']   = $path;
-            $config['allowed_types'] = 'gif|jpg|png|jpeg|pdf'; 
+            $config['allowed_types'] = 'gif|jpg|png|jpeg|pdf';
             $config['max_size']      = 5120;
             $config['encrypt_name']  = TRUE;
 

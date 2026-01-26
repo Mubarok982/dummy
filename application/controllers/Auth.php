@@ -37,6 +37,10 @@ class Auth extends CI_Controller {
             $user = $this->M_Akun->cek_login($username);
 
             if ($user) {
+                // Debug: Cek format password
+                log_message('debug', 'Password from DB: ' . substr($user['password'], 0, 20) . '...');
+                log_message('debug', 'Password input: ' . $password);
+
                 // Cek Password (Hash)
                 if (password_verify($password, $user['password'])) {
                     
@@ -88,7 +92,7 @@ class Auth extends CI_Controller {
         if ($role == 'mahasiswa') {
             // Ambil data detail mahasiswa terbaru
             $mhs = $this->db->get_where('data_mahasiswa', ['id' => $id_user])->row_array();
-            
+
             // --- LOGIKA CEK KELENGKAPAN DATA MAHASISWA ---
             // Cek apakah data penting masih kosong?
             // Misal: Alamat, Telepon, Jenis Kelamin, TTD

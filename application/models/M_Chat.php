@@ -14,11 +14,18 @@ class M_Chat extends CI_Model {
     }
 
     public function get_valid_chat_recipients_mhs($npm) {
-        // 1. Cari ID Kaprodi (Dosen yang is_kaprodi = 1)
-        $kaprodi = $this->db->get_where('data_dosen', ['is_kaprodi' => 1])->row_array();
+        // 1. Cari prodi mahasiswa
+        $this->db->select('M.prodi');
+        $this->db->from('data_mahasiswa M');
+        $this->db->where('M.npm', $npm);
+        $mahasiswa = $this->db->get()->row_array();
+        $prodi_mhs = $mahasiswa ? $mahasiswa['prodi'] : null;
+
+        // 2. Cari ID Kaprodi berdasarkan prodi mahasiswa
+        $kaprodi = $this->db->get_where('data_dosen', ['is_kaprodi' => 1, 'prodi' => $prodi_mhs])->row_array();
         $id_kaprodi = $kaprodi ? $kaprodi['id'] : null;
 
-        // 2. Cari ID Pembimbing dari tabel skripsi
+        // 3. Cari ID Pembimbing dari tabel skripsi
         $this->db->select('S.pembimbing1, S.pembimbing2, S.status_acc_kaprodi');
         $this->db->from('skripsi S');
         $this->db->join('data_mahasiswa M', 'S.id_mahasiswa = M.id');
@@ -28,7 +35,7 @@ class M_Chat extends CI_Model {
         $valid_ids = [];
         if ($id_kaprodi) $valid_ids[] = $id_kaprodi;
 
-        if ($skripsi && $skripsi['status_acc_kaprodi'] == 'diterima') {
+        if ($skripsi) {
             if ($skripsi['pembimbing1']) $valid_ids[] = $skripsi['pembimbing1'];
             if ($skripsi['pembimbing2']) $valid_ids[] = $skripsi['pembimbing2'];
         }
@@ -39,35 +46,35 @@ class M_Chat extends CI_Model {
       if ($role_user == 'dosen') {
     // 1. Cek status Kaprodi dan ambil Prodinya
     $check = $this->db->get_where('data_dosen', ['id' => $id_user, 'is_kaprodi' => 1])->row();
-    
+
     // ... bagian awal fungsi
     if ($check) {
         // KAPRODI: Lihat SEMUA DOSEN & MAHASISWA di prodinya
         $prodi_saya = $check->prodi;
 
         // Tambahkan parameter FALSE di akhir select agar tidak error backtick
-        $this->db->select('A.id, A.nama, A.foto, A.role, 
-                        (CASE 
-                            WHEN A.role = "dosen" THEN D.nidk 
-                            ELSE M.npm 
-                        END) as sub_info', FALSE); 
-        
+        $this->db->select('A.id, A.nama, A.foto, A.role,
+                        (CASE
+                            WHEN A.role = "dosen" THEN D.nidk
+                            ELSE M.npm
+                        END) as sub_info', FALSE);
+
         $this->db->from('mstr_akun A');
         $this->db->join('data_dosen D', 'A.id = D.id', 'left');
         $this->db->join('data_mahasiswa M', 'A.id = M.id', 'left');
-        
+
         // Filter: Harus di prodi yang sama
         $this->db->group_start();
             $this->db->where('D.prodi', $prodi_saya);
             $this->db->or_where('M.prodi', $prodi_saya);
         $this->db->group_end();
-        
+
         $this->db->where('A.id !=', $id_user);
         $this->db->order_by('A.role', 'ASC');
         $this->db->order_by('A.nama', 'ASC');
-        
+
         return $this->db->get()->result_array();
-    
+
     // ... sisa fungsi
 
     } else {
@@ -78,7 +85,7 @@ class M_Chat extends CI_Model {
         $this->db->join('mstr_akun A', 'M.id = A.id');
         $this->db->where("(S.pembimbing1 = $id_user OR S.pembimbing2 = $id_user)");
         $this->db->group_by('A.id'); // Jaga-jaga kalau ada data double
-        
+
         return $this->db->get()->result_array();
     }
 }
@@ -95,7 +102,7 @@ class M_Chat extends CI_Model {
 
             foreach ($kontak as $key => $k) {
                 $check_kaprodi = $this->db->get_where('data_dosen', ['id' => $k['id'], 'is_kaprodi' => 1])->row();
-                $kontak[$key]['sub_info'] = $check_kaprodi ? 'Kaprodi' : ($k['sub_info'] ?? 'Dosen');
+                $kontak[$key]['sub_info'] = $check_kaprodi ? 'Kaprodi' : 'Dospem';
             }
             return $kontak;
         }
@@ -104,12 +111,12 @@ class M_Chat extends CI_Model {
 
     public function get_kontak_filtered($allowed_ids) {
     if (empty($allowed_ids)) return [];
-    
+
     $this->db->select('id, nama, foto, role');
     $this->db->from('mstr_akun');
     $this->db->where_in('id', $allowed_ids);
     $query = $this->db->get();
-    
+
     return $query->result_array();
 }
 
@@ -132,7 +139,7 @@ public function get_list_angkatan($prodi)
         $this->db->join('skripsi S', 'M.id = S.id_mahasiswa', 'left');
         $this->db->join('mstr_akun P1', 'S.pembimbing1 = P1.id', 'left');
         $this->db->join('mstr_akun P2', 'S.pembimbing2 = P2.id', 'left');
-        
+
         $this->db->where('M.prodi', $prodi);
         $this->db->where('A.role', 'mahasiswa');
 
@@ -143,12 +150,12 @@ public function get_list_angkatan($prodi)
 
         $this->db->order_by('M.angkatan', 'ASC');
         $this->db->order_by('M.npm', 'ASC');
-        
+
         return $this->db->get()->result_array();
     }
 
     // ... (Sisa fungsi update_status_judul, count_dosen, dll TETAP SAMA) ...
-    
+
     public function update_status_judul($id_skripsi, $status)
     {
         $this->db->where('id', $id_skripsi);
