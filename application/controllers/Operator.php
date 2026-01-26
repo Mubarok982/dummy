@@ -135,24 +135,29 @@ class Operator extends CI_Controller {
     }
     
     // Perbaikan: Tambahkan nilai default null agar tidak error ArgumentCountError
-    public function edit_akun($id = null)
+   public function edit_akun($id = null)
     {
         if ($id == null) {
             $this->session->set_flashdata('pesan_error', 'ID Akun tidak ditemukan!');
             redirect('operator/manajemen_akun');
         }
 
-        // Gunakan M_akun_opt
         $data['user'] = $this->M_akun_opt->get_user_by_id($id);
-        
         if (!$data['user']) {
             redirect('operator/manajemen_akun');
         }
 
+        // --- LOGIKA BARU: Tangkap Source ---
+        // Ambil dari URL (saat load halaman)
+        $source = $this->input->get('source'); 
+        
+        // Kirim ke View agar bisa dijadikan input hidden
+        $data['source'] = $source; 
+        // -----------------------------------
+
         $data['title'] = 'Edit Akun: ' . $data['user']['nama'];
         
         $this->form_validation->set_rules('nama', 'Nama', 'required');
-        // Validasi Role tidak perlu karena role disabled
         
         if ($this->input->post('password')) {
             $this->form_validation->set_rules('password', 'Password', 'min_length[3]');
@@ -164,12 +169,11 @@ class Operator extends CI_Controller {
             $this->load->view('operator/v_tambah_edit_akun', $data);
             $this->load->view('template/footer');
         } else {
-            // Ambil role ASLI dari database (karena input disabled tidak terkirim)
+            // Ambil role ASLI dari database
             $role = $data['user']['role']; 
             
             $akun_data = [
                 'nama' => $this->input->post('nama'),
-                // Jangan update role di sini
             ];
             
             if ($this->input->post('password')) {
@@ -192,13 +196,21 @@ class Operator extends CI_Controller {
                 ];
             }
 
-            // Gunakan M_akun_opt
             if ($this->M_akun_opt->update_user($id, $akun_data, $detail_data, $role)) {
                 $this->session->set_flashdata('pesan_sukses', 'Akun ' . $role . ' berhasil diperbarui!');
             } else {
                 $this->session->set_flashdata('pesan_error', 'Gagal memperbarui akun.');
             }
-            redirect('operator/manajemen_akun');
+
+            // --- LOGIKA BARU: Redirect Sesuai Asal ---
+            $redirect_source = $this->input->post('redirect_source'); // Ambil dari hidden input form
+            
+            if ($redirect_source == 'data_mahasiswa') {
+                redirect('operator/data_mahasiswa');
+            } else {
+                redirect('operator/manajemen_akun');
+            }
+            // -----------------------------------------
         }
     }
 
@@ -401,9 +413,8 @@ class Operator extends CI_Controller {
         redirect('operator/cek_plagiarisme_list');
     }
 
-    // =======================================================================
     // --- FITUR BARU: PERSETUJUAN DOSEN PEMBIMBING (KAPRODI FLOW) ---
-    // =======================================================================
+
 
     public function acc_dospem()
     {
@@ -439,5 +450,18 @@ class Operator extends CI_Controller {
         
         $this->session->set_flashdata('pesan_sukses', $message);
         redirect('operator/acc_dospem');
+    }
+
+    public function data_mahasiswa()
+    {
+        $data['title'] = 'Data Mahasiswa & Status Skripsi';
+        
+        // Panggil fungsi model yang baru dibuat
+        $data['mahasiswa'] = $this->M_Data->get_all_mahasiswa_lengkap();
+
+        $this->load->view('template/header', $data);
+        $this->load->view('template/sidebar', $data);
+        $this->load->view('operator/v_data_mahasiswa_lengkap', $data); // View baru
+        $this->load->view('template/footer');
     }
 }

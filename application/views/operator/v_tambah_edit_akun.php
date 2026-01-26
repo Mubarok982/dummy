@@ -28,12 +28,17 @@
                         </div>
                         
                         <?php 
-                        // Perbaikan URL Action agar dinamis
                         $action_url = $is_edit ? base_url('operator/edit_akun/' . $user['id']) : base_url('operator/tambah_akun');
+                        // Menambahkan query string source ke URL action juga untuk menjaga state jika ada error validasi
+                        if($is_edit && isset($source) && !empty($source)) {
+                            $action_url .= '?source=' . $source;
+                        }
                         echo form_open($action_url, ['class' => 'form-horizontal']); 
                         ?>
                         
                         <div class="card-body">
+                            
+                            <input type="hidden" name="redirect_source" value="<?php echo isset($source) ? $source : ''; ?>">
                             
                             <?php if (validation_errors()): ?>
                                 <div class="alert alert-danger alert-dismissible fade show">
@@ -90,14 +95,12 @@
 
                             <div id="dosen-fields" style="display: none;">
                                 <h5 class="text-primary mt-4 mb-3 text-uppercase font-weight-bold" style="font-size: 0.9rem; border-bottom: 1px solid #eee; padding-bottom: 5px;">Detail Dosen</h5>
-                                
                                 <div class="form-group row">
                                     <label for="nidk" class="col-sm-3 col-form-label">NIDK / NIDN</label>
                                     <div class="col-sm-9">
                                         <input type="text" name="nidk" id="nidk" class="form-control" value="<?php echo set_value('nidk', $is_edit ? $user['nidk'] : ''); ?>">
                                     </div>
                                 </div>
-
                                 <div class="form-group row">
                                     <label for="prodi_dosen" class="col-sm-3 col-form-label">Program Studi</label>
                                     <div class="col-sm-9">
@@ -107,7 +110,6 @@
                                         </select>
                                     </div>
                                 </div>
-
                                 <div class="form-group row">
                                     <label class="col-sm-3 col-form-label">Jabatan</label>
                                     <div class="col-sm-9">
@@ -121,14 +123,12 @@
 
                             <div id="mahasiswa-fields" style="display: none;">
                                 <h5 class="text-primary mt-4 mb-3 text-uppercase font-weight-bold" style="font-size: 0.9rem; border-bottom: 1px solid #eee; padding-bottom: 5px;">Detail Mahasiswa</h5>
-                                
                                 <div class="form-group row">
                                     <label for="npm" class="col-sm-3 col-form-label">NPM</label>
                                     <div class="col-sm-9">
                                         <input type="text" name="npm" id="npm" class="form-control" value="<?php echo set_value('npm', $is_edit ? $user['npm'] : ''); ?>">
                                     </div>
                                 </div>
-
                                 <div class="form-group row">
                                     <label for="prodi_mhs" class="col-sm-3 col-form-label">Program Studi</label>
                                     <div class="col-sm-9">
@@ -138,7 +138,6 @@
                                         </select>
                                     </div>
                                 </div>
-
                                 <div class="form-group row">
                                     <label for="angkatan" class="col-sm-3 col-form-label">Angkatan</label>
                                     <div class="col-sm-9">
@@ -150,9 +149,19 @@
                         </div>
                         
                         <div class="card-footer justify-content-between">
-                            <a href="<?php echo base_url('operator/manajemen_akun'); ?>" class="btn btn-default">
+                            <?php 
+                            // LOGIKA TOMBOL KEMBALI DINAMIS
+                            // Jika source dari data_mahasiswa, tombol kembali mengarah ke sana
+                            if (isset($source) && $source == 'data_mahasiswa') {
+                                $url_kembali = base_url('operator/data_mahasiswa');
+                            } else {
+                                $url_kembali = base_url('operator/manajemen_akun');
+                            }
+                            ?>
+                            <a href="<?php echo $url_kembali; ?>" class="btn btn-default">
                                 <i class="fas fa-arrow-left"></i> Kembali
                             </a>
+                            
                             <button type="submit" class="btn btn-primary float-right px-4 shadow-sm">
                                 <i class="fas fa-save mr-1"></i> <?php echo $is_edit ? 'Simpan Perubahan' : 'Tambah Akun'; ?>
                             </button>
@@ -173,14 +182,12 @@
         var dosenFields = document.getElementById('dosen-fields');
         var mhsFields = document.getElementById('mahasiswa-fields');
         
-        // 1. Sembunyikan semua & Disable semua input di dalamnya
         dosenFields.style.display = 'none';
         disableInputsIn(dosenFields);
 
         mhsFields.style.display = 'none';
         disableInputsIn(mhsFields);
 
-        // 2. Tampilkan yang dipilih & Enable inputnya
         if (role === 'dosen') {
             dosenFields.style.display = 'block';
             enableInputsIn(dosenFields);
@@ -193,18 +200,17 @@
     function disableInputsIn(container) {
         var inputs = container.querySelectorAll('input, select');
         inputs.forEach(function(input) {
-            input.disabled = true; // Agar tidak dikirim ke server & tidak divalidasi 'required' oleh browser
+            input.disabled = true; 
         });
     }
 
     function enableInputsIn(container) {
         var inputs = container.querySelectorAll('input, select');
         inputs.forEach(function(input) {
-            input.disabled = false; // Aktifkan kembali agar data dikirim
+            input.disabled = false; 
         });
     }
     
-    // Panggil saat load untuk set kondisi awal (terutama saat Edit)
     document.addEventListener('DOMContentLoaded', function() {
         var initialRole = document.getElementById('role').value;
         toggleRoleFields(initialRole);

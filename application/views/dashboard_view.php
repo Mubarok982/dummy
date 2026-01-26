@@ -39,7 +39,7 @@
                                 <p>Total Mahasiswa</p>
                             </div>
                             <div class="icon"><i class="fas fa-users"></i></div>
-                            <a href="<?php echo base_url('operator/manajemen_akun'); ?>" class="small-box-footer">
+                            <a href="<?php echo base_url('operator/data_mahasiswa'); ?>" class="small-box-footer">
                                 Lihat Detail <i class="fas fa-arrow-circle-right"></i>
                             </a>
                         </div>

@@ -21,6 +21,12 @@
         </a>
       </li>
       <li class="nav-item">
+            <a href="<?php echo base_url('operator/data_mahasiswa'); ?>" class="nav-link <?php echo ($this->uri->segment(2) == 'data_mahasiswa') ? 'active' : ''; ?>">
+              <i class="nav-icon fas fa-users"></i>
+              <p>Data Mahasiswa</p>
+            </a>
+          </li>
+      <li class="nav-item">
         <a href="<?php echo base_url('operator/cek_plagiarisme_list'); ?>"
           class="nav-link <?php echo ($this->uri->segment(2) == 'cek_plagiarisme_list') ? 'active' : ''; ?>">
           <i class="nav-icon fas fa-search"></i>

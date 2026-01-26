@@ -6,12 +6,29 @@ class Mahasiswa extends CI_Controller {
     public function __construct()
     {
         parent::__construct();
-        // Cek login dan role
+        // 1. Cek Login & Role
         if ($this->session->userdata('role') != 'mahasiswa' || !$this->session->userdata('is_login')) {
             redirect('auth/login');
         }
-        // Load model yang dibutuhkan
+        
         $this->load->model(['M_Data', 'M_Mahasiswa', 'M_Log', 'M_Dosen', 'M_Chat']);
+
+        // 2. LOGIKA FORCE REDIRECT (CEK DATA LENGKAP)
+        $id_user = $this->session->userdata('id');
+        
+        // Ambil data detail mahasiswa
+        $detail = $this->db->get_where('data_mahasiswa', ['id' => $id_user])->row_array();
+        
+        // Tentukan halaman yang 'boleh' diakses saat data belum lengkap
+        // Kita izinkan 'biodata', 'update_biodata', dan 'logout'
+        $allowed_methods = ['biodata', 'update_biodata', 'logout'];
+        $current_method = $this->router->method;
+
+        // Cek jika NPM atau Prodi kosong (Indikator data belum lengkap)
+        if ((empty($detail['npm']) || empty($detail['prodi'])) && !in_array($current_method, $allowed_methods)) {
+            $this->session->set_flashdata('pesan_error', '⚠️ Halo! Silakan lengkapi <b>NPM</b> dan <b>Prodi</b> Anda terlebih dahulu sebelum melanjutkan.');
+            redirect('mahasiswa/biodata');
+        }
     }
 
     public function index()

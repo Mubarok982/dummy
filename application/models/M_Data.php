@@ -349,4 +349,16 @@ class M_Data extends CI_Model
         }
         return $result;
     }
+
+    // Ambil data lengkap semua mahasiswa
+    public function get_all_mahasiswa_lengkap()
+    {
+        $this->db->select('a.id, a.nama, a.foto, a.username, m.npm, m.prodi, m.angkatan, m.is_skripsi, m.telepon');
+        $this->db->from('mstr_akun a');
+        $this->db->join('data_mahasiswa m', 'a.id = m.id');
+        $this->db->where('a.role', 'mahasiswa');
+        $this->db->order_by('m.angkatan', 'DESC');
+        $this->db->order_by('a.nama', 'ASC');
+        return $this->db->get()->result_array();
+    }
 }

@@ -3,18 +3,32 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Dosen extends CI_Controller
 {
-
-    public function __construct()
+public function __construct()
     {
         parent::__construct();
-        // Cek akses: hanya Dosen yang boleh mengakses controller ini
+        // 1. Cek Login & Role
         if ($this->session->userdata('role') != 'dosen' || !$this->session->userdata('is_login')) {
             redirect('auth/login');
         }
-        $this->load->model('M_Dosen');
-        $this->load->model('M_Log');
-    }
 
+        $this->load->model(['M_Data', 'M_Dosen', 'M_Log']);
+
+        // 2. LOGIKA FORCE REDIRECT DOSEN
+        $id_user = $this->session->userdata('id');
+        
+        // Ambil data detail dosen
+        $detail = $this->db->get_where('data_dosen', ['id' => $id_user])->row_array();
+
+        // Halaman yang diizinkan: profil, update_profil, dan logout
+        $allowed_methods = ['profil', 'update_profil', 'logout'];
+        $current_method = $this->router->method;
+
+        // Cek jika NIDK atau Prodi kosong
+        if ((empty($detail['nidk']) || empty($detail['prodi'])) && !in_array($current_method, $allowed_methods)) {
+            $this->session->set_flashdata('pesan_error', '⚠️ Mohon lengkapi <b>NIDK</b> dan <b>Program Studi</b> Anda di Profil terlebih dahulu.');
+            redirect('dosen/profil');
+        }
+    }
     // --- Menu Utama Dosen: Daftar Mahasiswa Bimbingan ---
 
     public function bimbingan_list()
