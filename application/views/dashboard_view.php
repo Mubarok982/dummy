@@ -15,14 +15,14 @@
             <div class="row">
                 <?php 
                 $role = $this->session->userdata('role');
-                // Gunakan Null Coalescing Operator untuk menghindari error
+                
+                // DATA DEFAULT AGAR TIDAK ERROR
                 $stats = isset($statistik) ? $statistik : [
                     'total_mhs' => 0, 'mhs_skripsi' => 0, 'total_dosen' => 0,
                     'mhs_ready_sempro' => 0, 'total_bimbingan' => 0,
                     'last_bab' => 0, 'judul_status' => '-'
                 ];
                 
-                // Default data kaprodi jika belum ada
                 $stats_kaprodi = isset($stats_kaprodi) ? $stats_kaprodi : [
                     'total_dosen' => 0, 'judul_pending' => 0, 
                     'bab_stats' => [1=>0, 2=>0, 3=>0, 4=>0, 5=>0], 
@@ -78,7 +78,7 @@
                                 <p>Siap Sempro</p>
                             </div>
                             <div class="icon"><i class="fas fa-graduation-cap"></i></div>
-                            <a href="#" class="small-box-footer">
+                            <a href="<?php echo base_url('operator/mahasiswa_siap_sempro'); ?>" class="small-box-footer">
                                 Cek Data <i class="fas fa-arrow-circle-right"></i>
                             </a>
                         </div>
@@ -178,7 +178,7 @@
                         <div class="card card-outline card-info shadow-sm">
                             <div class="card-header">
                                 <h3 class="card-title">
-                                    <i class="fas fa-chart-bar mr-1"></i> 
+                                    <i class="fas fa-chart-pie mr-1"></i> 
                                     Grafik Sebaran Progres Mahasiswa
                                 </h3>
                                 <div class="card-tools">
@@ -206,7 +206,6 @@
                                     $i = 0;
                                     if(!empty($stats_kaprodi['bab_stats'])):
                                         foreach($stats_kaprodi['bab_stats'] as $bab => $total): 
-                                            // Hitung persentase
                                             $total_mhs = $stats_kaprodi['total_mhs'];
                                             $percent = ($total_mhs > 0) ? round(($total / $total_mhs) * 100) : 0;
                                     ?>
@@ -237,57 +236,79 @@
     </section>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 
 <?php if ($role == 'dosen' && $this->session->userdata('is_kaprodi') == 1): ?>
 <script>
-$(function () {
-    // Data dari PHP
+// Gunakan event listener agar script jalan setelah HTML ready
+document.addEventListener("DOMContentLoaded", function() {
+    
+    // --- Ambil Data dari PHP ---
+    // Menggunakan array_values untuk memastikan format array JS [1, 2, 3...]
     var babData = <?php echo json_encode(array_values($stats_kaprodi['bab_stats'])); ?>;
-    var totalMhs = <?php echo $stats_kaprodi['total_mhs']; ?>;
+    
+    // Cek di Console browser apakah data masuk
+    console.log("Data Chart:", babData);
 
-    var areaChartData = {
-      labels  : ['BAB 1', 'BAB 2', 'BAB 3', 'BAB 4', 'BAB 5'],
-      datasets: [
-        {
-          label               : 'Mahasiswa Selesai',
-          backgroundColor     : 'rgba(60,141,188,0.9)',
-          borderColor         : 'rgba(60,141,188,0.8)',
-          pointRadius          : false,
-          pointColor          : '#3b8bba',
-          pointStrokeColor    : 'rgba(60,141,188,1)',
-          pointHighlightFill  : '#fff',
-          pointHighlightStroke: 'rgba(60,141,188,1)',
-          data                : babData
+    // --- Konfigurasi Data ---
+    var donutData = {
+        labels: [
+            'BAB 1', 
+            'BAB 2', 
+            'BAB 3', 
+            'BAB 4', 
+            'BAB 5'
+        ],
+        datasets: [
+            {
+                data: babData,
+                backgroundColor : ['#007bff', '#17a2b8', '#28a745', '#ffc107', '#dc3545'], // Biru, Teal, Hijau, Kuning, Merah
+                hoverOffset: 4
+            }
+        ]
+    };
+
+    // --- Konfigurasi Opsi (Chart.js v3) ---
+    var pieOptions = {
+        maintainAspectRatio : false,
+        responsive : true,
+        plugins: {
+            legend: {
+                display: true,
+                position: 'left', // Posisi legenda di kiri
+                labels: {
+                    boxWidth: 20,
+                    padding: 20
+                }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        let label = context.label || '';
+                        if (label) {
+                            label += ': ';
+                        }
+                        label += context.raw + ' Mahasiswa';
+                        return label;
+                    }
+                }
+            }
         }
-      ]
+    };
+
+    // --- Render Chart ---
+    // Pastikan elemen canvas ada sebelum digambar
+    var canvasElement = document.getElementById('sebaranChart');
+    if (canvasElement) {
+        var pieChartCanvas = canvasElement.getContext('2d');
+        new Chart(pieChartCanvas, {
+            type: 'doughnut', // Gunakan 'doughnut' atau 'pie'
+            data: donutData,
+            options: pieOptions
+        });
+    } else {
+        console.error("Canvas element #sebaranChart tidak ditemukan!");
     }
-
-    //-------------
-    //- BAR CHART -
-    //-------------
-    var barChartCanvas = $('#sebaranChart').get(0).getContext('2d')
-    var barChartData = $.extend(true, {}, areaChartData)
-    var temp0 = areaChartData.datasets[0]
-    barChartData.datasets[0] = temp0
-
-    var barChartOptions = {
-      responsive              : true,
-      maintainAspectRatio     : false,
-      datasetFill             : false,
-      scales: {
-        y: {
-            beginAtZero: true,
-            suggestedMax: totalMhs > 0 ? totalMhs : 10 // Skala Y menyesuaikan total mahasiswa
-        }
-      }
-    }
-
-    new Chart(barChartCanvas, {
-      type: 'bar',
-      data: barChartData,
-      options: barChartOptions
-    })
-})
+});
 </script>
 <?php endif; ?>

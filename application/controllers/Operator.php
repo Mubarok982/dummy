@@ -472,4 +472,17 @@ class Operator extends CI_Controller {
         $this->load->view('operator/v_data_mahasiswa_lengkap', $data); // View baru
         $this->load->view('template/footer');
     }
+
+    public function mahasiswa_siap_sempro()
+    {
+        $data['title'] = 'Mahasiswa Siap Sempro';
+        
+        // Panggil model yang baru dibuat
+        $data['mahasiswa'] = $this->M_Data->get_mahasiswa_siap_sempro();
+
+        $this->load->view('template/header', $data);
+        $this->load->view('template/sidebar', $data);
+        $this->load->view('operator/v_mahasiswa_siap_sempro', $data); // View baru
+        $this->load->view('template/footer');
+    }
 }

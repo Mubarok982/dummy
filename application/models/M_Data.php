@@ -361,4 +361,40 @@ class M_Data extends CI_Model
         $this->db->order_by('a.nama', 'ASC');
         return $this->db->get()->result_array();
     }
+
+    // Ambil data mahasiswa yang Bab 3-nya sudah ACC Penuh oleh kedua dosen
+public function get_mahasiswa_siap_sempro()
+    {
+        $this->db->select('
+            a.nama, a.foto, 
+            m.npm, m.prodi, m.angkatan,
+            s.judul, 
+            d1.nama as nama_p1,
+            d2.nama as nama_p2,
+            p.tgl_upload as tgl_acc
+        ');
+
+        $this->db->from('progres_skripsi p');
+        
+        $this->db->join('data_mahasiswa m', 'p.npm = m.npm');
+        
+        $this->db->join('skripsi s', 's.id_mahasiswa = m.id'); 
+        
+        // 4. Join ke Master Akun (Untuk Nama & Foto Mahasiswa)
+        $this->db->join('mstr_akun a', 'm.id = a.id');
+        
+        // 5. Join Dosen Pembimbing
+        $this->db->join('mstr_akun d1', 's.pembimbing1 = d1.id', 'left');
+        $this->db->join('mstr_akun d2', 's.pembimbing2 = d2.id', 'left');
+        
+        // KONDISI SIAP SEMPRO:
+        $this->db->where('p.bab', 3);
+        $this->db->where('p.progres_dosen1', 100);
+        $this->db->where('p.progres_dosen2', 100);
+        
+        // Urutkan dari yang terbaru
+        $this->db->order_by('p.tgl_upload', 'DESC');
+        
+        return $this->db->get()->result_array();
+    }
 }

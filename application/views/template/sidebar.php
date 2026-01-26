@@ -48,6 +48,12 @@
           <p>Kinerja Dosen</p>
         </a>
       </li>
+      <li class="nav-item">
+            <a href="<?php echo base_url('operator/mahasiswa_siap_sempro'); ?>" class="nav-link <?php echo ($this->uri->segment(2) == 'mahasiswa_siap_sempro') ? 'active' : ''; ?>">
+              <i class="nav-icon fas fa-user-graduate"></i>
+              <p>Siap Sempro</p>
+            </a>
+          </li>
     <?php endif; ?>
 
     <?php if ($role == 'dosen'): ?>

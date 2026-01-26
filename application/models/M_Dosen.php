@@ -19,10 +19,6 @@ class M_Dosen extends CI_Model {
         // Filter di mana dosen ini adalah Pembimbing 1 atau Pembimbing 2
         $this->db->where("S.pembimbing1 = $id_dosen OR S.pembimbing2 = $id_dosen");
         
-        // --- LOGIKA PENGURUTAN TERBARU ---
-        // Prioritas 1: Mahasiswa yang id_skripsi-nya paling besar (artinya baru saja di-assign pembimbing)
-        // Jika ingin berdasarkan aktivitas terakhir, kita perlu kolom timestamp 'updated_at' di tabel skripsi.
-        // Tapi untuk sekarang, sorting by ID Skripsi DESC sudah cukup untuk menampilkan mahasiswa bimbingan 'terbaru' masuk.
         $this->db->order_by('S.id', 'DESC'); 
         
         return $this->db->get()->result_array();
