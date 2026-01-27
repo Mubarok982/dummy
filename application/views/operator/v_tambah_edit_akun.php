@@ -114,7 +114,16 @@
                                     <label class="col-sm-3 col-form-label">Jabatan</label>
                                     <div class="col-sm-9">
                                         <div class="custom-control custom-checkbox">
-                                            <input class="custom-control-input" type="checkbox" id="is_kaprodi" name="is_kaprodi" value="1" <?php echo set_checkbox('is_kaprodi', '1', $is_edit && isset($user['is_kaprodi']) && $user['is_kaprodi'] == 1); ?>>
+                                            <input type="hidden" name="is_kaprodi" value="0">
+                                            <input class="custom-control-input" type="checkbox" id="is_kaprodi" name="is_kaprodi" value="1" <?php
+                                                $checked = '';
+                                                if ($this->input->post('is_kaprodi')) {
+                                                    $checked = 'checked';
+                                                } elseif ($is_edit && isset($user['is_kaprodi']) && $user['is_kaprodi'] == 1) {
+                                                    $checked = 'checked';
+                                                }
+                                                echo $checked;
+                                            ?>>
                                             <label for="is_kaprodi" class="custom-control-label">Kepala Program Studi (Kaprodi)</label>
                                         </div>
                                     </div>

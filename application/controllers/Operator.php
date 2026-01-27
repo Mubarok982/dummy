@@ -83,11 +83,24 @@ class Operator extends CI_Controller {
     public function tambah_akun()
     {
         $data['title'] = 'Tambah Akun Baru';
-        
+
         $this->form_validation->set_rules('username', 'Username', 'required|is_unique[mstr_akun.username]|trim');
         $this->form_validation->set_rules('password', 'Password', 'required|min_length[3]');
         $this->form_validation->set_rules('nama', 'Nama', 'required');
         $this->form_validation->set_rules('role', 'Role', 'required');
+
+        // Validasi khusus untuk dosen
+        if ($this->input->post('role') == 'dosen') {
+            $this->form_validation->set_rules('nidk', 'NIDK', 'required|is_unique[data_dosen.nidk]|trim');
+            $this->form_validation->set_rules('prodi_dosen', 'Program Studi', 'required');
+        }
+
+        // Validasi khusus untuk mahasiswa
+        if ($this->input->post('role') == 'mahasiswa') {
+            $this->form_validation->set_rules('npm', 'NPM', 'required|is_unique[data_mahasiswa.npm]|trim');
+            $this->form_validation->set_rules('prodi_mhs', 'Program Studi', 'required');
+            $this->form_validation->set_rules('angkatan', 'Angkatan', 'required|numeric');
+        }
 
         if ($this->form_validation->run() == FALSE) {
             $this->load->view('template/header', $data);
@@ -96,10 +109,10 @@ class Operator extends CI_Controller {
             $this->load->view('template/footer');
         } else {
             $role = $this->input->post('role');
-            
+
             $akun_data = [
                 'username' => $this->input->post('username'),
-                'password' => password_hash($this->input->post('password'), PASSWORD_DEFAULT), 
+                'password' => password_hash($this->input->post('password'), PASSWORD_DEFAULT),
                 'nama'     => $this->input->post('nama'),
                 'role'     => $role,
             ];
@@ -107,10 +120,21 @@ class Operator extends CI_Controller {
             $detail_data = [];
 
             if ($role == 'dosen') {
+                $nidk = $this->input->post('nidk');
+                $prodi_dosen = $this->input->post('prodi_dosen');
+                $is_kaprodi = $this->input->post('is_kaprodi') ? 1 : 0;
+
+                // Jika is_kaprodi = 1, unset kaprodi yang ada untuk prodi ini
+                if ($is_kaprodi == 1) {
+                    $this->db->where('prodi', $prodi_dosen);
+                    $this->db->where('is_kaprodi', 1);
+                    $this->db->update('data_dosen', ['is_kaprodi' => 0]);
+                }
+
                 $detail_data = [
-                    'nidk' => $this->input->post('nidk'),
-                    'prodi' => $this->input->post('prodi_dosen'),
-                    'is_kaprodi' => $this->input->post('is_kaprodi') ? 1 : 0
+                    'nidk' => $nidk,
+                    'prodi' => $prodi_dosen,
+                    'is_kaprodi' => $is_kaprodi
                 ];
             } elseif ($role == 'mahasiswa') {
                 $detail_data = [
@@ -164,11 +188,24 @@ class Operator extends CI_Controller {
         // -----------------------------------
 
         $data['title'] = 'Edit Akun: ' . $data['user']['nama'];
-        
+
         $this->form_validation->set_rules('nama', 'Nama', 'required');
-        
+
         if ($this->input->post('password')) {
             $this->form_validation->set_rules('password', 'Password', 'min_length[3]');
+        }
+
+        // Validasi khusus untuk dosen saat edit
+        if ($data['user']['role'] == 'dosen') {
+            $this->form_validation->set_rules('nidk', 'NIDK', 'required|trim|numeric|callback_check_nidk_unique['.$id.']');
+            $this->form_validation->set_rules('prodi_dosen', 'Program Studi', 'required');
+        }
+
+        // Validasi khusus untuk mahasiswa saat edit
+        if ($data['user']['role'] == 'mahasiswa') {
+            $this->form_validation->set_rules('npm', 'NPM', 'required|trim|callback_check_npm_unique['.$id.']');
+            $this->form_validation->set_rules('prodi_mhs', 'Program Studi', 'required');
+            $this->form_validation->set_rules('angkatan', 'Angkatan', 'required|numeric');
         }
 
         if ($this->form_validation->run() == FALSE) {
@@ -191,10 +228,20 @@ class Operator extends CI_Controller {
             $detail_data = [];
 
             if ($role == 'dosen') {
+                $prodi_dosen = $this->input->post('prodi_dosen');
+                $is_kaprodi = $this->input->post('is_kaprodi') ? 1 : 0;
+
+                // Jika is_kaprodi = 1, unset kaprodi yang ada untuk prodi ini
+                if ($is_kaprodi == 1) {
+                    $this->db->where('prodi', $prodi_dosen);
+                    $this->db->where('is_kaprodi', 1);
+                    $this->db->update('data_dosen', ['is_kaprodi' => 0]);
+                }
+
                 $detail_data = [
                     'nidk' => $this->input->post('nidk'),
-                    'prodi' => $this->input->post('prodi_dosen'),
-                    'is_kaprodi' => $this->input->post('is_kaprodi') ? 1 : 0
+                    'prodi' => $prodi_dosen,
+                    'is_kaprodi' => $is_kaprodi
                 ];
             } elseif ($role == 'mahasiswa') {
                 $detail_data = [
@@ -206,8 +253,10 @@ class Operator extends CI_Controller {
 
             if ($this->M_akun_opt->update_user($id, $akun_data, $detail_data, $role)) {
                 $this->session->set_flashdata('pesan_sukses', 'Akun ' . $role . ' berhasil diperbarui!');
+                $this->M_Log->record('Edit Akun', 'Update successful for ID ' . $id . ', is_kaprodi set to ' . ($detail_data['is_kaprodi'] ?? 'N/A'), $id);
             } else {
                 $this->session->set_flashdata('pesan_error', 'Gagal memperbarui akun.');
+                $this->M_Log->record('Edit Akun', 'Update failed for ID ' . $id, $id);
             }
 
             // --- LOGIKA BARU: Redirect Sesuai Asal ---
@@ -476,7 +525,7 @@ class Operator extends CI_Controller {
     public function mahasiswa_siap_sempro()
     {
         $data['title'] = 'Mahasiswa Siap Sempro';
-        
+
         // Panggil model yang baru dibuat
         $data['mahasiswa'] = $this->M_Data->get_mahasiswa_siap_sempro();
 
@@ -484,5 +533,33 @@ class Operator extends CI_Controller {
         $this->load->view('template/sidebar', $data);
         $this->load->view('operator/v_mahasiswa_siap_sempro', $data); // View baru
         $this->load->view('template/footer');
+    }
+
+    // Callback untuk validasi NIDK unik saat edit
+    public function check_nidk_unique($nidk, $id)
+    {
+        $this->db->where('nidk', $nidk);
+        $this->db->where('id !=', $id);
+        $query = $this->db->get('data_dosen');
+
+        if ($query->num_rows() > 0) {
+            $this->form_validation->set_message('check_nidk_unique', 'NIDK sudah digunakan oleh dosen lain.');
+            return FALSE;
+        }
+        return TRUE;
+    }
+
+    // Callback untuk validasi NPM unik saat edit
+    public function check_npm_unique($npm, $id)
+    {
+        $this->db->where('npm', $npm);
+        $this->db->where('id !=', $id);
+        $query = $this->db->get('data_mahasiswa');
+
+        if ($query->num_rows() > 0) {
+            $this->form_validation->set_message('check_npm_unique', 'NPM sudah digunakan oleh mahasiswa lain.');
+            return FALSE;
+        }
+        return TRUE;
     }
 }
