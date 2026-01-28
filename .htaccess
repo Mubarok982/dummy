@@ -1,0 +1,9 @@
+RewriteEngine On
+RewriteBase /bimbingan_skripsi1/
+
+# 1. Jika folder atau file beneran ada di windows, langsung buka (Jangan lewat CI)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# 2. Jika bukan file/folder asli, baru lempar ke index.php (Routing CI)
+RewriteRule ^(.*)$ index.php/$1 [L]
