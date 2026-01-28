@@ -65,6 +65,9 @@
                             <?php endif; ?>
 
                             <div class="col text-right my-1">
+                                <a href="<?php echo base_url('operator/pengaturan_kaprodi'); ?>" class="btn btn-warning btn-sm px-3 shadow-sm mr-2">
+                                    <i class="fas fa-crown mr-1"></i> Pengaturan Kaprodi
+                                </a>
                                 <a href="<?php echo base_url('operator/tambah_akun'); ?>" class="btn btn-success btn-sm px-3 shadow-sm">
                                     <i class="fas fa-plus mr-1"></i> Tambah Akun
                                 </a>

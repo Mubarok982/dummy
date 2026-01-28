@@ -62,14 +62,6 @@ class Operator extends CI_Controller {
         // Gunakan M_akun_opt
         $data['users'] = $this->M_akun_opt->get_all_users_with_details($role, $prodi, $keyword, $config['per_page'], $page);
 
-        // Tambahkan is_kaprodi untuk dosen
-        foreach ($data['users'] as &$user) {
-            if ($user['role'] == 'dosen') {
-                $dsn = $this->db->get_where('data_dosen', ['id' => $user['id']])->row_array();
-                $user['is_kaprodi'] = $dsn['is_kaprodi'] ?? 0;
-            }
-        }
-
         $data['pagination'] = $this->pagination->create_links();
         $data['total_rows'] = $config['total_rows'];
         $data['start_index'] = $page;
@@ -561,5 +553,72 @@ class Operator extends CI_Controller {
             return FALSE;
         }
         return TRUE;
+    }
+
+    public function pengaturan_kaprodi()
+    {
+        $data['title'] = 'Pengaturan Kaprodi';
+
+        // Ambil daftar prodi yang ada
+        $this->db->select('DISTINCT(prodi) as prodi');
+        $this->db->from('data_dosen');
+        $this->db->where('prodi IS NOT NULL');
+        $this->db->where('prodi !=', '');
+        $prodi_list = $this->db->get()->result_array();
+        $data['prodi_list'] = $prodi_list;
+
+        // Ambil daftar dosen untuk setiap prodi
+        $data['dosen_per_prodi'] = [];
+        foreach ($prodi_list as $prodi) {
+            $this->db->select('A.id, A.nama, D.nidk, D.is_kaprodi');
+            $this->db->from('mstr_akun A');
+            $this->db->join('data_dosen D', 'A.id = D.id');
+            $this->db->where('D.prodi', $prodi['prodi']);
+            $this->db->order_by('A.nama', 'ASC');
+            $dosen = $this->db->get()->result_array();
+            $data['dosen_per_prodi'][$prodi['prodi']] = $dosen;
+        }
+
+        $this->load->view('template/header', $data);
+        $this->load->view('template/sidebar', $data);
+        $this->load->view('operator/v_pengaturan_kaprodi', $data);
+        $this->load->view('template/footer');
+    }
+
+    public function simpan_kaprodi()
+    {
+        $prodi = $this->input->post('prodi');
+        $id_dosen_baru = $this->input->post('kaprodi');
+
+        if (!$prodi || !$id_dosen_baru) {
+            $this->session->set_flashdata('pesan_error', 'Data tidak lengkap.');
+            redirect('operator/pengaturan_kaprodi');
+        }
+
+        // Cek apakah dosen tersebut ada di prodi ini
+        $this->db->select('A.nama, D.prodi');
+        $this->db->from('mstr_akun A');
+        $this->db->join('data_dosen D', 'A.id = D.id');
+        $this->db->where('A.id', $id_dosen_baru);
+        $this->db->where('D.prodi', $prodi);
+        $dosen = $this->db->get()->row_array();
+
+        if (!$dosen) {
+            $this->session->set_flashdata('pesan_error', 'Dosen tidak ditemukan di program studi ini.');
+            redirect('operator/pengaturan_kaprodi');
+        }
+
+        // Unset kaprodi lama untuk prodi ini
+        $this->db->where('prodi', $prodi);
+        $this->db->update('data_dosen', ['is_kaprodi' => 0]);
+
+        // Set kaprodi baru
+        $this->db->where('id', $id_dosen_baru);
+        $this->db->update('data_dosen', ['is_kaprodi' => 1]);
+
+        $this->session->set_flashdata('pesan_sukses', 'Kaprodi untuk ' . $prodi . ' berhasil diubah menjadi ' . $dosen['nama'] . '.');
+        $this->M_Log->record('Pengaturan Kaprodi', 'Mengubah Kaprodi untuk prodi ' . $prodi . ' menjadi ' . $dosen['nama'], $id_dosen_baru);
+
+        redirect('operator/pengaturan_kaprodi');
     }
 }
