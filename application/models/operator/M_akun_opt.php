@@ -35,13 +35,14 @@ class M_akun_opt extends CI_Model {
 
     public function get_all_users_with_details($role = NULL, $prodi = NULL, $keyword = NULL, $limit = NULL, $offset = NULL)
     {
-        $this->db->select('A.id, A.username, A.nama, A.role, D.nidk, M.npm, M.prodi AS prodi_mhs, D.prodi AS prodi_dsn');
+        $this->db->select('A.id, A.username, A.nama, A.role, D.nidk, M.npm, M.prodi AS prodi_mhs, D.prodi AS prodi_dsn, COALESCE(D.is_kaprodi, 0) as is_kaprodi');
         $this->_filter_users_query($role, $prodi, $keyword);
+        $this->db->order_by('is_kaprodi', 'DESC');
         $this->db->order_by('A.role', 'ASC');
         $this->db->order_by('A.nama', 'ASC');
 
         if ($limit) $this->db->limit($limit, $offset);
-        
+
         return $this->db->get()->result_array();
     }
 

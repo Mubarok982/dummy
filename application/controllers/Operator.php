@@ -62,14 +62,6 @@ class Operator extends CI_Controller {
         // Gunakan M_akun_opt
         $data['users'] = $this->M_akun_opt->get_all_users_with_details($role, $prodi, $keyword, $config['per_page'], $page);
 
-        // Tambahkan is_kaprodi untuk dosen
-        foreach ($data['users'] as &$user) {
-            if ($user['role'] == 'dosen') {
-                $dsn = $this->db->get_where('data_dosen', ['id' => $user['id']])->row_array();
-                $user['is_kaprodi'] = $dsn['is_kaprodi'] ?? 0;
-            }
-        }
-
         $data['pagination'] = $this->pagination->create_links();
         $data['total_rows'] = $config['total_rows'];
         $data['start_index'] = $page;
@@ -494,7 +486,7 @@ class Operator extends CI_Controller {
     public function mahasiswa_siap_sempro()
     {
         $data['title'] = 'Mahasiswa Siap Sempro';
-        
+
         // Panggil model yang baru dibuat
         $data['mahasiswa'] = $this->M_Data->get_mahasiswa_siap_sempro();
 
@@ -502,5 +494,53 @@ class Operator extends CI_Controller {
         $this->load->view('template/sidebar', $data);
         $this->load->view('operator/v_mahasiswa_siap_sempro', $data); // View baru
         $this->load->view('template/footer');
+    }
+
+    public function pengaturan_kaprodi()
+    {
+        $data['title'] = 'Pengaturan Kaprodi';
+
+        // Ambil data prodi
+        $this->db->select('DISTINCT(prodi) as prodi');
+        $this->db->from('data_dosen');
+        $this->db->where('prodi !=', '');
+        $data['prodi_list'] = $this->db->get()->result_array();
+
+        // Ambil data dosen per prodi
+        $data['dosen_per_prodi'] = [];
+        foreach ($data['prodi_list'] as $prodi) {
+            $this->db->select('d.id, a.nama, d.nidk, d.is_kaprodi');
+            $this->db->from('data_dosen d');
+            $this->db->join('mstr_akun a', 'd.id = a.id');
+            $this->db->where('d.prodi', $prodi['prodi']);
+            $data['dosen_per_prodi'][$prodi['prodi']] = $this->db->get()->result_array();
+        }
+
+        $this->load->view('template/header', $data);
+        $this->load->view('template/sidebar', $data);
+        $this->load->view('operator/v_pengaturan_kaprodi', $data);
+        $this->load->view('template/footer');
+    }
+
+    public function simpan_kaprodi()
+    {
+        $prodi = $this->input->post('prodi');
+        $kaprodi_id = $this->input->post('kaprodi');
+
+        if ($prodi && $kaprodi_id) {
+            // Unset kaprodi lama
+            $this->db->where('prodi', $prodi);
+            $this->db->update('data_dosen', ['is_kaprodi' => 0]);
+
+            // Set kaprodi baru
+            $this->db->where('id', $kaprodi_id);
+            $this->db->update('data_dosen', ['is_kaprodi' => 1]);
+
+            $this->session->set_flashdata('pesan_sukses', 'Kaprodi berhasil diperbarui!');
+        } else {
+            $this->session->set_flashdata('pesan_error', 'Gagal memperbarui kaprodi.');
+        }
+
+        redirect('operator/pengaturan_kaprodi');
     }
 }
