@@ -67,6 +67,25 @@
               <p>Siap Sempro</p>
             </a>
           </li>
+      <li class="nav-item">
+        <a href="<?php echo base_url('operator/mahasiswa_siap_pendadaran'); ?>" class="nav-link <?php echo ($this->uri->segment(2) == 'mahasiswa_siap_pendadaran') ? 'active' : ''; ?>">
+          <i class="nav-icon fas fa-graduation-cap"></i>
+          <p>Siap Pendadaran</p>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="<?php echo base_url('operator/mahasiswa_selesai_skripsi'); ?>" class="nav-link <?php echo ($this->uri->segment(2) == 'mahasiswa_selesai_skripsi') ? 'active' : ''; ?>">
+          <i class="nav-icon fas fa-trophy"></i>
+          <p>Selesai Skripsi</p>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="<?php echo base_url('operator/list_revisi'); ?>" class="nav-link <?php echo ($this->uri->segment(2) == 'list_revisi') ? 'active' : ''; ?>">
+          <i class="nav-icon fas fa-edit"></i>
+          <p>List Revisi</p>
+        </a>
+      </li>
+
     <?php endif; ?>
 
     <?php if ($role == 'dosen'): ?>

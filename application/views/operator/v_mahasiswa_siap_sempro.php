@@ -55,7 +55,7 @@
                                     <td class="text-center">
                                         <span class="badge badge-success">
                                             <i class="far fa-calendar-check mr-1"></i>
-                                            <?php echo date('d M Y', strtotime($m['tgl_acc'])); ?>
+                                            <?php echo date('d M Y', strtotime($m['tgl_daftar_sempro'])); ?>
                                         </span>
                                     </td>
                                 </tr>

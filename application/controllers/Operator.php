@@ -663,7 +663,7 @@ class Operator extends CI_Controller {
 
         if ($this->M_skripsi_opt->update_skripsi($id_skripsi, $data_update)) {
             $this->session->set_flashdata('pesan_sukses', 'Judul berhasil ditolak. Mahasiswa harus mengajukan ulang.');
-            
+
             // Log Aktivitas
             $this->M_Log->record('Tolak Judul', 'Operator menolak judul skripsi ID: ' . $id_skripsi);
         } else {
@@ -671,5 +671,63 @@ class Operator extends CI_Controller {
         }
 
         redirect('operator/acc_judul');
+    }
+
+    // --- FITUR BARU: List Revisi ---
+    public function list_revisi()
+    {
+        $data['title'] = 'List Revisi Progres Skripsi';
+
+        $prodi = $this->input->get('prodi');
+        $keyword = $this->input->get('keyword');
+
+        $data['list_revisi'] = $this->M_Data->get_list_revisi($prodi, $keyword);
+
+        $this->load->view('template/header', $data);
+        $this->load->view('template/sidebar', $data);
+        $this->load->view('operator/v_list_revisi', $data);
+        $this->load->view('template/footer');
+    }
+
+    // --- FITUR BARU: Laporan Kinerja Dospem per Semester ---
+    public function laporan_dospem_semester()
+    {
+        $data['title'] = 'Laporan Kinerja Dosen Pembimbing per Semester';
+
+        $semester = $this->input->get('semester');
+        $prodi = $this->input->get('prodi');
+
+        $data['kinerja_dospem'] = $this->M_Data->get_kinerja_dospem_per_semester($semester, $prodi);
+
+        $this->load->view('template/header', $data);
+        $this->load->view('template/sidebar', $data);
+        $this->load->view('operator/v_laporan_dospem', $data);
+        $this->load->view('template/footer');
+    }
+
+    // --- FITUR BARU: Mahasiswa Siap Pendadaran ---
+    public function mahasiswa_siap_pendadaran()
+    {
+        $data['title'] = 'Mahasiswa Siap Pendadaran';
+
+        $data['mahasiswa'] = $this->M_Data->get_mahasiswa_siap_pendadaran();
+
+        $this->load->view('template/header', $data);
+        $this->load->view('template/sidebar', $data);
+        $this->load->view('operator/v_mahasiswa_siap_pendadaran', $data);
+        $this->load->view('template/footer');
+    }
+
+    // --- FITUR BARU: Mahasiswa Selesai Skripsi ---
+    public function mahasiswa_selesai_skripsi()
+    {
+        $data['title'] = 'Mahasiswa Selesai Skripsi';
+
+        $data['mahasiswa'] = $this->M_Data->get_mahasiswa_selesai_skripsi();
+
+        $this->load->view('template/header', $data);
+        $this->load->view('template/sidebar', $data);
+        $this->load->view('operator/v_mahasiswa_selesai_skripsi', $data);
+        $this->load->view('template/footer');
     }
 }

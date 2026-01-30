@@ -400,36 +400,182 @@ class M_Data extends CI_Model
     // Ambil data mahasiswa yang Bab 3-nya sudah ACC Penuh oleh kedua dosen
 public function get_mahasiswa_siap_sempro()
     {
+        // UPDATE: Ambil dari ujian_skripsi berdasarkan status dan id_jenis_ujian_skripsi
         $this->db->select('
-            a.nama, a.foto, 
+            a.nama, a.foto,
             m.npm, m.prodi, m.angkatan,
-            s.judul, 
+            s.judul,
+            d1.nama as nama_p1,
+            d2.nama as nama_p2,
+            u.tanggal_daftar as tgl_daftar_sempro
+        ');
+
+        $this->db->from('ujian_skripsi u');
+
+        $this->db->join('skripsi s', 'u.id_skripsi = s.id');
+        $this->db->join('data_mahasiswa m', 's.id_mahasiswa = m.id');
+        $this->db->join('mstr_akun a', 'm.id = a.id');
+        $this->db->join('mstr_akun d1', 's.pembimbing1 = d1.id', 'left');
+        $this->db->join('mstr_akun d2', 's.pembimbing2 = d2.id', 'left');
+
+        // KONDISI: id_jenis_ujian_skripsi untuk sempro (misal 1 atau 5), status Berlangsung atau Diterima
+        $this->db->where_in('u.id_jenis_ujian_skripsi', [1, 5]); // Sesuaikan dengan jenis sempro
+        $this->db->where_in('u.status', ['Berlangsung', 'Diterima']);
+
+        $this->db->order_by('u.tanggal_daftar', 'DESC');
+
+        return $this->db->get()->result_array();
+    }
+
+    // --- FITUR BARU: List Revisi ---
+    public function get_list_revisi($prodi = NULL, $keyword = NULL)
+    {
+        $this->db->select('
+            p.id, p.npm, p.bab, p.komentar_dosen1, p.komentar_dosen2, p.tgl_upload,
+            a.nama as nama_mhs, m.prodi,
+            s.judul,
+            d1.nama as nama_p1,
+            d2.nama as nama_p2
+        ');
+
+        $this->db->from('progres_skripsi p');
+        $this->db->join('data_mahasiswa m', 'p.npm = m.npm');
+        $this->db->join('mstr_akun a', 'm.id = a.id');
+        $this->db->join('skripsi s', 's.id_mahasiswa = m.id', 'left');
+        $this->db->join('mstr_akun d1', 's.pembimbing1 = d1.id', 'left');
+        $this->db->join('mstr_akun d2', 's.pembimbing2 = d2.id', 'left');
+
+        // Kondisi revisi: nilai_dosen1 atau nilai_dosen2 = 'Revisi'
+        $this->db->group_start();
+            $this->db->where('p.nilai_dosen1', 'Revisi');
+            $this->db->or_where('p.nilai_dosen2', 'Revisi');
+        $this->db->group_end();
+
+        if ($prodi) {
+            $this->db->where('m.prodi', $prodi);
+        }
+
+        if ($keyword) {
+            $this->db->group_start();
+                $this->db->like('a.nama', $keyword);
+                $this->db->or_like('p.npm', $keyword);
+                $this->db->or_like('s.judul', $keyword);
+            $this->db->group_end();
+        }
+
+        $this->db->order_by('p.tgl_upload', 'DESC');
+
+        return $this->db->get()->result_array();
+    }
+
+    // --- FITUR BARU: Kinerja Dospem per Semester ---
+    public function get_kinerja_dospem_per_semester($semester = NULL, $prodi = NULL)
+    {
+        // Jika semester tidak diberikan, gunakan semester aktif (misal 2025/2026 Genap)
+        if (!$semester) {
+            $semester = '2025/2026 Genap'; // Default, bisa diubah
+        }
+
+        $this->db->select('
+            d.id, d.nama, d.nidk, dd.prodi,
+            COUNT(DISTINCT s.id) as jumlah_mahasiswa,
+            COUNT(p.id) as jumlah_bimbingan
+        ');
+
+        $this->db->from('mstr_akun d');
+        $this->db->join('data_dosen dd', 'd.id = dd.id');
+        $this->db->join('skripsi s', '(s.pembimbing1 = d.id OR s.pembimbing2 = d.id)', 'left');
+        $this->db->join('progres_skripsi p', 'p.npm = (SELECT npm FROM data_mahasiswa WHERE id = s.id_mahasiswa)', 'left');
+
+        $this->db->where('d.role', 'dosen');
+
+        if ($prodi) {
+            $this->db->where('dd.prodi', $prodi);
+        }
+
+        // Filter semester: asumsikan berdasarkan tgl_upload progres
+        // Misal, semester Genap: bulan 8-12, Ganjil: 1-7
+        if (strpos($semester, 'Genap') !== false) {
+            $this->db->where('MONTH(p.tgl_upload) >=', 8);
+            $this->db->where('MONTH(p.tgl_upload) <=', 12);
+        } else {
+            $this->db->where('MONTH(p.tgl_upload) >=', 1);
+            $this->db->where('MONTH(p.tgl_upload) <=', 7);
+        }
+
+        $this->db->group_by('d.id');
+        $this->db->order_by('jumlah_bimbingan', 'DESC');
+
+        $result = $this->db->get()->result_array();
+
+        // Tambahkan detail mahasiswa yang dibimbing
+        foreach ($result as $key => $dosen) {
+            $this->db->select('a.nama, m.npm, s.judul');
+            $this->db->from('skripsi s');
+            $this->db->join('data_mahasiswa m', 's.id_mahasiswa = m.id');
+            $this->db->join('mstr_akun a', 'm.id = a.id');
+            $this->db->where("(s.pembimbing1 = {$dosen['id']} OR s.pembimbing2 = {$dosen['id']})");
+            $result[$key]['mahasiswa_dibimbing'] = $this->db->get()->result_array();
+        }
+
+        return $result;
+    }
+
+    // --- FITUR BARU: Mahasiswa Siap Pendadaran (Bab 4 ACC) ---
+    public function get_mahasiswa_siap_pendadaran()
+    {
+        $this->db->select('
+            a.nama, a.foto,
+            m.npm, m.prodi, m.angkatan,
+            s.judul,
             d1.nama as nama_p1,
             d2.nama as nama_p2,
             p.tgl_upload as tgl_acc
         ');
 
         $this->db->from('progres_skripsi p');
-        
+
         $this->db->join('data_mahasiswa m', 'p.npm = m.npm');
-        
-        $this->db->join('skripsi s', 's.id_mahasiswa = m.id'); 
-        
-        // 4. Join ke Master Akun (Untuk Nama & Foto Mahasiswa)
+        $this->db->join('skripsi s', 's.id_mahasiswa = m.id');
         $this->db->join('mstr_akun a', 'm.id = a.id');
-        
-        // 5. Join Dosen Pembimbing
         $this->db->join('mstr_akun d1', 's.pembimbing1 = d1.id', 'left');
         $this->db->join('mstr_akun d2', 's.pembimbing2 = d2.id', 'left');
-        
-        // KONDISI SIAP SEMPRO:
-        $this->db->where('p.bab', 3);
+
+        $this->db->where('p.bab', 4);
         $this->db->where('p.progres_dosen1', 100);
         $this->db->where('p.progres_dosen2', 100);
-        
-        // Urutkan dari yang terbaru
+
         $this->db->order_by('p.tgl_upload', 'DESC');
-        
+
+        return $this->db->get()->result_array();
+    }
+
+    // --- FITUR BARU: Mahasiswa Selesai Skripsi (Bab 5 ACC) ---
+    public function get_mahasiswa_selesai_skripsi()
+    {
+        $this->db->select('
+            a.nama, a.foto,
+            m.npm, m.prodi, m.angkatan,
+            s.judul,
+            d1.nama as nama_p1,
+            d2.nama as nama_p2,
+            p.tgl_upload as tgl_acc
+        ');
+
+        $this->db->from('progres_skripsi p');
+
+        $this->db->join('data_mahasiswa m', 'p.npm = m.npm');
+        $this->db->join('skripsi s', 's.id_mahasiswa = m.id');
+        $this->db->join('mstr_akun a', 'm.id = a.id');
+        $this->db->join('mstr_akun d1', 's.pembimbing1 = d1.id', 'left');
+        $this->db->join('mstr_akun d2', 's.pembimbing2 = d2.id', 'left');
+
+        $this->db->where('p.bab', 5);
+        $this->db->where('p.progres_dosen1', 100);
+        $this->db->where('p.progres_dosen2', 100);
+
+        $this->db->order_by('p.tgl_upload', 'DESC');
+
         return $this->db->get()->result_array();
     }
 }

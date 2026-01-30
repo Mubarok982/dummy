@@ -1,34 +1,34 @@
-# TODO: Sistem Pengelolaan Jabatan Kaprodi di Manajemen Akun
+# TODO: Tambahkan 4 Fitur Bimbingan Skripsi
 
-## Tugas Utama
-Membuat sistem pengelolaan jabatan kaprodi berjalan dengan baik di manajemen akun, termasuk tombol khusus untuk pengaturan kaprodi.
+## Fitur 1: List Revisi
+- [x] Tambahkan method di Operator controller: list_revisi()
+- [x] Tambahkan method di M_Data: get_list_revisi() - ambil dari log_aktivitas atau progres_skripsi dengan status 'Revisi'
+- [x] Buat view: v_list_revisi.php di application/views/operator/
+- [x] Tambahkan link di sidebar operator
 
-## Masalah yang Ditemukan
-- Kolom `is_kaprodi` tidak disertakan dalam query utama di model `M_akun_opt`
-- Query terpisah di controller untuk mendapatkan `is_kaprodi` menyebabkan inefisiensi
-- Urutan data tidak memprioritaskan kaprodi
-- Tidak ada tombol khusus untuk mengatur kaprodi secara langsung
+## Fitur 2: Laporan Kinerja Dospem per Semester
+- [x] Tambahkan method di Operator controller: laporan_dospem_semester()
+- [x] Tambahkan method di M_Data: get_kinerja_dospem_per_semester($semester, $prodi) - hitung jumlah bimbingan per dosen, siapa yang dibimbing, jumlah mahasiswa
+- [x] Buat view: v_laporan_dospem.php di application/views/operator/
+- [x] Tambahkan filter semester dan prodi
+- [x] Tambahkan link di sidebar operator
 
-## Perbaikan yang Dilakukan
-### Fase 1: Integrasi Kaprodi di Manajemen Akun
-- [x] Tambahkan `COALESCE(D.is_kaprodi, 0) as is_kaprodi` ke dalam select query di `get_all_users_with_details()`
-- [x] Ubah urutan order by: `ORDER BY is_kaprodi DESC, A.role ASC, A.nama ASC` agar kaprodi muncul di atas
-- [x] Hapus query terpisah di controller `manajemen_akun()` yang mengambil `is_kaprodi` secara manual
+## Fitur 3: Tambah Bimbingan sampai Pendadaran
+- [ ] Update progres_skripsi untuk bab 4 dan 5 (pendadaran)
+- [x] Tambahkan method di Operator controller: mahasiswa_siap_pendadaran()
+- [x] Tambahkan method di M_Data: get_mahasiswa_siap_pendadaran() - bab 4 ACC
+- [x] Tambahkan method di Operator controller: mahasiswa_selesai_skripsi()
+- [x] Tambahkan method di M_Data: get_mahasiswa_selesai_skripsi() - bab 5 ACC
+- [x] Buat view: v_mahasiswa_siap_pendadaran.php dan v_mahasiswa_selesai_skripsi.php di application/views/operator/
+- [ ] Update view progres_detail di dosen untuk bab 4 dan 5
+- [x] Tambahkan link di sidebar operator
 
-### Fase 2: Tombol Pengaturan Kaprodi
-- [x] Tambahkan tombol "Pengaturan Kaprodi" di halaman manajemen akun
-- [x] Buat method `pengaturan_kaprodi()` di controller Operator untuk menampilkan halaman pengaturan
-- [x] Buat method `simpan_kaprodi()` untuk menyimpan perubahan kaprodi
-- [x] Buat view `v_pengaturan_kaprodi.php` dengan dropdown untuk setiap prodi
-- [x] Implementasikan logika untuk unset kaprodi lama dan set kaprodi baru
+## Fitur 4: Update Proses Sempro dari ujian_skripsi
+- [x] Update method get_mahasiswa_siap_sempro di M_Data untuk ambil dari ujian_skripsi berdasarkan status dan id_jenis_ujian_skripsi
+- [x] Pastikan ujian_skripsi terhubung dengan skripsi
+- [ ] Update view v_mahasiswa_siap_sempro jika perlu
 
-## Hasil
-- Sistem kaprodi sekarang terintegrasi penuh dalam manajemen akun
-- Badge "Kaprodi" ditampilkan dengan benar untuk dosen yang memiliki jabatan tersebut
-- Kaprodi muncul di urutan teratas dalam daftar akun
-- Tombol "Pengaturan Kaprodi" tersedia di halaman manajemen akun
-- Halaman pengaturan kaprodi memungkinkan operator memilih kaprodi untuk setiap prodi melalui dropdown
-- Pengaturan kaprodi melalui form edit akun dosen tetap berfungsi sebagai fallback
-
-## Status
-✅ **SELESAI** - Sistem pengelolaan jabatan kaprodi sudah berjalan di manajemen akun dengan fitur lengkap.
+## Testing
+- [x] Test semua fitur baru
+- [x] Pastikan tidak ada error
+- [x] Verifikasi data benar

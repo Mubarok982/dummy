@@ -117,58 +117,68 @@
                                             </td>
                                             
                                             <td class="text-center align-middle">
-                                                <button type="button" class="btn btn-info btn-sm shadow-sm" data-toggle="modal" data-target="#modal-history-<?php echo $dosen['id']; ?>">
+                                                <button type="button" class="btn btn-info btn-sm shadow-sm" data-toggle="modal" data-target="#modal-detail-<?php echo $dosen['id']; ?>">
                                                     <i class="fas fa-eye mr-1"></i> Lihat Detail
                                                 </button>
 
-                                                <div class="modal fade" id="modal-history-<?php echo $dosen['id']; ?>" tabindex="-1" aria-hidden="true">
-                                                    <div class="modal-dialog modal-dialog-scrollable">
+                                                <div class="modal fade" id="modal-detail-<?php echo $dosen['id']; ?>" tabindex="-1" aria-hidden="true">
+                                                    <div class="modal-dialog modal-xl">
                                                         <div class="modal-content">
                                                             <div class="modal-header bg-info">
                                                                 <h5 class="modal-title text-white">
-                                                                    <i class="fas fa-history mr-1"></i> Riwayat: <?php echo substr($dosen['nama'], 0, 20); ?>...
+                                                                    <i class="fas fa-chart-pie mr-1"></i> Laporan Kinerja Semester: <?php echo substr($dosen['nama'], 0, 25); ?>...
                                                                 </h5>
                                                                 <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                                                                     <span aria-hidden="true">&times;</span>
                                                                 </button>
                                                             </div>
-                                                            <div class="modal-body p-0">
-                                                                <?php if (empty($dosen['aktivitas'])): ?>
-                                                                    <div class="text-center py-5">
-                                                                        <i class="fas fa-inbox fa-3x text-muted mb-2 opacity-50"></i>
-                                                                        <p class="text-muted">Belum ada data aktivitas.</p>
+                                                            <div class="modal-body">
+                                                                <!-- Filter Form -->
+                                                                <form method="GET" action="#" class="mb-3" id="filter-form-<?php echo $dosen['id']; ?>">
+                                                                    <div class="row">
+                                                                        <div class="col-md-4">
+                                                                            <label>Semester</label>
+                                                                            <select name="semester" class="form-control form-control-sm" onchange="loadSemesterReport(<?php echo $dosen['id']; ?>)">
+                                                                                <option value="2025/2026 Genap" <?php echo ($this->input->get('semester') == '2025/2026 Genap') ? 'selected' : ''; ?>>2025/2026 Genap</option>
+                                                                                <option value="2025/2026 Ganjil" <?php echo ($this->input->get('semester') == '2025/2026 Ganjil') ? 'selected' : ''; ?>>2025/2026 Ganjil</option>
+                                                                                <option value="2024/2025 Genap" <?php echo ($this->input->get('semester') == '2024/2025 Genap') ? 'selected' : ''; ?>>2024/2025 Genap</option>
+                                                                                <option value="2024/2025 Ganjil" <?php echo ($this->input->get('semester') == '2024/2025 Ganjil') ? 'selected' : ''; ?>>2024/2025 Ganjil</option>
+                                                                            </select>
+                                                                        </div>
+                                                                        <div class="col-md-4">
+                                                                            <label>Program Studi</label>
+                                                                            <select name="prodi" class="form-control form-control-sm" onchange="loadSemesterReport(<?php echo $dosen['id']; ?>)">
+                                                                                <option value="">Semua Prodi</option>
+                                                                                <option value="Teknik Informatika S1">Teknik Informatika S1</option>
+                                                                                <option value="Teknologi Informasi D3">Teknologi Informasi D3</option>
+                                                                                <option value="Teknik Industri S1">Teknik Industri S1</option>
+                                                                                <option value="Teknik Mesin S1">Teknik Mesin S1</option>
+                                                                                <option value="Mesin Otomotif D3">Mesin Otomotif D3</option>
+                                                                            </select>
+                                                                        </div>
+                                                                        <div class="col-md-4 d-flex align-items-end">
+                                                                            <button type="button" class="btn btn-primary btn-sm" onclick="loadSemesterReport(<?php echo $dosen['id']; ?>)">
+                                                                                <i class="fas fa-search"></i> Filter
+                                                                            </button>
+                                                                        </div>
                                                                     </div>
-                                                                <?php else: ?>
-                                                                    <table class="table table-sm table-striped mb-0">
-                                                                        <thead class="bg-light">
-                                                                            <tr>
-                                                                                <th class="pl-4">Tanggal</th>
-                                                                                <th class="text-center">Jumlah Aksi</th>
-                                                                            </tr>
-                                                                        </thead>
-                                                                        <tbody>
-                                                                            <?php foreach ($dosen['aktivitas'] as $act): ?>
-                                                                            <tr>
-                                                                                <td class="pl-4 align-middle">
-                                                                                    <?php echo date('d M Y', strtotime($act['tanggal'])); ?>
-                                                                                </td>
-                                                                                <td class="text-center align-middle">
-                                                                                    <span class="font-weight-bold text-info"><?php echo $act['total_aksi']; ?></span>
-                                                                                </td>
-                                                                            </tr>
-                                                                            <?php endforeach; ?>
-                                                                        </tbody>
-                                                                    </table>
-                                                                <?php endif; ?>
+                                                                </form>
+
+                                                                <!-- Report Content -->
+                                                                <div id="report-content-<?php echo $dosen['id']; ?>">
+                                                                    <div class="text-center py-4">
+                                                                        <i class="fas fa-spinner fa-spin fa-2x text-info"></i>
+                                                                        <p class="mt-2">Memuat data...</p>
+                                                                    </div>
+                                                                </div>
                                                             </div>
-                                                            <div class="modal-footer bg-light justify-content-between py-2">
-                                                                <small class="text-muted">Total Keseluruhan: <b><?php echo $dosen['total_aksi']; ?></b></small>
+                                                            <div class="modal-footer bg-light py-2">
                                                                 <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Tutup</button>
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                                </td>
+                                            </td>
                                         </tr>
                                         <?php endforeach; ?>
                                     <?php endif; ?>
