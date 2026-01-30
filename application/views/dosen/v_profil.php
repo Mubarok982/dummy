@@ -35,7 +35,12 @@
                                      style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #adb5bd;">
                             </div>
 
-                            <h3 class="profile-username text-center mt-3"><?php echo $user['nama']; ?></h3>
+                            <h3 class="profile-username text-center mt-3">
+                                <?php echo $user['nama']; ?>
+                                <?php if ($user['is_kaprodi'] == 1): ?>
+                                    <span class="badge badge-warning ml-2">Kaprodi</span>
+                                <?php endif; ?>
+                            </h3>
                             <p class="text-muted text-center"><?php echo $user['nidk']; ?></p>
 
                             <ul class="list-group list-group-unbordered mb-3">
@@ -43,9 +48,7 @@
                                     <b>Program Studi</b> <a class="float-right"><?php echo $user['prodi_dsn']; ?></a>
                                 </li>
                                 <li class="list-group-item">
-                                    <b>Jabatan</b> <a class="float-right">
-                                        <?php echo ($user['is_kaprodi'] == 1) ? '<span class="badge badge-warning">Kaprodi</span>' : 'Dosen Pembimbing'; ?>
-                                    </a>
+                                    <b>Jabatan</b> <a class="float-right">Dosen Pembimbing</a>
                                 </li>
                             </ul>
                             

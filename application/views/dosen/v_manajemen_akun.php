@@ -1,5 +1,5 @@
 <div class="content-wrapper">
-    
+
     <section class="content-header">
         <div class="container-fluid">
             <div class="row mb-2">
@@ -18,12 +18,12 @@
 
     <section class="content">
         <div class="container-fluid">
-            
+
             <div class="card shadow-sm mb-3">
-                <div class="card-body p-2"> 
-                    <form action="<?php echo base_url('operator/manajemen_akun'); ?>" method="GET">
+                <div class="card-body p-2">
+                    <form action="<?php echo base_url('dosen/manajemen_akun'); ?>" method="GET">
                         <div class="form-row align-items-center">
-                            
+
                             <div class="col-auto">
                                 <span class="text-muted font-weight-bold mr-2 ml-2"><i class="fas fa-filter"></i> Filter:</span>
                             </div>
@@ -36,7 +36,7 @@
                                     <option value="operator" <?php echo ($this->input->get('role') == 'operator') ? 'selected' : ''; ?>>Operator</option>
                                 </select>
                             </div>
-                            
+
                             <div class="col-md-3 col-sm-4 my-1">
                                 <select name="prodi" class="form-control form-control-sm">
                                     <option value="">- Semua Prodi -</option>
@@ -58,27 +58,29 @@
 
                             <?php if($this->input->get('role') || $this->input->get('prodi') || $this->input->get('keyword')): ?>
                             <div class="col-auto my-1">
-                                <a href="<?php echo base_url('operator/manajemen_akun'); ?>" class="btn btn-outline-danger btn-sm" title="Reset Filter">
+                                <a href="<?php echo base_url('dosen/manajemen_akun'); ?>" class="btn btn-outline-danger btn-sm" title="Reset Filter">
                                     <i class="fas fa-times"></i>
                                 </a>
                             </div>
                             <?php endif; ?>
 
                             <div class="col text-right my-1">
-                                <a href="<?php echo base_url('operator/tambah_akun'); ?>" class="btn btn-success btn-sm px-3 shadow-sm mr-2">
+                                <a href="<?php echo base_url('dosen/tambah_akun'); ?>" class="btn btn-success btn-sm px-3 shadow-sm mr-2">
                                     <i class="fas fa-plus mr-1"></i> Tambah Akun
                                 </a>
-                                <a href="<?php echo base_url('operator/pengaturan_kaprodi'); ?>" class="btn btn-warning btn-sm px-3 shadow-sm mr-2" title="Kelola Kaprodi">
+                                <a href="<?php echo base_url('dosen/pengaturan_kaprodi'); ?>" class="btn btn-warning btn-sm px-3 shadow-sm mr-2" title="Kelola Kaprodi">
                                     <i class="fas fa-crown mr-1"></i> Pengaturan Kaprodi
                                 </a>
                             </div>
+
+                        </div>
                     </form>
                 </div>
             </div>
 
             <div class="row">
                 <div class="col-12">
-                    
+
                     <?php if ($this->session->flashdata('pesan_sukses')): ?>
                         <div class="alert alert-success alert-dismissible fade show shadow-sm py-2">
                             <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
@@ -88,10 +90,10 @@
 
                     <div class="card card-outline card-primary shadow-sm">
                         <div class="card-body table-responsive p-0">
-                            <table class="table table-hover table-striped text-nowrap table-sm align-middle"> 
+                            <table class="table table-hover table-striped text-nowrap table-sm align-middle">
                                 <thead>
                                     <tr class="text-center bg-light">
-                                        <th style="width: 50px">No</th> 
+                                        <th style="width: 50px">No</th>
                                         <th class="text-left">Nama Lengkap</th>
                                         <th class="text-left">Username</th>
                                         <th>Role</th>
@@ -109,22 +111,22 @@
                                             </td>
                                         </tr>
                                     <?php else: ?>
-                                        <?php 
-                                        $no = $start_index + 1; 
-                                        foreach ($users as $user): 
+                                        <?php
+                                        $no = $start_index + 1;
+                                        foreach ($users as $user):
                                         ?>
                                         <tr>
                                             <td class="text-center align-middle text-muted"><?php echo $no++; ?></td>
-                                            
+
                                             <td class="align-middle">
                                                 <div class="d-flex align-items-center">
                                                     <img src="https://ui-avatars.com/api/?name=<?php echo urlencode($user['nama']); ?>&background=random&size=30" class="img-circle mr-2" alt="Avatar">
                                                     <span class="font-weight-bold text-dark"><?php echo $user['nama']; ?></span>
                                                 </div>
                                             </td>
-                                            
+
                                             <td class="align-middle text-muted"><?php echo $user['username']; ?></td>
-                                            
+
                                             <td class="align-middle text-center">
                                                 <?php
                                                 $badge_color = 'secondary';
@@ -139,29 +141,29 @@
                                                 <span class="badge badge-success font-weight-normal px-2 py-1 ml-1">Kaprodi</span>
                                                 <?php endif; ?>
                                             </td>
-                                            
+
                                             <td class="align-middle text-center">
-                                                <?php 
+                                                <?php
                                                 if ($user['role'] == 'dosen') echo $user['nidk'];
                                                 else if ($user['role'] == 'mahasiswa') echo $user['npm'];
                                                 else echo '-';
                                                 ?>
                                             </td>
-                                            
+
                                             <td class="align-middle small">
-                                                <?php 
+                                                <?php
                                                 if ($user['role'] == 'dosen') echo $user['prodi_dsn'];
                                                 else if ($user['role'] == 'mahasiswa') echo $user['prodi_mhs'];
                                                 else echo '<span class="text-muted font-italic">-</span>';
                                                 ?>
                                             </td>
-                                            
+
                                             <td class="text-center align-middle">
                                                 <div class="btn-group btn-group-sm">
-                                                    <a href="<?php echo base_url('operator/edit_akun/' . $user['id']); ?>" class="btn btn-default text-warning" title="Edit Data">
+                                                    <a href="<?php echo base_url('dosen/edit_akun/' . $user['id']); ?>" class="btn btn-default text-warning" title="Edit Data">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
-                                                    <a href="<?php echo base_url('operator/delete_akun/' . $user['id']); ?>" class="btn btn-default text-danger" onclick="return confirm('Yakin ingin menghapus akun <?php echo $user['nama']; ?>?');" title="Hapus Permanen">
+                                                    <a href="<?php echo base_url('dosen/delete_akun/' . $user['id']); ?>" class="btn btn-default text-danger" onclick="return confirm('Yakin ingin menghapus akun <?php echo $user['nama']; ?>?');" title="Hapus Permanen">
                                                         <i class="fas fa-trash"></i>
                                                     </a>
                                                 </div>
@@ -172,7 +174,7 @@
                                 </tbody>
                             </table>
                         </div>
-                        
+
                         <div class="card-footer py-2 bg-white">
                             <div class="row align-items-center">
                                 <div class="col-sm-6 text-muted small">
