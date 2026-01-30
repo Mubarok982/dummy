@@ -3,18 +3,32 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Dosen extends CI_Controller
 {
-
-    public function __construct()
+public function __construct()
     {
         parent::__construct();
-        // Cek akses: hanya Dosen yang boleh mengakses controller ini
+        // 1. Cek Login & Role
         if ($this->session->userdata('role') != 'dosen' || !$this->session->userdata('is_login')) {
             redirect('auth/login');
         }
-        $this->load->model('M_Dosen');
-        $this->load->model('M_Log');
-    }
 
+        $this->load->model(['M_Data', 'M_Dosen', 'M_Log']);
+
+        // 2. LOGIKA FORCE REDIRECT DOSEN
+        $id_user = $this->session->userdata('id');
+        
+        // Ambil data detail dosen
+        $detail = $this->db->get_where('data_dosen', ['id' => $id_user])->row_array();
+
+        // Halaman yang diizinkan: profil, update_profil, dan logout
+        $allowed_methods = ['profil', 'update_profil', 'logout'];
+        $current_method = $this->router->method;
+
+        // Cek jika NIDK atau Prodi kosong
+        if ((empty($detail['nidk']) || empty($detail['prodi'])) && !in_array($current_method, $allowed_methods)) {
+            $this->session->set_flashdata('pesan_error', '⚠️ Mohon lengkapi <b>NIDK</b> dan <b>Program Studi</b> Anda di Profil terlebih dahulu.');
+            redirect('dosen/profil');
+        }
+    }
     // --- Menu Utama Dosen: Daftar Mahasiswa Bimbingan ---
 
     public function bimbingan_list()
@@ -52,92 +66,85 @@ class Dosen extends CI_Controller
         $this->load->view('template/footer');
     }
 
-    public function submit_koreksi()
+   public function submit_koreksi()
     {
         $id_progres = $this->input->post('id_progres');
-        $is_p1 = $this->input->post('is_p1');
-        $komentar = $this->input->post('komentar');
-        $status_progres = $this->input->post('status_progres'); // Nilai: 0, 50, 100
+        $is_p1      = $this->input->post('is_p1'); // 1 atau 0
+        $komentar   = $this->input->post('komentar');
+        $status_progres = $this->input->post('status_progres'); // 0, 50, 100
         $id_skripsi = $this->input->post('id_skripsi');
 
-        $plagiat_result = $this->M_Dosen->get_plagiarisme_result($id_progres);
+        // 1. AMBIL DATA PLAGIASI DARI DATABASE
+        // Pastikan Model mengambil kolom 'status_plagiasi' dan 'persentase_kemiripan'
+        $cek_plagiat = $this->M_Dosen->get_plagiarisme_result($id_progres);
 
-        if (!$plagiat_result || $plagiat_result['status'] == 'Menunggu') {
-            $this->session->set_flashdata('pesan_error', 'Gagal: Hasil cek plagiarisme masih Menunggu.');
-            redirect('dosen/progres_detail/' . $id_skripsi);
+        // 2. CEK LOGIKA PLAGIASI (Khusus Bab 1 atau yang ada datanya)
+        // Jika data plagiasi ditemukan (artinya ini Bab 1)
+        if ($cek_plagiat) {
+            
+            // A. Jika Admin Belum Verifikasi (Masih 'Menunggu')
+            if ($cek_plagiat['status_plagiasi'] == 'Menunggu') {
+                $this->session->set_flashdata('pesan_error', 'Gagal: Admin belum memverifikasi hasil Cek Plagiarisme. Harap tunggu admin.');
+                redirect('dosen/progres_detail/' . $id_skripsi);
+                return; // Stop eksekusi
+            }
+
+            // B. Jika Admin Menolak (Status 'Tolak')
+            // Maka Dosen dipaksa memberikan Revisi (Nilai 0), apapun inputannya
+            if ($cek_plagiat['status_plagiasi'] == 'Tolak') {
+                $status_progres = 0; // Paksa Revisi
+                $persen = $cek_plagiat['persentase_kemiripan'];
+                
+                // Tambahkan pesan sistem ke komentar
+                $komentar .= "\n\n[SYSTEM]: Progres ini DITOLAK otomatis karena Tingkat Plagiarisme tinggi ($persen%). Silakan revisi dan upload ulang.";
+            }
         }
 
-        if ($plagiat_result['status'] == 'Tolak') {
-            $status_progres = 0;
-            $komentar .= "\n[Sistem] : Hasil Plagiarisme Ditolak (" . $plagiat_result['persentase_kemiripan'] . "%). Wajib Revisi!";
-            $this->M_Log->record('Plagiarisme', 'Otomatis menetapkan status revisi karena persentase plagiat tinggi.', $id_progres);
-        }
-
+        // 3. SIAPKAN DATA UPDATE
         $data = [];
+        // Tentukan Nilai Text (Revisi/ACC Sebagian/ACC)
+        $nilai_text = ($status_progres == 100) ? 'ACC' : (($status_progres == 50) ? 'ACC Sebagian' : 'Revisi');
+
         if ($is_p1) {
             $data['komentar_dosen1'] = $komentar;
-            $data['progres_dosen1'] = $status_progres;
-            $data['nilai_dosen1'] = ($status_progres == 100) ? 'ACC' : (($status_progres == 50) ? 'ACC Sebagian' : 'Revisi');
+            $data['progres_dosen1']  = $status_progres;
+            $data['nilai_dosen1']    = $nilai_text;
+            $data['tgl_koreksi_d1']  = date('Y-m-d H:i:s'); // Catat waktu koreksi
         } else {
             $data['komentar_dosen2'] = $komentar;
-            $data['progres_dosen2'] = $status_progres;
-            $data['nilai_dosen2'] = ($status_progres == 100) ? 'ACC' : (($status_progres == 50) ? 'ACC Sebagian' : 'Revisi');
+            $data['progres_dosen2']  = $status_progres;
+            $data['nilai_dosen2']    = $nilai_text;
+            $data['tgl_koreksi_d2']  = date('Y-m-d H:i:s');
         }
 
+        // 4. EKSEKUSI UPDATE
         if ($this->M_Dosen->update_progres($id_progres, $data)) {
-            $this->session->set_flashdata('pesan_sukses', 'Koreksi dan status progres berhasil disimpan!');
             
-            // Ambil data progres terbaru untuk keperluan Log & WA
-            $progres_terkini = $this->M_Dosen->get_progres_by_id($id_progres);
-            
-            $dosen_label = $is_p1 ? 'P1' : 'P2';
-            $status_text = ($status_progres == 100) ? 'ACC Penuh' : (($status_progres == 50) ? 'ACC Sebagian' : 'Revisi');
-            
-            // Catat Log
-            $this->M_Log->record('Koreksi', 'Memberikan status **' . $status_text . '** Bab ' . $progres_terkini['bab'] . ' sebagai ' . $dosen_label, $id_progres);
+            // Log Aktivitas
+            $label_dosen = $is_p1 ? 'Pembimbing 1' : 'Pembimbing 2';
+            $this->M_Log->record('Koreksi', "Memberikan nilai $nilai_text ($status_progres) sebagai $label_dosen", $id_progres);
 
-            // ============================================================
-            // INTEGRASI FONNTE: KIRIM NOTIFIKASI WA KE MAHASISWA
-            // ============================================================
-            
-            // Load Helper
+            // --- INTEGRASI FONNTE (Optional / Jika dipakai) ---
             $this->load->helper('fonnte');
-
-            // Ambil data detail skripsi untuk dapat No HP & Nama Mahasiswa
             $skripsi_info = $this->M_Dosen->get_skripsi_details($id_skripsi);
             
-            $nomor_hp = isset($skripsi_info['telepon']) ? $skripsi_info['telepon'] : null;
-            
-            if (!empty($nomor_hp)) {
-                $nama_mhs = $skripsi_info['nama_mhs'];
-                $nama_dosen = $this->session->userdata('nama');
-                $bab = $progres_terkini['bab'];
-                $status_pesan = strtoupper($status_text);
+            if (!empty($skripsi_info['telepon'])) {
+                $pesan_wa  = "*UPDATE BIMBINGAN SKRIPSI*\n\n";
+                $pesan_wa .= "Halo " . $skripsi_info['nama_mhs'] . ",\n";
+                $pesan_wa .= "Dosen pembimbing Anda baru saja mengoreksi progres Anda.\n\n";
+                $pesan_wa .= "Hasil: *" . strtoupper($nilai_text) . "*\n";
+                if(isset($cek_plagiat['status_plagiasi']) && $cek_plagiat['status_plagiasi'] == 'Tolak'){
+                    $pesan_wa .= "Status Plagiasi: *DITOLAK ADMIN*\n";
+                }
+                $pesan_wa .= "Silakan cek website untuk detailnya.";
                 
-                // Batasi panjang komentar di WA agar tidak terlalu panjang
-                $preview_komentar = (strlen($komentar) > 100) ? substr($komentar, 0, 100) . "..." : $komentar;
-
-                // Format Pesan WA
-                $pesan_wa = "*NOTIFIKASI BIMBINGAN SKRIPSI*\n\n";
-                $pesan_wa .= "Halo $nama_mhs,\n";
-                $pesan_wa .= "Dosen pembimbing Anda ($nama_dosen) baru saja memberikan tanggapan untuk progres *BAB $bab*.\n\n";
-                $pesan_wa .= "Status: *$status_pesan*\n";
-                $pesan_wa .= "Komentar: _" . $preview_komentar . "_\n\n";
-                $pesan_wa .= "Silakan login ke sistem WBS untuk melihat detail revisi lengkap.\n";
-                $pesan_wa .= "Terima kasih.";
-
-                // Kirim via Helper
-                kirim_wa_fonnte($nomor_hp, $pesan_wa);
+                kirim_wa_fonnte($skripsi_info['telepon'], $pesan_wa);
             }
-            // ============================================================
+            // --------------------------------------------------
 
-            // Cek Sempro
-            if ($progres_terkini['bab'] == 3 && $progres_terkini['progres_dosen1'] == 100 && $progres_terkini['progres_dosen2'] == 100) {
-                $this->session->set_flashdata('pesan_info', 'Mahasiswa siap Seminar Proposal. Segera arahkan Mahasiswa untuk mendaftar di SITA.');
-            }
-
+            $this->session->set_flashdata('pesan_sukses', 'Koreksi berhasil disimpan.');
         } else {
-            $this->session->set_flashdata('pesan_error', 'Gagal menyimpan koreksi.');
+            $this->session->set_flashdata('pesan_error', 'Terjadi kesalahan database saat menyimpan.');
         }
 
         redirect('dosen/progres_detail/' . $id_skripsi);
@@ -145,7 +152,7 @@ class Dosen extends CI_Controller
 
     // --- Monitoring (Khusus Kaprodi) ---
 
-    public function monitoring_prodi()
+  public function monitoring_prodi()
     {
         if ($this->session->userdata('is_kaprodi') != 1) {
             $this->session->set_flashdata('pesan_error', 'Akses ditolak. Fitur ini hanya untuk Kaprodi.');
@@ -153,13 +160,23 @@ class Dosen extends CI_Controller
         }
 
         $prodi = $this->session->userdata('prodi');
-        $data['title'] = 'Monitoring Seluruh Mahasiswa Prodi ' . $prodi;
-        $data['mahasiswa_prodi'] = $this->M_Dosen->get_all_mahasiswa_prodi($prodi);
+        
+        // Ambil data filter dari URL (GET request)
+        $angkatan_filter = $this->input->get('angkatan');
+
+        $data['title'] = 'Monitoring Mahasiswa Prodi ' . $prodi;
+        
+        // Ambil list angkatan untuk dropdown
+        $data['list_angkatan'] = $this->M_Dosen->get_list_angkatan($prodi);
+        $data['selected_angkatan'] = $angkatan_filter; // Untuk menandai dropdown yang dipilih
+
+        // Ambil data mahasiswa dengan filter
+        $data['mahasiswa_prodi'] = $this->M_Dosen->get_all_mahasiswa_prodi($prodi, $angkatan_filter);
 
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
         $this->load->view('dosen/v_monitoring_prodi', $data);
-        $this->load->view('template/footer');
+        $this->load->view('template/footer'); // Pastikan footer view sudah dikosongkan isinya seperti request sebelumnya
     }
 
     // --- FITUR PROFIL DOSEN ---
@@ -178,55 +195,114 @@ class Dosen extends CI_Controller
         $this->load->view('template/footer');
     }
 
-    public function update_profil()
+   public function update_profil()
     {
         $id_user = $this->session->userdata('id');
         $this->load->model('M_Data');
+        $this->load->library('upload');
 
-        // Konfigurasi Upload
-        $config['upload_path'] = './uploads/profile/';
-        $config['allowed_types'] = 'jpg|jpeg|png';
-        $config['max_size'] = 2048;
-        $config['encrypt_name'] = TRUE;
+        // Validasi Input Dasar
+        $this->form_validation->set_rules('nama', 'Nama Lengkap', 'required|trim');
+        $this->form_validation->set_rules('telepon', 'Nomor Telepon', 'trim|numeric'); // Tambah validasi telepon
 
-        if (!is_dir($config['upload_path'])) mkdir($config['upload_path'], 0777, true);
-        $this->load->library('upload', $config);
+        if ($this->form_validation->run() == FALSE) {
+            $this->session->set_flashdata('pesan_error', 'Gagal: ' . validation_errors());
+            redirect('dosen/profil');
+        }
 
-        $akun_data = ['nama' => $this->input->post('nama')];
-        
-        // Upload Foto
+        // 1. Data Akun (Tabel mstr_akun)
+        $akun_data = [
+            'nama' => $this->input->post('nama', true)
+        ];
+
+        // 2. Data Detail Dosen (Tabel data_dosen)
+        // Masukkan 'telepon' ke sini karena kolom 'telepon' ada di tabel data_dosen
+        $detail_data = [
+            'telepon' => $this->input->post('telepon', true)
+        ];
+
+        // 3. PROSES UPLOAD FOTO PROFIL
         if (!empty($_FILES['foto']['name'])) {
+            // Reset config upload
+            $this->upload->initialize(array(), TRUE);
+
+            $config_foto['upload_path']   = './uploads/profile/';
+            $config_foto['allowed_types'] = 'jpg|jpeg|png|webp';
+            $config_foto['max_size']      = 5120; // 5MB
+            $config_foto['file_name']     = 'dosen_profile_' . $id_user . '_' . time();
+            $config_foto['overwrite']     = true;
+
+            // Buat folder jika belum ada
+            if (!is_dir($config_foto['upload_path'])) mkdir($config_foto['upload_path'], 0777, true);
+
+            $this->upload->initialize($config_foto);
+
             if ($this->upload->do_upload('foto')) {
-                $uploadData = $this->upload->data();
-                $akun_data['foto'] = $uploadData['file_name'];
+                // Hapus foto lama
+                $old_data = $this->db->get_where('mstr_akun', ['id' => $id_user])->row_array();
+                if ($old_data && !empty($old_data['foto']) && file_exists(FCPATH . 'uploads/profile/' . $old_data['foto'])) {
+                    unlink(FCPATH . 'uploads/profile/' . $old_data['foto']);
+                }
+
+                $akun_data['foto'] = $this->upload->data('file_name');
+                $this->session->set_userdata('foto', $akun_data['foto']);
+            } else {
+                $this->session->set_flashdata('pesan_error', 'Upload Foto Gagal: ' . $this->upload->display_errors('', ''));
+                redirect('dosen/profil');
+                return;
             }
         }
 
-        // Data Detail Dosen (Tidak banyak yang bisa diubah selain TTD)
-        $detail_data = [];
+        // 4. PROSES TTD DIGITAL (Dari Canvas Base64)
+        $ttd_base64 = $this->input->post('ttd_base64');
+        
+        if (!empty($ttd_base64)) {
+            // Format string: "data:image/png;base64,iVBORw0KGgoAAA..."
+            $image_parts = explode(";base64,", $ttd_base64);
+            
+            if (count($image_parts) == 2) {
+                $image_base64 = base64_decode($image_parts[1]);
+                
+                // Siapkan folder
+                $path_ttd = './uploads/ttd/';
+                if (!is_dir($path_ttd)) mkdir($path_ttd, 0777, true);
 
-        // Upload TTD
-        if (!empty($_FILES['ttd']['name'])) {
-            $config['upload_path'] = './uploads/ttd/';
-            if (!is_dir($config['upload_path'])) mkdir($config['upload_path'], 0777, true);
-            $this->upload->initialize($config);
+                // Buat nama file unik
+                $file_name = 'ttd_dosen_' . $id_user . '_' . time() . '.png';
+                $file_path = FCPATH . 'uploads/ttd/' . $file_name;
 
-            if ($this->upload->do_upload('ttd')) {
-                $uploadData = $this->upload->data();
-                $detail_data['ttd'] = $uploadData['file_name'];
+                // Simpan file
+                if (file_put_contents($file_path, $image_base64)) {
+                    // Hapus TTD lama jika ada
+                    $old_detail = $this->db->get_where('data_dosen', ['id' => $id_user])->row_array();
+                    if ($old_detail && !empty($old_detail['ttd']) && file_exists(FCPATH . 'uploads/ttd/' . $old_detail['ttd'])) {
+                        unlink(FCPATH . 'uploads/ttd/' . $old_detail['ttd']);
+                    }
+
+                    // Masukkan ke array update detail
+                    $detail_data['ttd'] = $file_name;
+                } else {
+                    $this->session->set_flashdata('pesan_error', 'Gagal menyimpan file Tanda Tangan.');
+                    redirect('dosen/profil');
+                    return;
+                }
             }
         }
 
+        // 5. EKSEKUSI UPDATE KE DATABASE
+        // Parameter ke-3 'dosen' memberitahu model untuk update tabel data_dosen
         if ($this->M_Data->update_user($id_user, $akun_data, 'dosen', $detail_data)) {
             $this->session->set_flashdata('pesan_sukses', 'Profil berhasil diperbarui!');
-            $this->session->set_userdata('nama', $akun_data['nama']);
+            // Update nama di session jika berubah
+            if(isset($akun_data['nama'])) {
+                $this->session->set_userdata('nama', $akun_data['nama']);
+            }
         } else {
-            $this->session->set_flashdata('pesan_error', 'Gagal memperbarui profil.');
+            $this->session->set_flashdata('pesan_error', 'Gagal memperbarui profil di database.');
         }
 
         redirect('dosen/profil');
     }
-
     // --- MENU KAPRODI: Kinerja Dosen ---
     public function kinerja_dosen()
     {
@@ -299,4 +375,26 @@ class Dosen extends CI_Controller
         $this->load->view('dosen/v_kinerja_dosen_prodi', $data); // View Baru
         $this->load->view('template/footer');
     }
+
+public function setuju_judul($id_skripsi)
+{
+    if ($this->session->userdata('is_kaprodi') != 1) redirect('auth/login');
+    
+    if ($this->M_Dosen->update_status_judul($id_skripsi, 'diterima')) {
+        $this->session->set_flashdata('pesan_sukses', 'Judul dan Pembimbing berhasil disetujui.');
+    }
+    redirect('dosen/monitoring_prodi');
+}
+
+public function tolak_judul($id_skripsi)
+{
+    if ($this->session->userdata('is_kaprodi') != 1) redirect('auth/login');
+
+    if ($this->M_Dosen->update_status_judul($id_skripsi, 'ditolak')) {
+        $this->session->set_flashdata('pesan_error', 'Judul dan Pembimbing ditolak.');
+    }
+    redirect('dosen/monitoring_prodi');
+}
+
+
 }

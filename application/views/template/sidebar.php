@@ -21,12 +21,18 @@
         </a>
       </li>
       <li class="nav-item">
-        <a href="<?php echo base_url('operator/penugasan_pembimbing'); ?>"
-          class="nav-link <?php echo ($this->uri->segment(2) == 'penugasan_pembimbing') ? 'active' : ''; ?>">
-          <i class="nav-icon fas fa-user-tie"></i>
-          <p>Atur Pembimbing</p>
+            <a href="<?php echo base_url('operator/data_mahasiswa'); ?>" class="nav-link <?php echo ($this->uri->segment(2) == 'data_mahasiswa') ? 'active' : ''; ?>">
+              <i class="nav-icon fas fa-users"></i>
+              <p>Data Mahasiswa</p>
+            </a>
+          </li>
+
+      <li class="nav-item">
+        <a href="<?= base_url('operator/data_dosen') ?>" class="nav-link <?= ($this->uri->segment(2) == 'data_dosen') ? 'active' : '' ?>">
+            <i class="nav-icon fas fa-chalkboard-teacher"></i>
+            <p>Data Dosen</p>
         </a>
-      </li>
+    </li>
       <li class="nav-item">
         <a href="<?php echo base_url('operator/cek_plagiarisme_list'); ?>"
           class="nav-link <?php echo ($this->uri->segment(2) == 'cek_plagiarisme_list') ? 'active' : ''; ?>">
@@ -49,6 +55,18 @@
           <p>Kinerja Dosen</p>
         </a>
       </li>
+      <li class="nav-item">
+          <a href="<?= base_url('operator/acc_judul') ?>" class="nav-link <?= ($this->uri->segment(2) == 'acc_judul') ? 'active' : '' ?>">
+              <i class="nav-icon fas fa-check-double"></i>
+              <p>ACC Judul & Dospem</p>
+          </a>
+      </li>
+      <li class="nav-item">
+            <a href="<?php echo base_url('operator/mahasiswa_siap_sempro'); ?>" class="nav-link <?php echo ($this->uri->segment(2) == 'mahasiswa_siap_sempro') ? 'active' : ''; ?>">
+              <i class="nav-icon fas fa-user-graduate"></i>
+              <p>Siap Sempro</p>
+            </a>
+          </li>
     <?php endif; ?>
 
     <?php if ($role == 'dosen'): ?>
@@ -147,17 +165,7 @@
 </div>
 </aside>
 
-<div class="content-wrapper">
-  <div class="content-header">
-    <div class="container-fluid">
-      <div class="row mb-2">
-        <div class="col-sm-6">
-          <h1 class="m-0"><?php echo isset($title) ? $title : 'Dashboard'; ?></h1>
-        </div>
-      </div>
-    </div>
-  </div>
-  <section class="content">
-    <div class="container-fluid">
-      <div class="card">
-        <div class="card-body">
+
+
+
+        

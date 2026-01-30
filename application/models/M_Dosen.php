@@ -5,6 +5,7 @@ class M_Dosen extends CI_Model {
 
     // --- Daftar Bimbingan ---
 
+   // --- Daftar Bimbingan ---
     public function get_mahasiswa_bimbingan($id_dosen)
     {
         $this->db->select('S.id AS id_skripsi, S.judul, M.npm, A.nama AS nama_mhs, A.id AS id_mhs, 
@@ -17,7 +18,9 @@ class M_Dosen extends CI_Model {
         
         // Filter di mana dosen ini adalah Pembimbing 1 atau Pembimbing 2
         $this->db->where("S.pembimbing1 = $id_dosen OR S.pembimbing2 = $id_dosen");
-        $this->db->order_by('A.nama', 'ASC');
+        
+        $this->db->order_by('S.id', 'DESC'); 
+        
         return $this->db->get()->result_array();
     }
 
@@ -50,22 +53,6 @@ class M_Dosen extends CI_Model {
         $this->db->where('id', $id_progres);
         return $this->db->update('progres_skripsi', $data);
     }
-    
-    // --- Kaprodi Monitoring ---
-    
-    public function get_all_mahasiswa_prodi($prodi)
-    {
-        $this->db->select('A.nama, M.npm, M.angkatan, S.judul, P1.nama AS p1, P2.nama AS p2');
-        $this->db->from('data_mahasiswa M');
-        $this->db->join('mstr_akun A', 'M.id = A.id', 'inner');
-        $this->db->join('skripsi S', 'M.id = S.id_mahasiswa', 'left');
-        $this->db->join('mstr_akun P1', 'S.pembimbing1 = P1.id', 'left');
-        $this->db->join('mstr_akun P2', 'S.pembimbing2 = P2.id', 'left');
-        $this->db->where('M.prodi', $prodi);
-        $this->db->where('A.role', 'mahasiswa');
-        $this->db->order_by('M.angkatan', 'ASC');
-        return $this->db->get()->result_array();
-    }
 
     public function count_total_bimbingan($id_dosen)
     {
@@ -74,9 +61,16 @@ class M_Dosen extends CI_Model {
         return $this->db->get('skripsi')->num_rows();
     }
 
+    // Ambil Status Plagiasi berdasarkan ID Progres
     public function get_plagiarisme_result($id_progres)
     {
-        return $this->db->get_where('hasil_plagiarisme', ['id_progres' => $id_progres])->row_array();
+        $this->db->select('status_plagiasi, persentase_kemiripan, bab');
+        $this->db->from('progres_skripsi');
+        $this->db->where('id', $id_progres);
+        $this->db->where('bab', 1); 
+        
+        return $this->db->get()->row_array(); 
+        // Mengembalikan NULL jika bukan Bab 1 atau ID tidak ketemu
     }
 
     public function submit_koreksi()
@@ -200,6 +194,79 @@ class M_Dosen extends CI_Model {
         
         return $this->db->get()->result_array();
     }
+
+    // Tambahkan fungsi ini di dalam class M_Dosen
+
+public function get_all_mahasiswa_prodi($prodi)
+{
+    // Tambahkan S.id_mahasiswa dan S.status_acc_kaprodi ke select
+    $this->db->select('A.nama, A.id as id_user, M.npm, M.angkatan, S.judul, S.status_acc_kaprodi, S.id as id_skripsi, P1.nama AS p1, P2.nama AS p2');
+    $this->db->from('data_mahasiswa M');
+    $this->db->join('mstr_akun A', 'M.id = A.id', 'inner');
+    $this->db->join('skripsi S', 'M.id = S.id_mahasiswa', 'left');
+    $this->db->join('mstr_akun P1', 'S.pembimbing1 = P1.id', 'left');
+    $this->db->join('mstr_akun P2', 'S.pembimbing2 = P2.id', 'left');
+    $this->db->where('M.prodi', $prodi);
+    $this->db->where('A.role', 'mahasiswa');
+    $this->db->order_by('M.angkatan', 'ASC');
+    return $this->db->get()->result_array();
+}
+
+public function update_status_judul($id_skripsi, $status)
+{
+    $this->db->where('id', $id_skripsi);
+    return $this->db->update('skripsi', ['status_acc_kaprodi' => $status]);
+}
+
+public function get_list_angkatan($prodi)
+    {
+        $this->db->distinct();
+        $this->db->select('angkatan');
+        $this->db->from('data_mahasiswa');
+        $this->db->where('prodi', $prodi);
+        $this->db->order_by('angkatan', 'DESC');
+        return $this->db->get()->result_array();
+    }
+
+    // Tambahkan fungsi ini di dalam class M_Dosen
+
+public function get_stats_kaprodi($prodi)
+{
+    $stats = []; // Inisialisasi array biar aman
+
+    // 1. Total Dosen di Prodi
+    $stats['total_dosen'] = $this->db->where('prodi', $prodi)->get('data_dosen')->num_rows();
+
+    // 2. Total Mahasiswa di Prodi
+    $stats['total_mhs'] = $this->db->where('prodi', $prodi)->get('data_mahasiswa')->num_rows();
+
+    // 3. Statistik Judul (Menunggu ACC)
+    $this->db->from('skripsi S');
+    $this->db->join('data_mahasiswa M', 'S.id_mahasiswa = M.id');
+    $this->db->where('M.prodi', $prodi);
+    $this->db->where('S.status_acc_kaprodi', 'menunggu');
+    $stats['judul_pending'] = $this->db->count_all_results();
+
+    // 4. Statistik Progress Per BAB
+    $stats['bab_stats'] = [];
+    for ($i = 1; $i <= 5; $i++) {
+        // PERBAIKAN DI SINI: Tambahkan 'P.' sebelum npm
+        $this->db->select('COUNT(DISTINCT(P.npm)) as total'); 
+        $this->db->from('progres_skripsi P');
+        $this->db->join('data_mahasiswa M', 'P.npm = M.npm');
+        $this->db->where('M.prodi', $prodi);
+        $this->db->where('P.bab', $i);
+        $this->db->where('P.progres_dosen1', 100);
+        $this->db->where('P.progres_dosen2', 100);
+        $result = $this->db->get()->row();
+        
+        // Pastikan tidak error jika result kosong
+        $stats['bab_stats'][$i] = isset($result->total) ? $result->total : 0;
+    }
+
+    return $stats;
+}
+
 }
 
 // public function insert_plagiarisme_mockup($id_progres)

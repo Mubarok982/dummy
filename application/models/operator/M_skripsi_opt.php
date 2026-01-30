@@ -52,4 +52,23 @@ class M_skripsi_opt extends CI_Model {
         $this->db->where('id', $id);
         return $this->db->update('hasil_plagiarisme', $data);
     }
+
+    public function get_pengajuan_dospem_menunggu()
+    {
+        $this->db->select('S.*, A_MHS.nama AS nama_mahasiswa, DM.npm, A1.nama AS nama_p1, A2.nama AS nama_p2');
+        $this->db->from('skripsi S');
+        $this->db->join('mstr_akun A_MHS', 'S.id_mahasiswa = A_MHS.id');
+        $this->db->join('data_mahasiswa DM', 'S.id_mahasiswa = DM.id');
+        $this->db->join('mstr_akun A1', 'S.pembimbing1 = A1.id', 'left');
+        $this->db->join('mstr_akun A2', 'S.pembimbing2 = A2.id', 'left');
+        $this->db->where('S.status_acc_kaprodi', 'menunggu');
+        $this->db->order_by('S.tgl_pengajuan_judul', 'ASC');
+        return $this->db->get()->result_array();
+    }
+
+    public function update_skripsi($id_skripsi, $data)
+    {
+        $this->db->where('id', $id_skripsi);
+        return $this->db->update('skripsi', $data);
+    }
 }

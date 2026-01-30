@@ -7,7 +7,7 @@ class Akun extends CI_Controller {
     {
         parent::__construct();
         if ($this->session->userdata('role') != 'operator') redirect('auth/login');
-        $this->load->model('operator/M_akun_opt'); // Load Model Khusus
+        $this->load->model('operator/M_akun_opt'); 
         $this->load->model('M_Log');
     }
 
@@ -27,7 +27,7 @@ class Akun extends CI_Controller {
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
         
-        // Styling Pagination AdminLTE
+        // Styling Pagination
         $config['full_tag_open']    = '<ul class="pagination pagination-sm m-0 float-right">';
         $config['full_tag_close']   = '</ul>';
         $config['first_link']       = '&laquo;';
@@ -86,7 +86,8 @@ class Akun extends CI_Controller {
         $role = $this->input->post('role');
         $akun_data = [
             'username' => $this->input->post('username'),
-            'password' => $this->input->post('password'), 
+            // FIX: Hash password saat tambah
+            'password' => password_hash($this->input->post('password'), PASSWORD_DEFAULT), 
             'nama'     => $this->input->post('nama'),
             'role'     => $role,
         ];
@@ -103,6 +104,7 @@ class Akun extends CI_Controller {
                 'npm' => $this->input->post('npm'),
                 'prodi' => $this->input->post('prodi_mhs'),
                 'angkatan' => $this->input->post('angkatan'),
+                // Default value untuk field wajib lainnya
                 'status_beasiswa' => 'Tidak Aktif',
                 'status_mahasiswa' => 'Murni',
                 'ttd' => 'dummy_ttd.png',
@@ -133,7 +135,7 @@ class Akun extends CI_Controller {
         $data['title'] = 'Edit Akun: ' . $data['user']['nama'];
         
         $this->form_validation->set_rules('nama', 'Nama', 'required');
-        $this->form_validation->set_rules('role', 'Role', 'required');
+        // Validasi role dihapus karena role diambil dari DB, bukan input form
         
         if ($this->input->post('password')) {
             $this->form_validation->set_rules('password', 'Password', 'min_length[3]');
@@ -150,28 +152,39 @@ class Akun extends CI_Controller {
     }
 
     private function _proses_edit($id) {
-        $role = $this->input->post('role');
-        $akun_data = ['nama' => $this->input->post('nama'), 'role' => $role];
+        // FIX: Ambil role ASLI dari database agar validasi if-else berjalan benar
+        // Input form 'role' seringkali disabled sehingga tidak terkirim via POST
+        $existing_user = $this->M_akun_opt->get_user_by_id($id);
+        $role = $existing_user['role']; 
+
+        // Data utama (mstr_akun)
+        // Kita tidak update 'role' karena role tidak boleh berubah
+        $akun_data = ['nama' => $this->input->post('nama')];
         
         if ($this->input->post('password')) {
-            $akun_data['password'] = $this->input->post('password');
+            // FIX: Hash password saat edit
+            $akun_data['password'] = password_hash($this->input->post('password'), PASSWORD_DEFAULT);
         }
 
+        // Data detail (data_mahasiswa / data_dosen)
         $detail_data = [];
+        
+        // Logika ini sekarang pasti jalan karena $role diambil dari DB
         if ($role == 'dosen') {
             $detail_data = [
                 'nidk' => $this->input->post('nidk'),
-                'prodi' => $this->input->post('prodi_dosen'),
+                'prodi' => $this->input->post('prodi_dosen'), // Sesuai name di view
                 'is_kaprodi' => $this->input->post('is_kaprodi') ? 1 : 0
             ];
         } elseif ($role == 'mahasiswa') {
             $detail_data = [
                 'npm' => $this->input->post('npm'),
-                'prodi' => $this->input->post('prodi_mhs'),
+                'prodi' => $this->input->post('prodi_mhs'), // Sesuai name di view
                 'angkatan' => $this->input->post('angkatan'),
             ];
         }
 
+        // Panggil Model dengan Role yang BENAR dari database
         if ($this->M_akun_opt->update_user($id, $akun_data, $detail_data, $role)) {
             $this->session->set_flashdata('pesan_sukses', 'Akun berhasil diperbarui!');
         } else {
