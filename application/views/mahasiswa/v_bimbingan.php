@@ -140,7 +140,7 @@
                         $alert_style = 'callout-success';
                         $pesan_info = 'Silakan upload file untuk melanjutkan progres.';
 
-                        // Variable flag untuk notifikasi SEMPRO GEN-Z
+                        // Variable flag untuk notifikasi SEMPRO
                         $siap_sempro = false;
 
                         // Cek data terakhir
@@ -162,8 +162,7 @@
                                 $text_header = 'Lanjut ke BAB ' . $target_bab;
                                 $pesan_info = 'Selamat! Bab sebelumnya telah di-ACC. Silakan upload <b>BAB ' . $target_bab . '</b>.';
 
-                                // --- LOGIKA KHUSUS GEN-Z (Bab 3 Selesai) ---
-                                // Jika baru saja menyelesaikan Bab 3 (maka target sekarang Bab 4)
+                                // --- LOGIKA JIKA BAB 3 SELESAI (Masuk Target Bab 4) ---
                                 if ($target_bab == 4) {
                                     $siap_sempro = true;
                                 }
@@ -187,20 +186,30 @@
                         ?>
 
                         <?php if ($siap_sempro): ?>
-                            <div class="card bg-gradient-warning shadow-lg mb-4" style="border: 2px solid #ffc107;">
+                            <div class="card bg-gradient-success shadow-lg mb-4">
                                 <div class="card-body text-center p-4">
-                                    <h1 class="display-4 font-weight-bold text-white mb-2">🔥 MENYALA ABANGKU! 🔥</h1>
-                                    <h4 class="text-white mt-2">Bab 3 Done? Fix No Debat! 💅</h4>
-                                    <p class="text-white lead mt-3">
-                                        Gilak sih, progres lu slay parah! Valid, lu udah siap buat <strong>SEMPRO</strong>.<br>
-                                        Tapi eits, jangan lupa kelarin dulu administrasi di web sebelah ya, Bestie!
+                                    <div class="mb-3">
+                                        <i class="fas fa-check-circle fa-4x text-white"></i>
+                                    </div>
+                                    <h3 class="font-weight-bold text-white mb-2">Selamat! Anda Siap Seminar Proposal</h3>
+                                    <p class="text-white lead">
+                                        Seluruh progres bimbingan dari <strong>BAB 1 hingga BAB 3</strong> telah disetujui oleh kedua dosen pembimbing.
                                     </p>
+                                    
+                                    <div class="alert alert-light d-inline-block p-3 mt-2 shadow-sm text-dark text-left" style="border-radius: 8px; max-width: 90%;">
+                                        <h6 class="font-weight-bold mb-2"><i class="fas fa-info-circle text-info mr-1"></i> Instruksi Selanjutnya:</h6>
+                                        <ul class="mb-0 pl-3 text-sm">
+                                            <li>Segera daftarkan diri Anda untuk <strong>Seminar Proposal (Sempro)</strong>.</li>
+                                            <li>Selesaikan persyaratan administrasi di website akademik.</li>
+                                            <li>Anda baru diperbolehkan mengupload <strong>BAB 4</strong> setelah Seminar Proposal selesai.</li>
+                                        </ul>
+                                    </div>
+
                                     <div class="mt-4">
-                                        <a href="http://website-administrasi-kampus.com" target="_blank" class="btn btn-light btn-lg text-danger font-weight-bold shadow pulse-button">
-                                            <i class="fas fa-hand-point-right mr-2"></i> KLIK DI SINI BUAT URUS ADMIN
+                                        <a href="http://website-administrasi-kampus.com" target="_blank" class="btn btn-warning btn-lg text-dark font-weight-bold shadow pulse-button">
+                                            <i class="fas fa-external-link-alt mr-2"></i> Ke Website Administrasi
                                         </a>
                                     </div>
-                                    <p class="text-white small mt-3 mb-0">*Kalau udah beres admin, baru lanjut upload Bab 4 ya king/queen!</p>
                                 </div>
                             </div>
                         <?php endif; ?>
@@ -320,9 +329,9 @@
     .pulse-button {
         animation: pulse 2s infinite;
     }
-    /* Biar warna gradien warning lebih menyala */
-    .bg-gradient-warning {
-        background: linear-gradient(45deg, #ffc107, #ff9800);
+    /* Warna gradien hijau agar terlihat lebih resmi/sukses */
+    .bg-gradient-success {
+        background: linear-gradient(45deg, #28a745, #218838);
     }
 </style>
 
