@@ -531,26 +531,25 @@ class Operator extends CI_Controller {
         $this->load->view('template/footer');
     }
 
-    // --- EDIT AKUN (SESUAI REQUEST) ---
-    public function edit_akun($id = null)
+   public function edit_akun($id = null)
     {
         if ($id == null) {
             $this->session->set_flashdata('pesan_error', 'ID Akun tidak ditemukan!');
             redirect('operator/manajemen_akun');
         }
 
+        $this->load->model('operator/M_akun_opt'); 
+
         $data['user'] = $this->M_akun_opt->get_user_by_id($id);
         if (!$data['user']) {
             redirect('operator/manajemen_akun');
         }
 
-        // 1. Tangkap Source dari URL (GET)
         $source = $this->input->get('source'); 
         $data['source'] = $source; 
 
         $data['title'] = 'Edit Akun: ' . $data['user']['nama'];
         
-        // Validasi
         $this->form_validation->set_rules('nama', 'Nama', 'required');
         
         if ($this->input->post('password')) {
@@ -560,12 +559,12 @@ class Operator extends CI_Controller {
         if ($this->form_validation->run() == FALSE) {
             $this->load->view('template/header', $data);
             $this->load->view('template/sidebar', $data);
-            $this->load->view('operator/v_tambah_edit_akun', $data); // Pastikan view ini form action-nya ke edit_akun/$id
+            $this->load->view('operator/v_tambah_edit_akun', $data);
             $this->load->view('template/footer');
         } else {
-            // Ambil Role
             $role = $data['user']['role']; 
             
+            // 1. Data Utama
             $akun_data = [
                 'nama' => $this->input->post('nama'),
             ];
@@ -574,14 +573,16 @@ class Operator extends CI_Controller {
                 $akun_data['password'] = password_hash($this->input->post('password'), PASSWORD_DEFAULT);
             }
 
+            // 2. Data Detail
             $detail_data = [];
 
             if ($role == 'dosen') {
                 $detail_data = [
                     'nidk' => $this->input->post('nidk'),
                     'prodi' => $this->input->post('prodi_dosen'),
-                    'is_kaprodi' => $this->input->post('is_kaprodi') ? 1 : 0
+                    // PERBAIKAN: Jangan sertakan 'is_kaprodi' disini agar tidak ter-reset jadi 0
                 ];
+
             } elseif ($role == 'mahasiswa') {
                 $detail_data = [
                     'npm' => $this->input->post('npm'),
@@ -590,16 +591,15 @@ class Operator extends CI_Controller {
                 ];
             }
 
-            // PERBAIKAN URUTAN PARAMETER MODEL (Cek M_akun_opt.php Anda)
-            // Di file model Anda: update_user($id, $data_akun, $role, $data_detail)
-            if ($this->M_akun_opt->update_user($id, $akun_data, $role, $detail_data)) {
+            // Update User
+            if ($this->M_akun_opt->update_user($id, $akun_data, $detail_data, $role)) {
                 $this->session->set_flashdata('pesan_sukses', 'Akun ' . $role . ' berhasil diperbarui!');
             } else {
                 $this->session->set_flashdata('pesan_error', 'Gagal memperbarui akun.');
             }
 
-            // 2. Logic Redirect Sesuai Asal (POST)
-          $redirect_source = $this->input->post('redirect_source'); 
+            // Redirect
+            $redirect_source = $this->input->post('redirect_source'); 
             
             if ($redirect_source == 'data_dosen') {
                 redirect('operator/data_dosen');
@@ -730,4 +730,6 @@ class Operator extends CI_Controller {
         $this->load->view('operator/v_mahasiswa_selesai_skripsi', $data);
         $this->load->view('template/footer');
     }
+
+    
 }

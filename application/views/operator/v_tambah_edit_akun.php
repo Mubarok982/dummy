@@ -29,7 +29,6 @@
                         
                         <?php 
                         $action_url = $is_edit ? base_url('operator/edit_akun/' . $user['id']) : base_url('operator/tambah_akun');
-                        // Menambahkan query string source ke URL action juga untuk menjaga state jika ada error validasi
                         if($is_edit && isset($source) && !empty($source)) {
                             $action_url .= '?source=' . $source;
                         }
@@ -98,7 +97,7 @@
                                 <div class="form-group row">
                                     <label for="nidk" class="col-sm-3 col-form-label">NIDK / NIDN</label>
                                     <div class="col-sm-9">
-                                        <input type="text" name="nidk" id="nidk" class="form-control" value="<?php echo set_value('nidk', $is_edit ? $user['nidk'] : ''); ?>">
+                                        <input type="text" name="nidk" id="nidk" class="form-control" value="<?php echo set_value('nidk', ($is_edit && isset($user['nidk'])) ? $user['nidk'] : ''); ?>">
                                     </div>
                                 </div>
                                 <div class="form-group row">
@@ -110,15 +109,6 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="form-group row">
-                                    <label class="col-sm-3 col-form-label">Jabatan</label>
-                                    <div class="col-sm-9">
-                                        <div class="custom-control custom-checkbox">
-                                            <input class="custom-control-input" type="checkbox" id="is_kaprodi" name="is_kaprodi" value="1" <?php echo set_checkbox('is_kaprodi', '1', $is_edit && isset($user['is_kaprodi']) && $user['is_kaprodi'] == 1); ?>>
-                                            <label for="is_kaprodi" class="custom-control-label">Kepala Program Studi (Kaprodi)</label>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
 
                             <div id="mahasiswa-fields" style="display: none;">
@@ -126,7 +116,7 @@
                                 <div class="form-group row">
                                     <label for="npm" class="col-sm-3 col-form-label">NPM</label>
                                     <div class="col-sm-9">
-                                        <input type="text" name="npm" id="npm" class="form-control" value="<?php echo set_value('npm', $is_edit ? $user['npm'] : ''); ?>">
+                                        <input type="text" name="npm" id="npm" class="form-control" value="<?php echo set_value('npm', ($is_edit && isset($user['npm'])) ? $user['npm'] : ''); ?>">
                                     </div>
                                 </div>
                                 <div class="form-group row">
@@ -141,7 +131,7 @@
                                 <div class="form-group row">
                                     <label for="angkatan" class="col-sm-3 col-form-label">Angkatan</label>
                                     <div class="col-sm-9">
-                                        <input type="number" name="angkatan" id="angkatan" class="form-control" min="2000" max="<?php echo date('Y'); ?>" value="<?php echo set_value('angkatan', $is_edit ? $user['angkatan'] : date('Y')); ?>">
+                                        <input type="number" name="angkatan" id="angkatan" class="form-control" min="2000" max="<?php echo date('Y'); ?>" value="<?php echo set_value('angkatan', ($is_edit && isset($user['angkatan'])) ? $user['angkatan'] : date('Y')); ?>">
                                     </div>
                                 </div>
                             </div>
@@ -151,7 +141,7 @@
                        <div class="card-footer d-flex justify-content-between">
                             <?php 
                             // LOGIKA TOMBOL KEMBALI DINAMIS
-                            $url_kembali = base_url('operator/manajemen_akun'); // Default ke Manajemen Akun
+                            $url_kembali = base_url('operator/manajemen_akun');
 
                             if (isset($source)) {
                                 if ($source == 'data_dosen') {
