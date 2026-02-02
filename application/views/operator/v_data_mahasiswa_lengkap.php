@@ -63,7 +63,7 @@
                                         <?php endif; ?>
                                     </td>
                                     <td class="text-center">
-                                        <a href="<?php echo base_url('operator/edit_akun/' . $m['id'] . '?source=data_mahasiswa'); ?>" class="btn btn-xs btn-info" title="Edit Detail">
+                                        <a href="<?php echo base_url('operator/edit_akun/' . $m['id_user'] . '?source=data_mahasiswa'); ?>" class="btn btn-xs btn-info" title="Edit Detail">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                     </td>
