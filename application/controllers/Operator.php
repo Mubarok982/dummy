@@ -300,10 +300,13 @@ class Operator extends CI_Controller {
         redirect('operator/penugasan_pembimbing');
     }
 
-    public function acc_judul()
+   public function acc_judul()
     {
         $data['title'] = 'Persetujuan Judul Skripsi';
         $data['mahasiswa'] = $this->M_Data->get_all_mahasiswa_lengkap(); 
+        
+        // TAMBAHAN: Ambil list dosen untuk dropdown edit
+        $data['dosen_list'] = $this->M_Data->get_dosen_pembimbing_list(); 
 
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
@@ -626,6 +629,7 @@ class Operator extends CI_Controller {
         $this->load->view('template/sidebar', $data);
         $this->load->view('operator/v_pengaturan_kaprodi', $data);
         $this->load->view('template/footer');
+        
     }
 
     public function simpan_kaprodi()
@@ -664,5 +668,44 @@ class Operator extends CI_Controller {
         $config['num_tag_open']     = '<li class="page-item">';
         $config['num_tag_close']    = '</li>';
         $config['attributes']       = array('class' => 'page-link');
+    }
+
+    // --- FITUR BARU: UPDATE PEMBIMBING ---
+    public function update_pembimbing()
+    {
+        $id_skripsi = $this->input->post('id_skripsi');
+        $pembimbing1 = $this->input->post('pembimbing1');
+        $pembimbing2 = $this->input->post('pembimbing2');
+
+        if ($id_skripsi && $pembimbing1 && $pembimbing2) {
+            
+            // Cek apakah pembimbing sama
+            if ($pembimbing1 == $pembimbing2) {
+                $this->session->set_flashdata('pesan_error', 'Gagal: Pembimbing 1 dan 2 tidak boleh sama.');
+                redirect('operator/acc_judul');
+            }
+
+            $data_update = [
+                'pembimbing1' => $pembimbing1,
+                'pembimbing2' => $pembimbing2
+            ];
+
+            // Panggil model untuk update (Gunakan model yang relevan, misal M_skripsi_opt atau M_Data)
+            // Asumsi pakai M_Data->update_skripsi_by_id (Buat fungsi ini jika belum ada di Model)
+            $this->db->where('id', $id_skripsi);
+            $update = $this->db->update('skripsi', $data_update);
+
+            if ($update) {
+                $this->session->set_flashdata('pesan_sukses', 'Dosen Pembimbing berhasil diperbarui.');
+                $this->M_Log->record('Update Pembimbing', 'Mengubah pembimbing skripsi ID: ' . $id_skripsi);
+            } else {
+                $this->session->set_flashdata('pesan_error', 'Gagal memperbarui database.');
+            }
+
+        } else {
+            $this->session->set_flashdata('pesan_error', 'Data tidak lengkap.');
+        }
+
+        redirect('operator/acc_judul');
     }
 }

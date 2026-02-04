@@ -19,6 +19,20 @@
     <section class="content">
         <div class="container-fluid">
             
+            <?php if ($this->session->flashdata('pesan_sukses')): ?>
+                <div class="alert alert-success alert-dismissible fade show shadow-sm">
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    <i class="fas fa-check mr-1"></i> <?= $this->session->flashdata('pesan_sukses'); ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($this->session->flashdata('pesan_error')): ?>
+                <div class="alert alert-danger alert-dismissible fade show shadow-sm">
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    <i class="fas fa-ban mr-1"></i> <?= $this->session->flashdata('pesan_error'); ?>
+                </div>
+            <?php endif; ?>
+
             <div class="row mb-3">
                 <div class="col-md-12">
                     <div class="callout callout-info shadow-sm bg-white border-left-info">
@@ -48,11 +62,11 @@
                                 <form method="get" action="<?= base_url('dosen/monitoring_prodi'); ?>" class="mr-2">
                                     <select name="angkatan" class="form-control form-control-sm" onchange="this.form.submit()" style="width: 150px;">
                                         <option value="all">-- Semua Angkatan --</option>
-                                        <?php foreach($list_angkatan as $a): ?>
+                                        <?php if(isset($list_angkatan)): foreach($list_angkatan as $a): ?>
                                             <option value="<?= $a['angkatan']; ?>" <?= ($selected_angkatan == $a['angkatan']) ? 'selected' : ''; ?>>
                                                 Angkatan <?= $a['angkatan']; ?>
                                             </option>
-                                        <?php endforeach; ?>
+                                        <?php endforeach; endif; ?>
                                     </select>
                                 </form>
 
@@ -103,8 +117,18 @@
                                             </td>
 
                                             <td class="align-middle text-sm">
-                                                <div class="text-muted mb-1"><i class="fas fa-user-tie text-primary mr-1"></i> <b>P1:</b> <?php echo $m['p1'] ?: '-'; ?></div>
-                                                <div class="text-muted"><i class="fas fa-user-tie text-secondary mr-1"></i> <b>P2:</b> <?php echo $m['p2'] ?: '-'; ?></div>
+                                                <div class="text-muted mb-1 d-flex justify-content-between">
+                                                    <span><i class="fas fa-user-tie text-primary mr-1"></i> <b>P1:</b> <?php echo $m['p1'] ?: '-'; ?></span>
+                                                </div>
+                                                <div class="text-muted d-flex justify-content-between">
+                                                    <span><i class="fas fa-user-tie text-secondary mr-1"></i> <b>P2:</b> <?php echo $m['p2'] ?: '-'; ?></span>
+                                                </div>
+                                                
+                                                <?php if($m['id_skripsi']): ?>
+                                                <button type="button" class="btn btn-xs btn-outline-warning mt-2 btn-block" data-toggle="modal" data-target="#modalEditPembimbing<?= $m['id_skripsi']; ?>">
+                                                    <i class="fas fa-edit mr-1"></i> Ganti Pembimbing
+                                                </button>
+                                                <?php endif; ?>
                                             </td>
 
                                             <td class="align-middle text-center">
@@ -112,10 +136,10 @@
                                                     <div class="btn-group">
                                                         <?php if($m['status_acc_kaprodi'] == 'menunggu'): ?>
                                                             <a href="<?= base_url('dosen/setuju_judul/'.$m['id_skripsi']) ?>" class="btn btn-xs btn-success shadow-sm" onclick="return confirm('Setujui Judul & Pembimbing?')" title="Setujui">
-                                                                <i class="fas fa-check"></i> ACC
+                                                                <i class="fas fa-check"></i>
                                                             </a>
                                                             <a href="<?= base_url('dosen/tolak_judul/'.$m['id_skripsi']) ?>" class="btn btn-xs btn-danger shadow-sm ml-1" onclick="return confirm('Tolak Judul?')" title="Tolak">
-                                                                <i class="fas fa-times"></i> Tolak
+                                                                <i class="fas fa-times"></i>
                                                             </a>
                                                         <?php else: ?>
                                                             <span class="badge badge-<?= ($m['status_acc_kaprodi'] == 'diterima') ? 'success' : 'danger' ?> p-2">
@@ -132,6 +156,55 @@
                                                 <?php endif; ?>
                                             </td>
                                         </tr>
+
+                                        <?php if($m['id_skripsi']): ?>
+                                        <div class="modal fade" id="modalEditPembimbing<?= $m['id_skripsi']; ?>" tabindex="-1" role="dialog" aria-hidden="true">
+                                            <div class="modal-dialog" role="document">
+                                                <div class="modal-content">
+                                                    <div class="modal-header bg-warning">
+                                                        <h5 class="modal-title text-dark"><i class="fas fa-user-edit mr-2"></i> Ganti Pembimbing</h5>
+                                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                            <span aria-hidden="true">&times;</span>
+                                                        </button>
+                                                    </div>
+                                                    <form action="<?= base_url('dosen/update_pembimbing'); ?>" method="POST">
+                                                        <div class="modal-body">
+                                                            <p class="text-sm">Ubah dosen pembimbing untuk mahasiswa: <b><?= $m['nama']; ?></b></p>
+                                                            <input type="hidden" name="id_skripsi" value="<?= $m['id_skripsi']; ?>">
+                                                            
+                                                            <div class="form-group">
+                                                                <label>Pembimbing 1</label>
+                                                                <select name="pembimbing1" class="form-control select2" style="width: 100%;" required>
+                                                                    <option value="">-- Pilih Dosen --</option>
+                                                                    <?php if(isset($list_dosen)): foreach($list_dosen as $d): ?>
+                                                                        <option value="<?= $d['id']; ?>" <?= ($d['nama'] == $m['p1']) ? 'selected' : ''; ?>>
+                                                                            <?= $d['nama']; ?>
+                                                                        </option>
+                                                                    <?php endforeach; endif; ?>
+                                                                </select>
+                                                            </div>
+
+                                                            <div class="form-group">
+                                                                <label>Pembimbing 2</label>
+                                                                <select name="pembimbing2" class="form-control select2" style="width: 100%;" required>
+                                                                    <option value="">-- Pilih Dosen --</option>
+                                                                    <?php if(isset($list_dosen)): foreach($list_dosen as $d): ?>
+                                                                        <option value="<?= $d['id']; ?>" <?= ($d['nama'] == $m['p2']) ? 'selected' : ''; ?>>
+                                                                            <?= $d['nama']; ?>
+                                                                        </option>
+                                                                    <?php endforeach; endif; ?>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer justify-content-between">
+                                                            <button type="button" class="btn btn-default btn-sm" data-dismiss="modal">Batal</button>
+                                                            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save mr-1"></i> Simpan Perubahan</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <?php endif; ?>
                                         <?php endforeach; ?>
                                     <?php endif; ?>
                                 </tbody>
@@ -141,7 +214,11 @@
                 </div>
             </div>
 
-        </div></section></div><script>
+        </div>
+    </section>
+</div>
+
+<script>
 document.addEventListener("DOMContentLoaded", function() {
     var searchInput = document.getElementById('searchMhs');
     if(searchInput){

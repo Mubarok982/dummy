@@ -178,6 +178,44 @@ public function __construct()
         $this->load->view('template/sidebar', $data);
         $this->load->view('dosen/v_monitoring_prodi', $data);
         $this->load->view('template/footer'); // Pastikan footer view sudah dikosongkan isinya seperti request sebelumnya
+
+        $data['list_dosen'] = $this->M_Data->get_dosen_pembimbing_list(); 
+    }
+
+    public function update_pembimbing()
+    {
+        // Hanya Kaprodi yang boleh akses
+        if ($this->session->userdata('is_kaprodi') != 1) {
+            redirect('dosen/monitoring_prodi');
+        }
+
+        $id_skripsi = $this->input->post('id_skripsi');
+        $p1 = $this->input->post('pembimbing1');
+        $p2 = $this->input->post('pembimbing2');
+
+        if ($id_skripsi && $p1 && $p2) {
+            
+            // Validasi: P1 dan P2 tidak boleh sama
+            if ($p1 == $p2) {
+                $this->session->set_flashdata('pesan_error', 'Gagal: Pembimbing 1 dan 2 tidak boleh sama.');
+                redirect('dosen/monitoring_prodi');
+            }
+
+            $data_update = [
+                'pembimbing1' => $p1,
+                'pembimbing2' => $p2
+            ];
+
+            // Update ke database
+            $this->db->where('id', $id_skripsi);
+            $this->db->update('skripsi', $data_update);
+
+            $this->session->set_flashdata('pesan_sukses', 'Pembimbing berhasil diperbarui.');
+        } else {
+            $this->session->set_flashdata('pesan_error', 'Data tidak lengkap.');
+        }
+
+        redirect('dosen/monitoring_prodi');
     }
 
     // --- FITUR PROFIL DOSEN ---
