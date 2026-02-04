@@ -74,4 +74,62 @@ class M_laporan_opt extends CI_Model {
         if ($limit) $this->db->limit($limit, $offset);
         return $this->db->get()->result_array();
     }
+
+    // Ambil detail kinerja dosen berdasarkan filter
+    public function get_detail_kinerja($id_dosen, $start_date, $end_date, $prodi = null)
+    {
+        // Query 1: Menghitung Total Mahasiswa Bimbingan Aktif di Periode Tersebut
+        $this->db->select('COUNT(DISTINCT s.id_mahasiswa) as total_mhs');
+        $this->db->from('skripsi s');
+        $this->db->join('data_mahasiswa m', 's.id_mahasiswa = m.id');
+        $this->db->where("('$start_date' <= s.tgl_pengajuan_judul)"); // Asumsi aktif jika judul diajukan sebelum akhir semester
+        $this->db->group_start();
+            $this->db->where('s.pembimbing1', $id_dosen);
+            $this->db->or_where('s.pembimbing2', $id_dosen);
+        $this->db->group_end();
+        
+        if (!empty($prodi)) {
+            $this->db->where('m.prodi', $prodi);
+        }
+        $data_mhs = $this->db->get()->row_array();
+
+
+        // Query 2: Mengambil Riwayat Aktivitas (Revisi/ACC) dari tabel progres_skripsi
+        // Kita asumsikan tabel 'progres_skripsi' mencatat kapan revisi terjadi (created_at)
+        $this->db->select('
+            ps.bab, 
+            ps.created_at, 
+            ps.status_p1, 
+            ps.status_p2, 
+            m.nama as nama_mahasiswa,
+            m.npm,
+            m.prodi
+        ');
+        $this->db->from('progres_skripsi ps');
+        $this->db->join('skripsi s', 'ps.id_skripsi = s.id');
+        $this->db->join('data_mahasiswa m', 's.id_mahasiswa = m.id');
+        
+        // Filter Waktu (Semester)
+        $this->db->where('ps.created_at >=', $start_date . ' 00:00:00');
+        $this->db->where('ps.created_at <=', $end_date . ' 23:59:59');
+
+        // Filter Dosen (Apakah dia P1 atau P2 di skripsi tersebut)
+        $this->db->group_start();
+            $this->db->where('s.pembimbing1', $id_dosen);
+            $this->db->or_where('s.pembimbing2', $id_dosen);
+        $this->db->group_end();
+
+        // Filter Prodi
+        if (!empty($prodi)) {
+            $this->db->where('m.prodi', $prodi);
+        }
+
+        $this->db->order_by('ps.created_at', 'DESC');
+        $riwayat = $this->db->get()->result_array();
+
+        return [
+            'total_mhs_bimbingan' => $data_mhs['total_mhs'],
+            'riwayat_aktivitas' => $riwayat
+        ];
+    }
 }

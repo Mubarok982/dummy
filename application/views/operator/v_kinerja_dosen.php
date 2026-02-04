@@ -132,17 +132,17 @@
                                                                     <span aria-hidden="true">&times;</span>
                                                                 </button>
                                                             </div>
-                                                            <div class="modal-body">
-                                                                <!-- Filter Form -->
-                                                                <form method="GET" action="#" class="mb-3" id="filter-form-<?php echo $dosen['id']; ?>">
+                                                            <div class="modal-body text-left">
+                                                                
+                                                                <form method="GET" action="#" class="mb-3" id="filter-form-<?php echo $dosen['id']; ?>" onsubmit="return false;">
                                                                     <div class="row">
                                                                         <div class="col-md-4">
                                                                             <label>Semester</label>
                                                                             <select name="semester" class="form-control form-control-sm" onchange="loadSemesterReport(<?php echo $dosen['id']; ?>)">
-                                                                                <option value="2025/2026 Genap" <?php echo ($this->input->get('semester') == '2025/2026 Genap') ? 'selected' : ''; ?>>2025/2026 Genap</option>
-                                                                                <option value="2025/2026 Ganjil" <?php echo ($this->input->get('semester') == '2025/2026 Ganjil') ? 'selected' : ''; ?>>2025/2026 Ganjil</option>
-                                                                                <option value="2024/2025 Genap" <?php echo ($this->input->get('semester') == '2024/2025 Genap') ? 'selected' : ''; ?>>2024/2025 Genap</option>
-                                                                                <option value="2024/2025 Ganjil" <?php echo ($this->input->get('semester') == '2024/2025 Ganjil') ? 'selected' : ''; ?>>2024/2025 Ganjil</option>
+                                                                                <option value="2025/2026 Genap">2025/2026 Genap</option>
+                                                                                <option value="2025/2026 Ganjil">2025/2026 Ganjil</option>
+                                                                                <option value="2024/2025 Genap">2024/2025 Genap</option>
+                                                                                <option value="2024/2025 Ganjil">2024/2025 Ganjil</option>
                                                                             </select>
                                                                         </div>
                                                                         <div class="col-md-4">
@@ -158,19 +158,19 @@
                                                                         </div>
                                                                         <div class="col-md-4 d-flex align-items-end">
                                                                             <button type="button" class="btn btn-primary btn-sm" onclick="loadSemesterReport(<?php echo $dosen['id']; ?>)">
-                                                                                <i class="fas fa-search"></i> Filter
+                                                                                <i class="fas fa-search"></i> Terapkan Filter
                                                                             </button>
                                                                         </div>
                                                                     </div>
                                                                 </form>
 
-                                                                <!-- Report Content -->
                                                                 <div id="report-content-<?php echo $dosen['id']; ?>">
                                                                     <div class="text-center py-4">
                                                                         <i class="fas fa-spinner fa-spin fa-2x text-info"></i>
-                                                                        <p class="mt-2">Memuat data...</p>
+                                                                        <p class="mt-2">Menunggu data...</p>
                                                                     </div>
                                                                 </div>
+
                                                             </div>
                                                             <div class="modal-footer bg-light py-2">
                                                                 <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Tutup</button>
@@ -178,7 +178,7 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </td>
+                                                </td>
                                         </tr>
                                         <?php endforeach; ?>
                                     <?php endif; ?>
@@ -205,3 +205,56 @@
         </div>
     </section>
 </div>
+
+<script>
+    /**
+     * Fungsi untuk memuat laporan kinerja dosen per semester
+     * Dipanggil saat modal dibuka atau saat filter semester/prodi berubah
+     */
+    function loadSemesterReport(idDosen) {
+        // 1. Ambil elemen form filter di dalam modal yang spesifik untuk dosen ini
+        var form = $('#filter-form-' + idDosen);
+        var semester = form.find('select[name="semester"]').val();
+        var prodi = form.find('select[name="prodi"]').val();
+        var container = $('#report-content-' + idDosen);
+
+        // 2. Tampilkan Loading State
+        container.html('<div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x text-info"></i><p class="mt-2">Mengambil data dari database...</p></div>');
+
+        // 3. Lakukan Request AJAX ke Controller Operator
+        $.ajax({
+            url: '<?php echo base_url("operator/get_detail_kinerja_ajax"); ?>',
+            type: 'POST',
+            data: {
+                id_dosen: idDosen,
+                semester: semester,
+                prodi: prodi
+            },
+            success: function(response) {
+                // 4. Masukkan hasil HTML (Tabel/Info) ke dalam container modal
+                container.html(response);
+            },
+            error: function(xhr, status, error) {
+                // Handle Error
+                container.html('<div class="alert alert-danger text-center"><i class="fas fa-exclamation-circle"></i> Gagal memuat data. Periksa koneksi internet atau server.</div>');
+                console.error("AJAX Error: " + error);
+            }
+        });
+    }
+
+    // Event Listener saat Dokumen Siap
+    $(document).ready(function() {
+        // Event Handler: Ketika modal 'Lihat Detail' dibuka
+        $('[data-target^="#modal-detail-"]').on('shown.bs.modal', function (e) {
+            var btn = $(e.relatedTarget);
+            var targetId = btn.data('target'); // Contoh: #modal-detail-123
+            var idDosen = targetId.split('-')[2]; // Ambil ID (123)
+            
+            // Cek apakah konten masih kosong (belum pernah diload) atau masih loading state awal
+            // Kita cek length children <= 1 (asumsi cuma ada div spinner)
+            if($('#report-content-' + idDosen).children().length <= 1) { 
+                loadSemesterReport(idDosen);
+            }
+        });
+    });
+</script>

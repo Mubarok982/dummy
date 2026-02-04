@@ -49,8 +49,7 @@ class Mahasiswa extends CI_Controller {
         $this->load->view('mahasiswa/v_pengajuan_judul', $data);
         $this->load->view('template/footer');
     }
-
-    public function submit_judul()
+public function submit_judul()
     {
         $id_mahasiswa = $this->session->userdata('id');
         
@@ -73,17 +72,14 @@ class Mahasiswa extends CI_Controller {
                 'status_acc_kaprodi' => 'menunggu'
             ];
 
-            $is_update = $this->M_Mahasiswa->get_skripsi_by_mhs($id_mahasiswa);
+            // --- PERBAIKAN: HAPUS LOGIKA UPDATE, PAKSA INSERT ---
+            // Kita tidak perlu cek $is_update, langsung insert saja agar jadi history
             
-            if ($is_update) {
-                $this->M_Mahasiswa->update_skripsi_judul($id_mahasiswa, $data);
-                $this->session->set_flashdata('pesan_sukses', 'Judul skripsi berhasil diperbarui. Menunggu persetujuan Kaprodi.');
-            } else {
-                $this->M_Mahasiswa->insert_skripsi($data);
-                $this->session->set_flashdata('pesan_sukses', 'Pengajuan judul skripsi berhasil. Menunggu persetujuan Kaprodi.');
-            }
+            $this->M_Mahasiswa->insert_skripsi($data);
+            $this->session->set_flashdata('pesan_sukses', 'Pengajuan judul baru berhasil dikirim.');
             
-            $this->M_Log->record('Judul', 'Input/Update judul: ' . $data['judul']);
+            // Log
+            $this->M_Log->record('Judul', 'Mengajukan judul baru: ' . $data['judul']);
             redirect('mahasiswa/pengajuan_judul');
         }
     }

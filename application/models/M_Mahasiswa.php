@@ -3,11 +3,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class M_Mahasiswa extends CI_Model {
 
-    /**
-     * Mengambil data skripsi berdasarkan ID Mahasiswa.
-     * Sudah di-JOIN dengan data_mahasiswa untuk mendapatkan NPM
-     * dan mstr_akun untuk mendapatkan nama pembimbing.
-     */
+  // GANTI fungsi get_skripsi_by_mhs yang lama dengan ini:
     public function get_skripsi_by_mhs($id_mahasiswa)
     {
         $this->db->select('S.*, M.npm, A1.nama AS nama_p1, A2.nama AS nama_p2');
@@ -16,7 +12,27 @@ class M_Mahasiswa extends CI_Model {
         $this->db->join('mstr_akun A1', 'S.pembimbing1 = A1.id', 'left');
         $this->db->join('mstr_akun A2', 'S.pembimbing2 = A2.id', 'left');
         $this->db->where('S.id_mahasiswa', $id_mahasiswa);
-        return $this->db->get()->row_array();
+        
+        // PENTING: Ambil yang paling baru berdasarkan ID atau Tanggal
+        $this->db->order_by('S.id', 'DESC'); 
+        
+        return $this->db->get()->row_array(); // Hanya ambil 1 data terbaru
+    }
+
+    // TAMBAHKAN fungsi baru ini untuk Riwayat Dashboard:
+    public function get_all_skripsi_by_mhs($id_mahasiswa)
+    {
+        $this->db->select('S.*, A1.nama AS nama_p1, A2.nama AS nama_p2');
+        $this->db->from('skripsi S');
+        $this->db->join('mstr_akun A1', 'S.pembimbing1 = A1.id', 'left');
+        $this->db->join('mstr_akun A2', 'S.pembimbing2 = A2.id', 'left');
+        $this->db->where('S.id_mahasiswa', $id_mahasiswa);
+        
+        // Urutkan dari yang terbaru
+        $this->db->order_by('S.tgl_pengajuan_judul', 'DESC');
+        $this->db->order_by('S.id', 'DESC');
+        
+        return $this->db->get()->result_array(); // Ambil BANYAK data (result_array)
     }
     
     public function insert_skripsi($data)

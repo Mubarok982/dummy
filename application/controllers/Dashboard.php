@@ -55,6 +55,16 @@ class Dashboard extends CI_Controller {
             } else {
                 $data['statistik']['last_bab'] = 0;
             }
+
+            // Ambil Riwayat Pengajuan Judul Lengkap
+            $this->db->select('s.*, d1.nama as nama_p1, d2.nama as nama_p2');
+            $this->db->from('skripsi s');
+            // Join ke tabel akun untuk dapat nama Dosen Pembimbing 1 & 2
+            $this->db->join('mstr_akun d1', 's.pembimbing1 = d1.id', 'left');
+            $this->db->join('mstr_akun d2', 's.pembimbing2 = d2.id', 'left');
+            $this->db->where('s.id_mahasiswa', $this->session->userdata('id'));
+            $this->db->order_by('s.tgl_pengajuan_judul', 'DESC'); // Yang terbaru paling atas
+            $data['riwayat_judul'] = $this->db->get()->result_array();
         }
         
         $this->load->view('template/header', $data);

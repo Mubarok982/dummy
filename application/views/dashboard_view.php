@@ -16,7 +16,7 @@
                 <?php 
                 $role = $this->session->userdata('role');
                 
-                // DATA DEFAULT AGAR TIDAK ERROR
+                // DATA DEFAULT AGAR TIDAK ERROR (Jika controller lupa kirim data)
                 $stats = isset($statistik) ? $statistik : [
                     'total_mhs' => 0, 'mhs_skripsi' => 0, 'total_dosen' => 0,
                     'mhs_ready_sempro' => 0, 'total_bimbingan' => 0,
@@ -129,7 +129,7 @@
                 <?php elseif ($role == 'mahasiswa'): ?>
 
                     <?php
-                    $current_bab = $stats['last_bab'];
+                    $current_bab = isset($stats['last_bab']) ? $stats['last_bab'] : 0;
                     $total_bab = 5; 
                     $progress_percent = ($total_bab > 0) ? min(100, round(($current_bab / $total_bab) * 100)) : 0;
                     
@@ -138,42 +138,108 @@
                     if($progress_percent >= 80) $bg_class = 'bg-success';
                     ?>
 
-                    <div class="col-md-4">
-                        <div class="info-box mb-3 bg-white shadow-sm">
-                            <span class="info-box-icon bg-info elevation-1"><i class="fas fa-file-signature"></i></span>
-                            <div class="info-box-content">
-                                <span class="info-box-text">Status Judul</span>
-                                <span class="info-box-number"><?php echo $stats['judul_status']; ?></span>
-                                <a href="<?php echo base_url('mahasiswa/pengajuan_judul'); ?>" class="small-box-footer text-muted text-sm">
-                                    Lihat Detail <i class="fas fa-arrow-circle-right"></i>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-md-8">
-                        <div class="card card-primary card-outline shadow-sm">
-                            <div class="card-header">
-                                <h3 class="card-title"><i class="fas fa-tasks mr-1"></i> Progres Skripsi Anda</h3>
-                            </div>
-                            <div class="card-body">
-                                <h5 class="mb-2">Saat ini: <b>BAB <?php echo $current_bab; ?></b> <small class="float-right badge badge-<?php echo str_replace('bg-', '', $bg_class); ?>"><?php echo $progress_percent; ?>% Selesai</small></h5>
-                                <div class="progress mb-3" style="height: 20px;">
-                                    <div class="progress-bar <?php echo $bg_class; ?> progress-bar-striped progress-bar-animated" role="progressbar" style="width: <?php echo $progress_percent; ?>%"></div>
+                    </div> 
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="info-box mb-3 bg-white shadow-sm">
+                                <span class="info-box-icon bg-info elevation-1"><i class="fas fa-file-signature"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Status Judul Aktif</span>
+                                    <span class="info-box-number text-lg"><?php echo isset($stats['judul_status']) ? $stats['judul_status'] : '-'; ?></span>
+                                    <a href="<?php echo base_url('mahasiswa/pengajuan_judul'); ?>" class="small-box-footer text-muted text-sm mt-2 d-block">
+                                        Ajukan Judul Baru <i class="fas fa-plus-circle ml-1"></i>
+                                    </a>
                                 </div>
-                                <a href="<?php echo base_url('mahasiswa/bimbingan'); ?>" class="btn btn-primary btn-block">
-                                    <i class="fas fa-upload"></i> Lanjut Bimbingan / Upload File
-                                </a>
+                            </div>
+                        </div>
+
+                        <div class="col-md-8">
+                            <div class="card card-primary card-outline shadow-sm">
+                                <div class="card-header">
+                                    <h3 class="card-title"><i class="fas fa-tasks mr-1"></i> Progres Skripsi (Aktif)</h3>
+                                </div>
+                                <div class="card-body">
+                                    <h5 class="mb-2">Saat ini: <b>BAB <?php echo $current_bab; ?></b> <small class="float-right badge badge-<?php echo str_replace('bg-', '', $bg_class); ?>"><?php echo $progress_percent; ?>% Selesai</small></h5>
+                                    <div class="progress mb-3" style="height: 20px;">
+                                        <div class="progress-bar <?php echo $bg_class; ?> progress-bar-striped progress-bar-animated" role="progressbar" style="width: <?php echo $progress_percent; ?>%"></div>
+                                    </div>
+                                    <a href="<?php echo base_url('mahasiswa/bimbingan'); ?>" class="btn btn-primary btn-block">
+                                        <i class="fas fa-upload mr-2"></i> Lanjut Bimbingan / Upload File
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                <?php endif; ?>
-            </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="card card-info card-outline shadow-sm">
+                                <div class="card-header">
+                                    <h3 class="card-title"><i class="fas fa-history mr-1"></i> Riwayat Pengajuan Judul Skripsi</h3>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-striped table-hover mb-0">
+                                            <thead class="bg-light text-center">
+                                                <tr>
+                                                    <th style="width: 5%;">No</th>
+                                                    <th style="width: 15%;">Tgl Pengajuan</th>
+                                                    <th style="width: 35%; text-align: left;">Judul & Tema</th>
+                                                    <th style="width: 25%; text-align: left;">Usulan Pembimbing</th>
+                                                    <th style="width: 10%;">Skema</th>
+                                                    <th style="width: 10%;">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php if (empty($riwayat_judul)): ?>
+                                                    <tr>
+                                                        <td colspan="6" class="text-center py-4 text-muted">
+                                                            <i class="fas fa-info-circle mr-1"></i> Belum ada riwayat pengajuan judul.
+                                                        </td>
+                                                    </tr>
+                                                <?php else: ?>
+                                                    <?php $no = 1; foreach ($riwayat_judul as $row): ?>
+                                                        <tr>
+                                                            <td class="text-center align-middle"><?php echo $no++; ?></td>
+                                                            <td class="text-center align-middle"><?php echo date('d M Y', strtotime($row['tgl_pengajuan_judul'])); ?></td>
+                                                            <td class="align-middle">
+                                                                <span class="font-weight-bold d-block"><?php echo $row['judul']; ?></span>
+                                                                <small class="text-muted"><i class="fas fa-tag mr-1"></i> <?php echo $row['tema']; ?></small>
+                                                            </td>
+                                                            <td class="align-middle">
+                                                                <small class="d-block text-truncate" style="max-width: 200px;"><i class="fas fa-user-tie text-primary mr-1"></i> P1: <?php echo $row['nama_p1'] ?: '-'; ?></small>
+                                                                <small class="d-block text-truncate" style="max-width: 200px;"><i class="fas fa-user-tie text-secondary mr-1"></i> P2: <?php echo $row['nama_p2'] ?: '-'; ?></small>
+                                                            </td>
+                                                            <td class="text-center align-middle">
+                                                                <span class="badge badge-light border"><?php echo $row['skema']; ?></span>
+                                                            </td>
+                                                            <td class="text-center align-middle">
+                                                                <?php 
+                                                                $status = strtolower($row['status_acc_kaprodi']);
+                                                                $badge = 'secondary';
+                                                                if($status == 'diterima') $badge = 'success';
+                                                                elseif($status == 'ditolak') $badge = 'danger';
+                                                                elseif($status == 'menunggu') $badge = 'warning';
+                                                                ?>
+                                                                <span class="badge badge-<?php echo $badge; ?> px-3 py-2 shadow-sm">
+                                                                    <?php echo strtoupper($status); ?>
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    <?php endforeach; ?>
+                                                <?php endif; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-            <?php if ($role == 'dosen' && $this->session->userdata('is_kaprodi') == 1): ?>
+                <?php endif; ?> </div> <?php if ($role == 'dosen' && $this->session->userdata('is_kaprodi') == 1): ?>
                 
-                <div class="row">
+                <div class="row mt-4">
                     <div class="col-md-8">
                         <div class="card card-outline card-info shadow-sm">
                             <div class="card-header">
@@ -236,78 +302,40 @@
     </section>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-
 <?php if ($role == 'dosen' && $this->session->userdata('is_kaprodi') == 1): ?>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script>
-// Gunakan event listener agar script jalan setelah HTML ready
 document.addEventListener("DOMContentLoaded", function() {
-    
-    // --- Ambil Data dari PHP ---
-    // Menggunakan array_values untuk memastikan format array JS [1, 2, 3...]
     var babData = <?php echo json_encode(array_values($stats_kaprodi['bab_stats'])); ?>;
     
-    // Cek di Console browser apakah data masuk
-    console.log("Data Chart:", babData);
-
-    // --- Konfigurasi Data ---
     var donutData = {
-        labels: [
-            'BAB 1', 
-            'BAB 2', 
-            'BAB 3', 
-            'BAB 4', 
-            'BAB 5'
-        ],
-        datasets: [
-            {
-                data: babData,
-                backgroundColor : ['#007bff', '#17a2b8', '#28a745', '#ffc107', '#dc3545'], // Biru, Teal, Hijau, Kuning, Merah
-                hoverOffset: 4
-            }
-        ]
+        labels: ['BAB 1', 'BAB 2', 'BAB 3', 'BAB 4', 'BAB 5'],
+        datasets: [{
+            data: babData,
+            backgroundColor : ['#007bff', '#17a2b8', '#28a745', '#ffc107', '#dc3545'],
+            hoverOffset: 4
+        }]
     };
 
-    // --- Konfigurasi Opsi (Chart.js v3) ---
     var pieOptions = {
         maintainAspectRatio : false,
         responsive : true,
         plugins: {
             legend: {
                 display: true,
-                position: 'left', // Posisi legenda di kiri
-                labels: {
-                    boxWidth: 20,
-                    padding: 20
-                }
-            },
-            tooltip: {
-                callbacks: {
-                    label: function(context) {
-                        let label = context.label || '';
-                        if (label) {
-                            label += ': ';
-                        }
-                        label += context.raw + ' Mahasiswa';
-                        return label;
-                    }
-                }
+                position: 'left',
+                labels: { boxWidth: 20, padding: 20 }
             }
         }
     };
 
-    // --- Render Chart ---
-    // Pastikan elemen canvas ada sebelum digambar
     var canvasElement = document.getElementById('sebaranChart');
     if (canvasElement) {
-        var pieChartCanvas = canvasElement.getContext('2d');
-        new Chart(pieChartCanvas, {
-            type: 'doughnut', // Gunakan 'doughnut' atau 'pie'
+        new Chart(canvasElement.getContext('2d'), {
+            type: 'doughnut',
             data: donutData,
             options: pieOptions
         });
-    } else {
-        console.error("Canvas element #sebaranChart tidak ditemukan!");
     }
 });
 </script>
