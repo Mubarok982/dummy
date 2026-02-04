@@ -61,7 +61,7 @@
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <tr>
-                                    <td colspan="10" class="text-center">Tidak ada mahasiswa yang siap pendadaran.</td>
+                                    <td colspan="10" class="text-center">Belum ada mahasiswa yang siap pendadaran.</td>
                                 </tr>
                             <?php endif; ?>
                         </tbody>

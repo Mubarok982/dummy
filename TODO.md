@@ -1,6 +1,5 @@
-- [ ] Add `manajemen_akun` method to `application/controllers/Dosen.php` (restricted to kaprodi)
-- [ ] Create `application/views/dosen/v_manajemen_akun.php` view similar to the operator's version
-=======
-## Task 3: Add Account Management Page for Kaprodi
-- [x] Add `manajemen_akun` method to `application/controllers/Dosen.php` (restricted to kaprodi)
-- [x] Create `application/views/dosen/v_manajemen_akun.php` view similar to the operator's version
+# Delete Thesis Completion Page
+
+- [x] Remove menu link from sidebar.php
+- [x] Delete view file v_mahasiswa_selesai_skripsi.php
+- [x] Remove get_mahasiswa_selesai_skripsi() method from M_Data.php

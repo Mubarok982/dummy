@@ -1,4 +1,4 @@
-<?php
+    <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class M_Data extends CI_Model
@@ -427,11 +427,11 @@ public function get_mahasiswa_siap_sempro()
         return $this->db->get()->result_array();
     }
 
-    // --- FITUR BARU: List Revisi ---
-    public function get_list_revisi($prodi = NULL, $keyword = NULL)
+    // --- FITUR BARU: Riwayat Progress Mahasiswa ---
+    public function get_riwayat_progress($keyword = NULL)
     {
         $this->db->select('
-            p.id, p.npm, p.bab, p.komentar_dosen1, p.komentar_dosen2, p.tgl_upload,
+            p.id, p.npm, p.bab, p.file, p.komentar_dosen1, p.komentar_dosen2, p.nilai_dosen1, p.nilai_dosen2, p.progres_dosen1, p.progres_dosen2, p.tgl_upload, p.tgl_verifikasi,
             a.nama as nama_mhs, m.prodi,
             s.judul,
             d1.nama as nama_p1,
@@ -444,16 +444,6 @@ public function get_mahasiswa_siap_sempro()
         $this->db->join('skripsi s', 's.id_mahasiswa = m.id', 'left');
         $this->db->join('mstr_akun d1', 's.pembimbing1 = d1.id', 'left');
         $this->db->join('mstr_akun d2', 's.pembimbing2 = d2.id', 'left');
-
-        // Kondisi revisi: nilai_dosen1 atau nilai_dosen2 = 'Revisi'
-        $this->db->group_start();
-            $this->db->where('p.nilai_dosen1', 'Revisi');
-            $this->db->or_where('p.nilai_dosen2', 'Revisi');
-        $this->db->group_end();
-
-        if ($prodi) {
-            $this->db->where('m.prodi', $prodi);
-        }
 
         if ($keyword) {
             $this->db->group_start();
@@ -550,32 +540,21 @@ public function get_mahasiswa_siap_sempro()
         return $this->db->get()->result_array();
     }
 
-    // --- FITUR BARU: Mahasiswa Selesai Skripsi (Bab 5 ACC) ---
-    public function get_mahasiswa_selesai_skripsi()
+    // --- GET SKRIPSI BY ID ---
+    public function get_skripsi_by_id($id_skripsi)
     {
         $this->db->select('
-            a.nama, a.foto,
-            m.npm, m.prodi, m.angkatan,
-            s.judul,
-            d1.nama as nama_p1,
-            d2.nama as nama_p2,
-            p.tgl_upload as tgl_acc
+            s.id, s.judul, s.pembimbing1, s.pembimbing2,
+            a.nama as nama_mahasiswa, m.npm
         ');
 
-        $this->db->from('progres_skripsi p');
-
-        $this->db->join('data_mahasiswa m', 'p.npm = m.npm');
-        $this->db->join('skripsi s', 's.id_mahasiswa = m.id');
+        $this->db->from('skripsi s');
+        $this->db->join('data_mahasiswa m', 's.id_mahasiswa = m.id');
         $this->db->join('mstr_akun a', 'm.id = a.id');
-        $this->db->join('mstr_akun d1', 's.pembimbing1 = d1.id', 'left');
-        $this->db->join('mstr_akun d2', 's.pembimbing2 = d2.id', 'left');
+        $this->db->where('s.id', $id_skripsi);
 
-        $this->db->where('p.bab', 5);
-        $this->db->where('p.progres_dosen1', 100);
-        $this->db->where('p.progres_dosen2', 100);
-
-        $this->db->order_by('p.tgl_upload', 'DESC');
-
-        return $this->db->get()->result_array();
+        return $this->db->get()->row_array();
     }
+
+
 }

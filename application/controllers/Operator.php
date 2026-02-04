@@ -241,6 +241,35 @@ class Operator extends CI_Controller {
         $this->load->view('template/footer');
     }
 
+    public function mahasiswa_siap_pendadaran()
+    {
+        $data['title'] = 'Mahasiswa Siap Pendadaran';
+        $data['mahasiswa'] = $this->M_Data->get_mahasiswa_siap_pendadaran();
+
+        $this->load->view('template/header', $data);
+        $this->load->view('template/sidebar', $data);
+        $this->load->view('operator/v_mahasiswa_siap_pendadaran', $data);
+        $this->load->view('template/footer');
+    }
+
+    public function list_revisi()
+    {
+        $data['title'] = 'Riwayat Progress Mahasiswa';
+        $keyword = $this->input->get('keyword');
+
+        if (!$keyword) {
+            // Jika belum ada filter, kosongkan tabel
+            $data['list_revisi'] = [];
+        } else {
+            $data['list_revisi'] = $this->M_Data->get_riwayat_progress($keyword);
+        }
+
+        $this->load->view('template/header', $data);
+        $this->load->view('template/sidebar', $data);
+        $this->load->view('operator/v_progres_mahasiswa', $data);
+        $this->load->view('template/footer');
+    }
+
     // --- SKRIPSI & BIMBINGAN ---
 
     public function penugasan_pembimbing()
@@ -306,30 +335,39 @@ class Operator extends CI_Controller {
         redirect('operator/acc_judul');
     }
 
-    public function acc_dospem()
+
+
+    public function edit_dospem($id_skripsi)
     {
-        $data['title'] = 'Persetujuan Dosen Pembimbing';
-        $data['pengajuan'] = $this->M_skripsi_opt->get_pengajuan_menunggu(); // Sesuaikan nama fungsi di model
-        
+        $data['title'] = 'Edit Dosen Pembimbing';
+        $data['skripsi'] = $this->M_Data->get_skripsi_by_id($id_skripsi);
+        $data['dosen_list'] = $this->M_Data->get_dosen_pembimbing_list();
+
+        if (!$data['skripsi']) {
+            $this->session->set_flashdata('pesan_error', 'Data skripsi tidak ditemukan!');
+            redirect('operator/acc_judul');
+        }
+
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
-        $this->load->view('operator/v_acc_dospem', $data);
+        $this->load->view('operator/v_edit_dospem', $data);
         $this->load->view('template/footer');
     }
 
-    public function proses_acc_dospem($id_skripsi, $action)
+    public function update_dospem()
     {
-        $status = ($action == 'setujui') ? 'diterima' : 'ditolak';
-        $msg_sukses = ($status == 'diterima') ? 'Dosen Pembimbing disetujui.' : 'Pengajuan ditolak.';
+        $id_skripsi = $this->input->post('id_skripsi');
+        $pembimbing1 = $this->input->post('pembimbing1');
+        $pembimbing2 = $this->input->post('pembimbing2');
 
-        $data_update = [
-            'status_acc_kaprodi' => $status,
-            'tgl_acc_kaprodi' => date('Y-m-d H:i:s')
-        ];
-
-        $this->M_skripsi_opt->update_skripsi($id_skripsi, $data_update);
-        $this->session->set_flashdata('pesan_sukses', $msg_sukses);
-        redirect('operator/acc_dospem');
+        if ($id_skripsi && $pembimbing1 && $pembimbing2) {
+            $this->M_Data->assign_pembimbing($id_skripsi, $pembimbing1, $pembimbing2);
+            $this->session->set_flashdata('pesan_sukses', 'Dosen Pembimbing berhasil diperbarui!');
+            $this->M_Log->record('Edit Dospem', 'Operator mengubah dosen pembimbing skripsi ID: ' . $id_skripsi);
+        } else {
+            $this->session->set_flashdata('pesan_error', 'Gagal memperbarui dosen pembimbing. Data tidak lengkap.');
+        }
+        redirect('operator/acc_judul');
     }
 
     // --- MONITORING & LAPORAN ---
@@ -345,7 +383,7 @@ class Operator extends CI_Controller {
         // Gunakan M_laporan_opt agar konsisten
         $config['base_url'] = base_url('operator/monitoring_progres');
         $config['total_rows'] = $this->M_laporan_opt->count_laporan_progres($prodi, $keyword);
-        $config['per_page'] = 10; 
+        $config['per_page'] = 10;
         $config['reuse_query_string'] = TRUE;
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
@@ -355,7 +393,7 @@ class Operator extends CI_Controller {
 
         $page = $this->input->get('page') ? $this->input->get('page') : 0;
         $data['laporan'] = $this->M_laporan_opt->get_laporan_progres($prodi, $keyword, $config['per_page'], $page);
-        
+
         $data['pagination'] = $this->pagination->create_links();
         $data['total_rows'] = $config['total_rows'];
         $data['start_index'] = $page;
@@ -386,7 +424,7 @@ class Operator extends CI_Controller {
 
         $page = $this->input->get('page') ? $this->input->get('page') : 0;
         $data['dosen_list'] = $this->M_laporan_opt->get_dosen_pembimbing_list($keyword, $config['per_page'], $page);
-        
+
         // Hitung total aktivitas
         foreach ($data['dosen_list'] as $key => $dosen) {
             $aktivitas = $this->M_Log->get_dosen_activity_summary($dosen['id']);

@@ -71,7 +71,7 @@
                         <div class="card-body table-responsive p-0" style="height: 600px;">
                             <table class="table table-head-fixed table-hover text-nowrap table-striped align-middle" id="tableAcc">
                                 <thead>
-                                    <tr class="text-center">
+                                <tr class="text-center">
                                         <th style="width: 5%;">No</th>
                                         <th style="width: 10%;">NPM</th>
                                         <th class="text-left" style="width: 20%;">Nama Mahasiswa</th>
@@ -79,12 +79,13 @@
                                         <th class="text-left" style="width: 25%;">Judul Skripsi</th>
                                         <th class="text-left" style="width: 20%;">Pembimbing</th>
                                         <th style="width: 10%;">Aksi</th>
+                                        <th style="width: 10%;">Edit</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php if (empty($mahasiswa)): ?>
                                         <tr>
-                                            <td colspan="7" class="text-center py-5 text-muted">
+                                            <td colspan="8" class="text-center py-5 text-muted">
                                                 <i class="fas fa-users-slash fa-3x mb-3 text-gray-300"></i><br>
                                                 Belum ada data pengajuan.
                                             </td>
@@ -113,7 +114,7 @@
                                             <td class="align-middle text-center">
                                                 <?php if($m['id_skripsi']): ?>
                                                     <div class="btn-group">
-                                                        
+
                                                         <?php if($m['status_acc_kaprodi'] == 'menunggu'): ?>
                                                             <a href="<?= base_url('operator/setuju_judul/'.$m['id_skripsi']) ?>" class="btn btn-sm btn-success shadow-sm" onclick="return confirm('Setujui Judul & Pembimbing?')" title="ACC">
                                                                 <i class="fas fa-check"></i> ACC
@@ -129,6 +130,17 @@
                                                     </div>
                                                 <?php else: ?>
                                                     <span class="text-muted font-italic text-sm">Menunggu Input</span>
+                                                <?php endif; ?>
+                                            </td>
+
+                                            <td class="align-middle text-center">
+                                                <?php if($m['id_skripsi']): ?>
+                                                    <a href="<?php echo base_url('operator/edit_dospem/' . $m['id_skripsi']); ?>"
+                                                       class="btn btn-warning btn-sm shadow-sm">
+                                                        <i class="fas fa-edit mr-1"></i> Edit
+                                                    </a>
+                                                <?php else: ?>
+                                                    <span class="text-muted font-italic text-sm">-</span>
                                                 <?php endif; ?>
                                             </td>
                                         </tr>

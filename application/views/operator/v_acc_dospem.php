@@ -49,15 +49,16 @@
                                     <th style="width: 5%">No</th>
                                     <th style="width: 20%">Mahasiswa</th>
                                     <th style="width: 25%">Judul Skripsi</th>
-                                    <th style="width: 20%">Usulan Pembimbing</th>
-                                    <th style="width: 15%">Tgl Pengajuan</th>
+                                    <th style="width: 15%">Usulan Pembimbing</th>
+                                    <th style="width: 10%">Tgl Pengajuan</th>
                                     <th style="width: 15%">Aksi</th>
+                                    <th style="width: 10%">Edit</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php if (empty($pengajuan)): ?>
                                     <tr>
-                                        <td colspan="6" class="text-center py-5 text-muted">
+                                        <td colspan="7" class="text-center py-5 text-muted">
                                             <i class="fas fa-inbox fa-3x mb-3 text-gray-300"></i><br>
                                             Tidak ada pengajuan dosen pembimbing yang perlu disetujui saat ini.
                                         </td>
@@ -88,21 +89,28 @@
                                             <td class="align-middle text-center">
                                                 <?php echo date('d M Y', strtotime($p['tgl_pengajuan_judul'])); ?>
                                             </td>
-                                            
+
                                             <td class="align-middle text-center">
                                                 <div class="btn-group-vertical btn-block">
-                                                    <a href="<?php echo base_url('operator/proses_acc_dospem/' . $p['id'] . '/setujui'); ?>" 
+                                                    <a href="<?php echo base_url('operator/proses_acc_dospem/' . $p['id'] . '/setujui'); ?>"
                                                        onclick="return confirm('Setujui pengajuan ini? Mahasiswa akan dapat mulai bimbingan.')"
                                                        class="btn btn-success btn-sm mb-1 shadow-sm">
                                                         <i class="fas fa-check mr-1"></i> Setujui
                                                     </a>
-                                                    
+
                                                     <a href="<?php echo base_url('operator/proses_acc_dospem/' . $p['id'] . '/tolak'); ?>"
                                                        onclick="return confirm('Tolak pengajuan ini? Mahasiswa harus mengajukan ulang.')"
                                                        class="btn btn-danger btn-sm shadow-sm">
                                                         <i class="fas fa-times mr-1"></i> Tolak
                                                     </a>
                                                 </div>
+                                            </td>
+
+                                            <td class="align-middle text-center">
+                                                <a href="<?php echo base_url('operator/edit_dospem/' . $p['id']); ?>"
+                                                   class="btn btn-warning btn-sm shadow-sm">
+                                                    <i class="fas fa-edit mr-1"></i> Edit
+                                                </a>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
