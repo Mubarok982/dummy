@@ -120,65 +120,7 @@
                                                 <button type="button" class="btn btn-info btn-sm shadow-sm" data-toggle="modal" data-target="#modal-detail-<?php echo $dosen['id']; ?>">
                                                     <i class="fas fa-eye mr-1"></i> Lihat Detail
                                                 </button>
-
-                                                <div class="modal fade" id="modal-detail-<?php echo $dosen['id']; ?>" tabindex="-1" aria-hidden="true">
-                                                    <div class="modal-dialog modal-xl">
-                                                        <div class="modal-content">
-                                                            <div class="modal-header bg-info">
-                                                                <h5 class="modal-title text-white">
-                                                                    <i class="fas fa-chart-pie mr-1"></i> Laporan Kinerja Semester: <?php echo substr($dosen['nama'], 0, 25); ?>...
-                                                                </h5>
-                                                                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                                                                    <span aria-hidden="true">&times;</span>
-                                                                </button>
-                                                            </div>
-                                                            <div class="modal-body text-left">
-                                                                
-                                                                <form method="GET" action="#" class="mb-3" id="filter-form-<?php echo $dosen['id']; ?>" onsubmit="return false;">
-                                                                    <div class="row">
-                                                                        <div class="col-md-4">
-                                                                            <label>Semester</label>
-                                                                            <select name="semester" class="form-control form-control-sm" onchange="loadSemesterReport(<?php echo $dosen['id']; ?>)">
-                                                                                <option value="2025/2026 Genap">2025/2026 Genap</option>
-                                                                                <option value="2025/2026 Ganjil">2025/2026 Ganjil</option>
-                                                                                <option value="2024/2025 Genap">2024/2025 Genap</option>
-                                                                                <option value="2024/2025 Ganjil">2024/2025 Ganjil</option>
-                                                                            </select>
-                                                                        </div>
-                                                                        <div class="col-md-4">
-                                                                            <label>Program Studi</label>
-                                                                            <select name="prodi" class="form-control form-control-sm" onchange="loadSemesterReport(<?php echo $dosen['id']; ?>)">
-                                                                                <option value="">Semua Prodi</option>
-                                                                                <option value="Teknik Informatika S1">Teknik Informatika S1</option>
-                                                                                <option value="Teknologi Informasi D3">Teknologi Informasi D3</option>
-                                                                                <option value="Teknik Industri S1">Teknik Industri S1</option>
-                                                                                <option value="Teknik Mesin S1">Teknik Mesin S1</option>
-                                                                                <option value="Mesin Otomotif D3">Mesin Otomotif D3</option>
-                                                                            </select>
-                                                                        </div>
-                                                                        <div class="col-md-4 d-flex align-items-end">
-                                                                            <button type="button" class="btn btn-primary btn-sm" onclick="loadSemesterReport(<?php echo $dosen['id']; ?>)">
-                                                                                <i class="fas fa-search"></i> Terapkan Filter
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
-                                                                </form>
-
-                                                                <div id="report-content-<?php echo $dosen['id']; ?>">
-                                                                    <div class="text-center py-4">
-                                                                        <i class="fas fa-spinner fa-spin fa-2x text-info"></i>
-                                                                        <p class="mt-2">Menunggu data...</p>
-                                                                    </div>
-                                                                </div>
-
-                                                            </div>
-                                                            <div class="modal-footer bg-light py-2">
-                                                                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Tutup</button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                </td>
+                                            </td>
                                         </tr>
                                         <?php endforeach; ?>
                                     <?php endif; ?>
@@ -206,22 +148,92 @@
     </section>
 </div>
 
+<?php if (!empty($dosen_list)): ?>
+    <?php foreach ($dosen_list as $dosen): ?>
+    <div class="modal fade" id="modal-detail-<?php echo $dosen['id']; ?>" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-info">
+                    <h5 class="modal-title text-white">
+                        <i class="fas fa-chart-pie mr-1"></i> Laporan Kinerja Semester: <?php echo substr($dosen['nama'], 0, 25); ?>...
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body text-left">
+                    
+                    <form method="GET" action="#" class="mb-3" id="filter-form-<?php echo $dosen['id']; ?>" onsubmit="return false;">
+                        <div class="row">
+                          <div class="col-md-4">
+                                        <label>Semester</label>
+                                        <select name="semester" class="form-control form-control-sm" onchange="loadSemesterReport(<?php echo $dosen['id']; ?>)">
+                                            <?php 
+                                            if(isset($list_semester) && !empty($list_semester)): 
+                                                foreach($list_semester as $sem):
+                                            ?>
+                                                <option value="<?php echo $sem; ?>"><?php echo $sem; ?></option>
+                                            <?php 
+                                                endforeach; 
+                                            else:
+                                            ?>
+                                                <option value="2025/2026 Genap">2025/2026 Genap</option> <?php endif; ?>
+                                        </select>
+                                    </div>
+                            
+                            <div class="col-md-4">
+                                <label>Program Studi</label>
+                                <select name="prodi" class="form-control form-control-sm" onchange="loadSemesterReport(<?php echo $dosen['id']; ?>)">
+                                    <option value="">Semua Prodi</option>
+                                    <?php 
+                                    // Cek apakah data list_prodi dikirim dari controller
+                                    if(isset($list_prodi) && !empty($list_prodi)): 
+                                        foreach($list_prodi as $prod):
+                                    ?>
+                                        <option value="<?php echo $prod['prodi']; ?>">
+                                            <?php echo $prod['prodi']; ?>
+                                        </option>
+                                    <?php 
+                                        endforeach; 
+                                    endif; 
+                                    ?>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button type="button" class="btn btn-primary btn-sm" onclick="loadSemesterReport(<?php echo $dosen['id']; ?>)">
+                                    <i class="fas fa-search"></i> Terapkan Filter
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div id="report-content-<?php echo $dosen['id']; ?>">
+                        <div class="text-center py-4">
+                            <i class="fas fa-spinner fa-spin fa-2x text-info"></i>
+                            <p class="mt-2">Menunggu data...</p>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endforeach; ?>
+<?php endif; ?>
+
 <script>
-    /**
-     * Fungsi untuk memuat laporan kinerja dosen per semester
-     * Dipanggil saat modal dibuka atau saat filter semester/prodi berubah
-     */
     function loadSemesterReport(idDosen) {
-        // 1. Ambil elemen form filter di dalam modal yang spesifik untuk dosen ini
         var form = $('#filter-form-' + idDosen);
         var semester = form.find('select[name="semester"]').val();
         var prodi = form.find('select[name="prodi"]').val();
         var container = $('#report-content-' + idDosen);
 
-        // 2. Tampilkan Loading State
         container.html('<div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x text-info"></i><p class="mt-2">Mengambil data dari database...</p></div>');
 
-        // 3. Lakukan Request AJAX ke Controller Operator
         $.ajax({
             url: '<?php echo base_url("operator/get_detail_kinerja_ajax"); ?>',
             type: 'POST',
@@ -231,27 +243,21 @@
                 prodi: prodi
             },
             success: function(response) {
-                // 4. Masukkan hasil HTML (Tabel/Info) ke dalam container modal
                 container.html(response);
             },
             error: function(xhr, status, error) {
-                // Handle Error
-                container.html('<div class="alert alert-danger text-center"><i class="fas fa-exclamation-circle"></i> Gagal memuat data. Periksa koneksi internet atau server.</div>');
+                container.html('<div class="alert alert-danger text-center">Gagal memuat data.</div>');
                 console.error("AJAX Error: " + error);
             }
         });
     }
 
-    // Event Listener saat Dokumen Siap
     $(document).ready(function() {
-        // Event Handler: Ketika modal 'Lihat Detail' dibuka
         $('[data-target^="#modal-detail-"]').on('shown.bs.modal', function (e) {
             var btn = $(e.relatedTarget);
-            var targetId = btn.data('target'); // Contoh: #modal-detail-123
-            var idDosen = targetId.split('-')[2]; // Ambil ID (123)
+            var targetId = btn.data('target'); 
+            var idDosen = targetId.split('-')[2]; 
             
-            // Cek apakah konten masih kosong (belum pernah diload) atau masih loading state awal
-            // Kita cek length children <= 1 (asumsi cuma ada div spinner)
             if($('#report-content-' + idDosen).children().length <= 1) { 
                 loadSemesterReport(idDosen);
             }

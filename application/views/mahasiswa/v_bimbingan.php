@@ -23,26 +23,35 @@
             // 1. Inisialisasi Data
             $skripsi = isset($skripsi) ? $skripsi : null;
             $status_acc = isset($skripsi['status_acc_kaprodi']) ? $skripsi['status_acc_kaprodi'] : '';
-            // Ambil Status Sempro (Default: menunggu syarat jika null)
-            $status_sempro = isset($skripsi['status_sempro']) ? $skripsi['status_sempro'] : 'menunggu syarat';
             
+            // Ambil Status Ujian (Berlangsung/Diterima/Perbaikan/Mengulang)
+            $status_ujian = isset($status_ujian) ? $status_ujian : null;
+            
+            // Ambil Status Sempro dari Tabel Skripsi (Siap Sempro/Menunggu Syarat)
+            $status_sempro_db = isset($skripsi['status_sempro']) ? $skripsi['status_sempro'] : '';
+
             $is_acc_diterima = ($status_acc == 'diterima');
-            $valid_recipients = isset($valid_recipients) ? $valid_recipients : [];
             ?>
 
             <?php if (!$skripsi): ?>
                 <div class="alert alert-danger shadow-sm">
                     <h5><i class="icon fas fa-ban"></i> Belum Mengajukan Judul!</h5>
-                    Anda harus mengajukan judul skripsi terlebih dahulu di menu <a href="<?php echo base_url('mahasiswa/pengajuan_judul'); ?>" class="text-bold text-white" style="text-decoration: underline;">Pengajuan Judul</a>.
+                    Anda harus mengajukan judul skripsi terlebih dahulu.
                 </div>
                 <?php return; ?>
             <?php endif; ?>
 
             <?php if ($this->session->flashdata('pesan_sukses')): ?>
                 <div class="alert alert-success alert-dismissible shadow-sm">
-                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-                    <h5><i class="icon fas fa-check"></i> Berhasil!</h5>
-                    <?php echo $this->session->flashdata('pesan_sukses'); ?>
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    <i class="icon fas fa-check"></i> <?= $this->session->flashdata('pesan_sukses'); ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($this->session->flashdata('pesan_error')): ?>
+                <div class="alert alert-danger alert-dismissible shadow-sm">
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    <i class="icon fas fa-ban"></i> <?= $this->session->flashdata('pesan_error'); ?>
                 </div>
             <?php endif; ?>
 
@@ -67,7 +76,15 @@
                                 <li class="list-group-item">
                                     <b>Status Sempro</b> 
                                     <a class="float-right badge badge-info">
-                                        <?php echo strtoupper($status_sempro); ?>
+                                        <?php 
+                                        if ($status_ujian) {
+                                            echo strtoupper($status_ujian);
+                                        } elseif ($status_sempro_db == 'Siap Sempro') {
+                                            echo "SIAP SEMPRO";
+                                        } else {
+                                            echo "BELUM DAFTAR";
+                                        }
+                                        ?>
                                     </a>
                                 </li>
                             </ul>
@@ -113,195 +130,165 @@
                         
                         <?php 
                         // ============================================================
-                        // LOGIKA PENENTUAN BAB & STATUS (CORE LOGIC)
+                        // LOGIKA INTI (CORE LOGIC)
                         // ============================================================
                         
                         $target_bab = 1; 
                         $is_revisi = false;
                         
-                        // Default UI Variables
-                        $status_card = 'card-success';
-                        $icon_card = 'fa-plus-circle';
+                        // Default UI
+                        $status_card = 'card-primary';
                         $text_header = 'Upload Progres Baru';
-                        $alert_style = 'callout-success';
+                        $alert_style = 'callout-info';
                         $pesan_info = 'Silakan upload file untuk melanjutkan progres.';
-                        
-                        // Flag khusus Sempro
-                        $is_sempro_gate_locked = false; // Kunci jika sedang masa sidang
-                        $sempro_lock_message = "";
-                        $notif_type = ""; // untuk menampilkan banner khusus
+                        $is_locked = false;
+                        $lock_msg = "";
+                        $show_congrats_sempro = false; // Flag khusus ucapan selamat
 
-                        // 1. Cek Progres Terakhir
+                        // 1. Cek Progres Terakhir (Normal)
                         if (isset($last_progres) && !empty($last_progres)) {
                             $lp = (object) $last_progres;
-                            $p1 = $lp->progres_dosen1;
-                            $p2 = $lp->progres_dosen2;
-                            $bab_terakhir = $lp->bab;
-
-                            if ($p1 == 100 && $p2 == 100) {
-                                // ACC -> Lanjut Bab Selanjutnya
-                                $target_bab = $bab_terakhir + 1;
-                                $is_revisi = false;
-                                $text_header = 'Lanjut ke BAB ' . $target_bab;
-                                $icon_card = 'fa-arrow-circle-up';
-                                $pesan_info = 'Selamat! Bab sebelumnya telah di-ACC. Silakan upload <b>BAB ' . $target_bab . '</b>.';
+                            if ($lp->progres_dosen1 == 100 && $lp->progres_dosen2 == 100) {
+                                $target_bab = $lp->bab + 1;
                             } else {
-                                // Belum ACC -> Revisi
-                                $target_bab = $bab_terakhir;
+                                $target_bab = $lp->bab;
                                 $is_revisi = true;
                                 $status_card = 'card-warning';
-                                $icon_card = 'fa-sync-alt';
-                                $text_header = 'Upload Revisi BAB ' . $target_bab;
-                                $alert_style = 'callout-warning';
-                                $pesan_info = 'Bab ini belum disetujui sepenuhnya. File akan tercatat sebagai <b>REVISI</b>.';
+                                $text_header = 'Upload Revisi';
+                                $pesan_info = 'Silakan upload revisi untuk bab ini.';
                             }
                         }
 
-                        // ============================================================
-                        // LOGIKA GATEKEEPER SEMPRO (ANTARA BAB 3 DAN 4)
-                        // ============================================================
-                        if ($target_bab == 4) {
+                        // 2. LOGIKA SPESIAL SEMPRO (Siap Sempro / Ujian)
+                        
+                        // A. Cek Status "Siap Sempro" dari Skripsi (Belum Ujian tapi sudah ACC Bab 3)
+                        if ($status_sempro_db == 'Siap Sempro' && $status_ujian == null) {
+                            $show_congrats_sempro = true;
+                            $is_locked = true; // Kunci upload karena harus daftar dulu
+                            $lock_msg = "Form upload dikunci. Silakan lakukan pendaftaran Seminar Proposal.";
+                        }
+
+                        // B. Cek Status Ujian (Jika sudah ada data di tabel ujian_skripsi)
+                        if ($status_ujian != null) {
                             
-                            // Cek Status Sempro dari Database
-                            switch ($status_sempro) {
-                                case 'menunggu syarat':
-                                    // Sudah selesai Bab 3, tapi belum daftar/belum di-acc admin buat sempro
-                                    // Tampilkan Notifikasi "Siap Sempro" tapi LOCK Bab 4
-                                    $notif_type = "siap_sempro"; 
-                                    $is_sempro_gate_locked = true;
-                                    $sempro_lock_message = "Anda belum bisa lanjut ke Bab 4 sebelum status Seminar Proposal Anda disetujui.";
+                            switch ($status_ujian) {
+                                case 'Berlangsung':
+                                    $is_locked = true;
+                                    $lock_msg = "Form upload <b>DIKUNCI</b> karena status Ujian Anda sedang <b>BERLANGSUNG</b>. Harap tunggu hasil sidang keluar.";
                                     break;
 
-                                case 'siap sempro':
-                                case 'dijadwalkan':
-                                    // Sedang proses daftar / menunggu sidang
-                                    $notif_type = "waiting_sempro";
-                                    $is_sempro_gate_locked = true;
-                                    $sempro_lock_message = "Upload dikunci karena Anda sedang dalam masa persiapan/pelaksanaan Seminar Proposal.";
+                                case 'Diterima':
+                                    $target_bab = 4;
+                                    $is_revisi = false;
+                                    $status_card = 'card-success';
+                                    $text_header = 'Lanjut Penelitian (BAB 4)';
+                                    $alert_style = 'callout-success';
+                                    $pesan_info = 'Selamat! Ujian <b>DITERIMA</b>. Silakan lanjutkan penelitian ke <b>BAB 4</b>.';
+                                    $is_locked = false;
                                     break;
 
-                                case 'revisi sempro':
-                                    // Selesai sidang tapi harus revisi
-                                    // PAKSA MUNDUR KE BAB 3 (REVISI)
-                                    $target_bab = 3;
+                                case 'Perbaikan':
+                                    // Asumsi revisi Bab 1-3
+                                    $target_bab = 3; 
                                     $is_revisi = true;
-                                    $notif_type = "revisi_sempro";
-                                    $is_sempro_gate_locked = false; // Buka gate tapi arahkan ke revisi
-                                    
-                                    // Override UI
                                     $status_card = 'card-warning';
-                                    $text_header = 'Upload Revisi Pasca Sempro';
-                                    $alert_style = 'callout-danger';
-                                    $pesan_info = '<b>STATUS: REVISI SEMPRO.</b><br>Silakan upload naskah perbaikan hasil seminar proposal (Bab 1-3) untuk diperiksa dosen pembimbing.';
+                                    $text_header = 'Upload Revisi Pasca Ujian';
+                                    $alert_style = 'callout-warning';
+                                    $pesan_info = 'Status: <b>PERBAIKAN</b>. Silakan upload revisi naskah (Bab 1-3) sesuai masukan penguji.';
+                                    $is_locked = false;
                                     break;
 
-                                case 'mengulang': // Jika ada status ini
-                                    $target_bab = 3; // Atau 1 tergantung kebijakan
-                                    $is_revisi = true;
-                                    $notif_type = "mengulang";
-                                    $is_sempro_gate_locked = false;
-                                    
+                                case 'Mengulang':
+                                    $target_bab = 1;
+                                    $is_revisi = true; 
                                     $status_card = 'card-danger';
-                                    $text_header = 'Upload Ulang Naskah (Mengulang)';
+                                    $text_header = 'Upload Ulang Naskah';
                                     $alert_style = 'callout-danger';
-                                    $pesan_info = '<b>STATUS: MENGULANG.</b><br>Anda dinyatakan Mengulang. Silakan perbaiki total naskah Anda.';
-                                    break;
-
-                                case 'disetujui sempro':
-                                    // Lolos! Boleh lanjut Bab 4
-                                    $is_sempro_gate_locked = false;
-                                    // UI Normal Bab 4
-                                    $pesan_info = 'Selamat! Seminar Proposal telah disetujui. Anda dapat melanjutkan penelitian <b>BAB 4</b>.';
-                                    break;
-                                
-                                default:
-                                    // Fallback jika status aneh, kunci saja biar aman
-                                    $is_sempro_gate_locked = true;
-                                    $sempro_lock_message = "Status Sempro tidak valid. Hubungi admin.";
+                                    $pesan_info = 'Status: <b>MENGULANG</b>. Anda diwajibkan mengulang proses dari <b>BAB 1</b>.';
+                                    $is_locked = false;
                                     break;
                             }
                         }
-
-                        // Batasi Maksimal Bab 6
-                        if ($target_bab > 6) { $target_bab = 6; }
+                        
+                        if ($target_bab > 6) $target_bab = 6;
                         ?>
 
-                        <?php if ($notif_type == 'siap_sempro'): ?>
+                        <?php if ($show_congrats_sempro): ?>
                             <div class="card bg-gradient-success shadow-lg mb-4">
                                 <div class="card-body text-center p-4">
-                                    <div class="mb-3"><i class="fas fa-trophy fa-4x text-white"></i></div>
-                                    <h3 class="font-weight-bold text-white">Bab 1-3 Selesai!</h3>
-                                    <p class="text-white lead">Anda sudah memenuhi syarat akademik untuk <strong>Seminar Proposal</strong>.</p>
-                                    <a href="http://website-administrasi.com" target="_blank" class="btn btn-warning font-weight-bold pulse-button">
-                                        <i class="fas fa-external-link-alt mr-2"></i> Daftar Sempro Sekarang
-                                    </a>
+                                    <div class="mb-3">
+                                        <i class="fas fa-trophy fa-4x text-white"></i>
+                                    </div>
+                                    <h3 class="font-weight-bold text-white mb-2">Selamat! Anda Siap Seminar Proposal</h3>
+                                    <p class="text-white lead">
+                                        Seluruh persyaratan akademik Bab 1-3 telah terpenuhi.
+                                    </p>
+                                    
+                                    <div class="alert alert-light d-inline-block p-3 mt-2 shadow-sm text-dark text-left" style="border-radius: 8px; max-width: 90%;">
+                                        <h6 class="font-weight-bold mb-2"><i class="fas fa-info-circle text-info mr-1"></i> Langkah Selanjutnya:</h6>
+                                        <ul class="mb-0 pl-3 text-sm">
+                                            <li>Silakan mendaftar Seminar Proposal melalui website Administrasi.</li>
+                                            <li>Tunggu jadwal ujian keluar.</li>
+                                            <li>Upload Bab 4 baru akan dibuka setelah Anda dinyatakan <b>Lulus Sempro</b>.</li>
+                                        </ul>
+                                    </div>
+
+                                    <div class="mt-4">
+                                        <a href="http://website-administrasi-kampus.com" target="_blank" class="btn btn-warning btn-lg text-dark font-weight-bold shadow pulse-button">
+                                            <i class="fas fa-external-link-alt mr-2"></i> Daftar Sempro Sekarang
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
-                        
-                        <?php elseif ($notif_type == 'waiting_sempro'): ?>
-                            <div class="card bg-gradient-info shadow-lg mb-4">
-                                <div class="card-body text-center p-4">
-                                    <div class="mb-3"><i class="fas fa-clock fa-4x text-white"></i></div>
-                                    <h3 class="font-weight-bold text-white">Menunggu Pelaksanaan Sempro</h3>
-                                    <p class="text-white">Semoga sukses ujiannya! Upload Bab 4 akan dibuka setelah hasil Sempro keluar dan status Anda menjadi <b>Disetujui Sempro</b>.</p>
-                                </div>
-                            </div>
-
-                        <?php elseif ($notif_type == 'revisi_sempro'): ?>
-                            <div class="alert alert-warning shadow-lg border-left-danger" role="alert">
-                                <h4 class="alert-heading"><i class="fas fa-exclamation-triangle mr-2"></i> Perlu Revisi Pasca Sidang!</h4>
-                                <p>Berdasarkan hasil Seminar Proposal, Anda diminta untuk melakukan <b>REVISI</b>. Silakan perbaiki naskah Bab 1-3 Anda dan upload ulang pada form di bawah ini untuk mendapatkan ACC Dosen Pembimbing kembali.</p>
-                            </div>
-
                         <?php endif; ?>
 
 
-                        <?php if ($is_sempro_gate_locked): ?>
+                        <?php if ($is_locked): ?>
                             
                             <div class="card shadow mb-4 border-left-secondary">
                                 <div class="card-body text-center text-muted py-5">
-                                    <i class="fas fa-lock fa-3x mb-3 text-gray-300"></i>
+                                    <div class="mb-3">
+                                        <i class="fas fa-lock fa-4x text-gray-300"></i>
+                                    </div>
                                     <h5>Akses Upload Terkunci</h5>
-                                    <p class="mb-0"><?php echo $sempro_lock_message; ?></p>
+                                    <p class="mb-0"><?= $lock_msg ?></p>
                                 </div>
                             </div>
 
                         <?php else: ?>
 
-                            <div class="card <?php echo $status_card; ?> card-outline shadow mb-4">
+                            <div class="card <?= $status_card ?> card-outline shadow mb-4">
                                 <div class="card-header">
                                     <h3 class="card-title font-weight-bold">
-                                        <i class="fas <?php echo $icon_card; ?> mr-2"></i> <?php echo $text_header; ?>
+                                        <i class="fas fa-upload mr-2"></i> <?= $text_header ?>
                                     </h3>
                                 </div>
                                 
                                 <?php echo form_open_multipart('mahasiswa/upload_progres_bab'); ?>
                                 <div class="card-body">
                                     
-                                    <div class="callout <?php echo $alert_style; ?>">
-                                        <h5>Status Upload: <b><?php echo $is_revisi ? 'REVISI' : 'BARU'; ?></b></h5>
-                                        <p><?php echo $pesan_info; ?></p>
+                                    <div class="callout <?= $alert_style ?>">
+                                        <h5>Target: <b>BAB <?= $target_bab ?></b> <?= $is_revisi ? '(Revisi)' : '' ?></h5>
+                                        <p><?= $pesan_info ?></p>
                                     </div>
 
-                                    <input type="hidden" name="bab" value="<?php echo $target_bab; ?>">
-                                    <input type="hidden" name="is_revisi" value="<?php echo $is_revisi ? '1' : '0'; ?>"> 
+                                    <input type="hidden" name="bab" value="<?= $target_bab ?>">
+                                    <input type="hidden" name="is_revisi" value="<?= $is_revisi ? '1' : '0' ?>"> 
                                     
                                     <div class="form-group">
-                                        <label>File Laporan Skripsi (PDF)</label>
+                                        <label>File Laporan (PDF)</label>
                                         <div class="custom-file">
                                             <input type="file" class="custom-file-input" id="file_progres" name="file_progres" required accept=".pdf">
                                             <label class="custom-file-label" for="file_progres">Pilih file...</label>
                                         </div>
                                         <small class="text-muted mt-2 d-block">
-                                            <i class="fas fa-info-circle"></i> 
-                                            File otomatis dinamai: 
-                                            <code>[NPM]_BAB_<?php echo $target_bab; ?><?php echo $is_revisi ? '_REVISI' : ''; ?>.pdf</code>
+                                            Format file: <code>.pdf</code>. Ukuran maks: 5MB.
                                         </small>
                                     </div>
                                 </div>
                                 <div class="card-footer bg-white">
-                                    <button type="submit" class="btn btn-<?php echo $is_revisi ? 'warning' : 'success'; ?> float-right font-weight-bold px-4 shadow-sm">
-                                        <i class="fas fa-paper-plane mr-1"></i> Kirim <?php echo $is_revisi ? 'Revisi' : 'Progres'; ?>
+                                    <button type="submit" class="btn btn-success float-right font-weight-bold px-4 shadow-sm">
+                                        <i class="fas fa-paper-plane mr-1"></i> Kirim File
                                     </button>
                                 </div>
                                 <?php echo form_close(); ?>
@@ -311,7 +298,7 @@
 
                         <div class="card shadow mb-4">
                             <div class="card-header py-3">
-                                <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-list-alt mr-2"></i> Riwayat Upload Terakhir</h6>
+                                <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-history mr-2"></i> Riwayat Upload Terakhir</h6>
                             </div>
                             <div class="card-body p-0">
                                 <table class="table table-striped mb-0 align-middle">
@@ -325,14 +312,14 @@
                                     <tbody>
                                         <?php if (isset($progres_riwayat) && !empty($progres_riwayat)): ?>
                                             <?php 
-                                            $limit_riwayat = array_slice($progres_riwayat, 0, 3); 
+                                            $limit_riwayat = array_slice($progres_riwayat, 0, 5); 
                                             foreach ($limit_riwayat as $pr): 
-                                                $is_revisi_file = (stripos($pr->file, '_REVISI') !== false);
+                                                $is_rev = (stripos($pr->file, '_REVISI') !== false);
                                             ?>
                                                 <tr>
                                                     <td>
                                                         <b>BAB <?= $pr->bab ?></b>
-                                                        <?php if ($is_revisi_file): ?>
+                                                        <?php if ($is_rev): ?>
                                                             <span class="badge badge-warning ml-1">Revisi</span>
                                                         <?php endif; ?>
                                                     </td> 
@@ -362,9 +349,9 @@
 <style>
     .pulse-button { animation: pulse 2s infinite; }
     @keyframes pulse {
-        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
-        70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
-        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7); }
+        70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(255, 193, 7, 0); }
+        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
     }
     .bg-gradient-success { background: linear-gradient(45deg, #28a745, #20c997); }
     .bg-gradient-info { background: linear-gradient(45deg, #17a2b8, #117a8b); }

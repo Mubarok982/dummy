@@ -126,4 +126,96 @@ class Laporan extends CI_Controller {
         }
         fclose($output);
     }
+
+    // --- TAMBAHKAN FUNGSI INI KE DALAM FILE Laporan.php ---
+    
+    public function get_detail_kinerja_ajax()
+    {
+        // 1. Ambil data dari POST (dikirim oleh AJAX)
+        $id_dosen = $this->input->post('id_dosen');
+        $semester_str = $this->input->post('semester'); 
+        $prodi = $this->input->post('prodi');
+
+        // 2. Konversi String Semester menjadi Rentang Tanggal
+        if (empty($semester_str)) {
+            $semester_str = "2025/2026 Genap"; // Default
+        }
+
+        $parts = explode(' ', $semester_str);
+        $years = explode('/', $parts[0]); 
+        $type = isset($parts[1]) ? strtolower($parts[1]) : 'genap'; 
+
+        $start_year = $years[0];
+        $end_year = isset($years[1]) ? $years[1] : $start_year;
+
+        if ($type == 'ganjil') {
+            // Ganjil: Sept - Feb
+            $start_date = $start_year . '-09-01';
+            $end_date = $end_year . '-02-28';
+        } else {
+            // Genap: Maret - Agust
+            $start_date = $end_year . '-03-01';
+            $end_date = $end_year . '-08-31';
+        }
+
+        // 3. Ambil Data dari Model (M_laporan_opt sudah di-load di __construct)
+        $data = $this->M_laporan_opt->get_detail_kinerja($id_dosen, $start_date, $end_date, $prodi);
+        
+        // 4. Render Tampilan HTML untuk dikirim balik ke Modal
+        if (empty($data['riwayat_aktivitas'])) {
+            echo '<div class="alert alert-warning text-center"><i class="fas fa-info-circle"></i> Tidak ada aktivitas bimbingan pada semester/prodi ini.</div>';
+        } else {
+            // Summary Box
+            echo '<div class="row mb-3">
+                    <div class="col-6">
+                        <div class="info-box bg-light shadow-none border">
+                            <span class="info-box-icon bg-info"><i class="fas fa-users"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">Mahasiswa Dibimbing</span>
+                                <span class="info-box-number">' . $data['total_mhs_bimbingan'] . ' Orang</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="info-box bg-light shadow-none border">
+                            <span class="info-box-icon bg-success"><i class="fas fa-check-circle"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">Total Aktivitas (Revisi/ACC)</span>
+                                <span class="info-box-number">' . count($data['riwayat_aktivitas']) . ' Kali</span>
+                            </div>
+                        </div>
+                    </div>
+                  </div>';
+
+            // Tabel Detail
+            echo '<div class="table-responsive">
+                    <table class="table table-sm table-bordered table-striped">
+                        <thead class="bg-secondary">
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Mahasiswa</th>
+                                <th>Prodi</th>
+                                <th>Aktivitas</th>
+                            </tr>
+                        </thead>
+                        <tbody>';
+            
+            foreach ($data['riwayat_aktivitas'] as $row) {
+                $tgl = date('d/m/Y H:i', strtotime($row['created_at']));
+                echo '<tr>
+                        <td>' . $tgl . '</td>
+                        <td>
+                            <b>' . $row['nama_mahasiswa'] . '</b><br>
+                            <small class="text-muted">' . $row['npm'] . '</small>
+                        </td>
+                        <td>' . $row['prodi'] . '</td>
+                        <td>
+                            Memeriksa <b>BAB ' . $row['bab'] . '</b>
+                        </td>
+                      </tr>';
+            }
+
+            echo '</tbody></table></div>';
+        }
+    }
 }
