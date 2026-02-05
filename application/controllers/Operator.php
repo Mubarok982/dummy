@@ -480,40 +480,56 @@ class Operator extends CI_Controller {
     }
 
     // --- AJAX HANDLER (Untuk Modal Detail Kinerja) ---
-    public function get_detail_kinerja_ajax()
+public function get_detail_kinerja_ajax()
     {
         // 1. Ambil data dari POST
         $id_dosen = $this->input->post('id_dosen');
         $semester_str = $this->input->post('semester'); 
         $prodi = $this->input->post('prodi');
 
-        // 2. Default Semester jika kosong
+        // 2. Default Semester jika kosong (Ambil tahun saat ini)
         if (empty($semester_str)) {
-            $semester_str = "2025/2026 Genap"; 
+            $currYear = date('Y');
+            $nextYear = $currYear + 1;
+            // Default ke Gasal tahun ini
+            $semester_str = "Gasal " . $currYear . "-" . $nextYear; 
         }
 
-        // 3. Konversi Semester ke Tanggal
-        $parts = explode(' ', $semester_str);
-        $years = explode('/', $parts[0]); 
-        $type = isset($parts[1]) ? strtolower($parts[1]) : 'genap'; 
+        // 3. LOGIKA BARU: Parsing Semester & Tahun (Fleksibel)
+        // Mencari kata "Gasal" atau "Genap" (case insensitive)
+        $is_gasal = (stripos($semester_str, 'Gasal') !== false);
+        
+        // Mencari Tahun (Format YYYY-YYYY atau YYYY/YYYY)
+        // Regex akan menangkap dua angka 4 digit yang dipisah tanda apapun
+        preg_match('/(\d{4}).*?(\d{4})/', $semester_str, $matches);
 
-        $start_year = $years[0];
-        $end_year = isset($years[1]) ? $years[1] : $start_year;
-
-        if ($type == 'ganjil') {
-            // Ganjil: 1 Sept - 28 Feb
-            $start_date = $start_year . '-09-01';
-            $end_date = $end_year . '-02-28';
+        if (isset($matches[1]) && isset($matches[2])) {
+            $tahun_awal = $matches[1]; // Contoh: 2024
+            $tahun_akhir = $matches[2]; // Contoh: 2025
         } else {
-            // Genap: 1 Maret - 31 Agust
-            $start_date = $end_year . '-03-01';
-            $end_date = $end_year . '-08-31';
+            // Fallback jika format tahun tidak ketemu
+            $tahun_awal = date('Y');
+            $tahun_akhir = date('Y') + 1;
         }
 
-        // 4. Ambil Data dari Model
+        // 4. Tentukan Rentang Tanggal Berdasarkan Logic getAcademicSemester
+        if ($is_gasal) {
+            // Logic Gasal: Bulan 9 (Tahun Awal) s/d Bulan 2 (Tahun Akhir)
+            // Contoh: Gasal 2024-2025 = 01 Sept 2024 s.d 28/29 Feb 2025
+            $start_date = $tahun_awal . '-09-01';
+            // Gunakan 'last day of' untuk menangani kabisat (28 atau 29 Feb) otomatis
+            $end_date   = date("Y-m-t", strtotime($tahun_akhir . "-02-01"));
+        } else {
+            // Logic Genap: Bulan 3 s/d Bulan 8 (Semuanya di Tahun Akhir)
+            // Contoh: Genap 2024-2025 = 01 Maret 2025 s.d 31 Agust 2025
+            $start_date = $tahun_akhir . '-03-01';
+            $end_date   = $tahun_akhir . '-08-31';
+        }
+
+        // 5. Ambil Data dari Model (Pastikan Model M_laporan_opt sudah benar)
         $data = $this->M_laporan_opt->get_detail_kinerja($id_dosen, $start_date, $end_date, $prodi);
         
-        // 5. Render HTML untuk Respon AJAX
+        // 6. Render HTML
         if (empty($data['riwayat_aktivitas'])) {
             echo '<div class="alert alert-warning text-center"><i class="fas fa-info-circle"></i> Tidak ada aktivitas bimbingan pada semester/prodi ini.</div>';
         } else {
@@ -539,30 +555,62 @@ class Operator extends CI_Controller {
                     </div>
                   </div>';
 
-            // Tabel
+            // Tabel Detail
             echo '<div class="table-responsive">
-                    <table class="table table-sm table-bordered table-striped">
-                        <thead class="bg-secondary">
+                    <table class="table table-sm table-bordered table-striped align-middle">
+                        <thead class="bg-secondary text-center">
                             <tr>
-                                <th>Tanggal</th>
-                                <th>Mahasiswa</th>
-                                <th>Prodi</th>
-                                <th>Aktivitas</th>
+                                <th style="width: 15%">Tanggal</th>
+                                <th style="width: 25%">Mahasiswa</th>
+                                <th style="width: 15%">Aktivitas</th>
+                                <th style="width: 15%">Naskah</th>
+                                <th style="width: 30%">Komentar / Status</th>
                             </tr>
                         </thead>
                         <tbody>';
             
             foreach ($data['riwayat_aktivitas'] as $row) {
                 $tgl = date('d/m/Y H:i', strtotime($row['created_at']));
+                
+                // Logic Cek Role Dosen (P1/P2) untuk menampilkan komentar yang tepat
+                $komentar = '-';
+                $status_progres = 0;
+
+                // Pastikan key array sesuai dengan return dari Model
+                if ($row['pembimbing1'] == $id_dosen) {
+                    $komentar = isset($row['nilai_dosen1']) ? $row['nilai_dosen1'] : '-';
+                    $status_progres = $row['status_p1'];
+                } elseif ($row['pembimbing2'] == $id_dosen) {
+                    $komentar = isset($row['nilai_dosen2']) ? $row['nilai_dosen2'] : '-';
+                    $status_progres = $row['status_p2'];
+                }
+
+                // Styling Badge
+                $badge_class = 'secondary';
+                if ($status_progres == 100) $badge_class = 'success';
+                elseif ($status_progres > 0) $badge_class = 'warning';
+                else $badge_class = 'danger';
+
+                // Link File
+                $link_file = base_url('uploads/progres/' . $row['file']);
+                
                 echo '<tr>
-                        <td>' . $tgl . '</td>
+                        <td class="text-center small">' . $tgl . '</td>
                         <td>
                             <b>' . $row['nama_mahasiswa'] . '</b><br>
-                            <small class="text-muted">' . $row['npm'] . '</small>
+                            <small class="text-muted">' . $row['npm'] . ' - ' . $row['prodi'] . '</small>
                         </td>
-                        <td>' . $row['prodi'] . '</td>
+                        <td class="text-center">
+                            Koreksi <b>BAB ' . $row['bab'] . '</b>
+                        </td>
+                        <td class="text-center">
+                            <a href="' . $link_file . '" target="_blank" class="btn btn-xs btn-outline-primary">
+                                <i class="fas fa-file-pdf mr-1"></i> Lihat
+                            </a>
+                        </td>
                         <td>
-                            Memeriksa <b>BAB ' . $row['bab'] . '</b>
+                            <span class="badge badge-' . $badge_class . ' mb-1">' . $status_progres . '%</span><br>
+                            <small class="font-italic text-muted">"' . ($komentar ? $komentar : 'Belum ada catatan') . '"</small>
                         </td>
                       </tr>';
             }
@@ -570,7 +618,6 @@ class Operator extends CI_Controller {
             echo '</tbody></table></div>';
         }
     }
-
     // --- CEK PLAGIARISME & LAINNYA ---
 
     public function cek_plagiarisme_list()

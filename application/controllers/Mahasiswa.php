@@ -30,12 +30,23 @@ class Mahasiswa extends CI_Controller {
         redirect('mahasiswa/bimbingan');
     }
 
-    public function pengajuan_judul()
+ public function pengajuan_judul()
     {
         $id_mahasiswa = $this->session->userdata('id');
         $data['title'] = 'Pengajuan Judul Skripsi';
+        
         $data['skripsi'] = $this->M_Mahasiswa->get_skripsi_by_mhs($id_mahasiswa);
         $data['dosen_list'] = $this->M_Data->get_dosen_pembimbing_list();
+
+        // --- TAMBAHAN LOGIKA MENGULANG ---
+        // Cek apakah mahasiswa sudah pernah ujian dan statusnya mengulang
+        $status_ujian = null;
+        if ($data['skripsi']) {
+            $ujian = $this->M_Mahasiswa->get_status_ujian_terakhir($data['skripsi']['id']);
+            $status_ujian = $ujian ? $ujian['status'] : null;
+        }
+        $data['status_ujian'] = $status_ujian;
+        // ---------------------------------
 
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
@@ -79,6 +90,8 @@ class Mahasiswa extends CI_Controller {
         $id_mahasiswa = $this->session->userdata('id');
         $data['title'] = 'Bimbingan Skripsi';
         
+        // 1. Ambil Data Skripsi & Mahasiswa (Join)
+        // Pastikan model get_skripsi_by_mhs melakukan JOIN ke tabel data_mahasiswa untuk ambil 'prodi'
         $data['skripsi'] = $this->M_Mahasiswa->get_skripsi_by_mhs($id_mahasiswa);
 
         if (!$data['skripsi']) {
@@ -87,6 +100,25 @@ class Mahasiswa extends CI_Controller {
         }
 
         $npm_mhs = $data['skripsi']['npm'] ?? $this->session->userdata('npm');
+        
+        // --- LOGIKA BARU: TENTUKAN MAX BAB BERDASARKAN PRODI ---
+        $prodi = $this->session->userdata('prodi'); // Ambil dari session
+        // Atau ambil dari data skripsi jika session kosong
+        if(empty($prodi) && isset($data['skripsi']['prodi'])) {
+            $prodi = $data['skripsi']['prodi'];
+        }
+
+        // Default S1 (Bab 6)
+        $max_bab = 6; 
+        
+        // Cek jika D3 (Bab 5)
+        if (stripos($prodi, 'D3') !== false || stripos($prodi, 'Diploma 3') !== false) {
+            $max_bab = 5;
+        }
+        
+        $data['max_bab'] = $max_bab; // Kirim ke View
+        // -------------------------------------------------------
+
         $data['status_acc'] = $data['skripsi']['status_acc_kaprodi'] ?? 'menunggu';
         
         $recipients = $this->M_Chat->get_valid_chat_recipients_mhs($npm_mhs);
@@ -115,10 +147,17 @@ class Mahasiswa extends CI_Controller {
             }
         }
 
-        $data['progres_riwayat'] = $this->M_Mahasiswa->get_riwayat_progres($npm_mhs); 
+        // Cegah next_bab melebihi max_bab prodi
+        if ($data['next_bab'] > $max_bab) {
+            $data['next_bab'] = $max_bab; 
+            $data['is_finished'] = true; // Tandai sudah selesai
+        } else {
+            $data['is_finished'] = false;
+        }
 
-        // --- MENGAMBIL STATUS UJIAN TERAKHIR (Fitur Baru) ---
-        // Pastikan Model M_Mahasiswa sudah memiliki fungsi get_status_ujian_terakhir
+        $data['progres_riwayat'] = $this->M_Mahasiswa->get_riwayat_progres($npm_mhs); 
+        
+        // Ambil Status Ujian (Sempro/Pendadaran)
         $ujian = $this->M_Mahasiswa->get_status_ujian_terakhir($data['skripsi']['id']);
         $data['status_ujian'] = $ujian ? $ujian['status'] : null;
         
@@ -395,4 +434,6 @@ class Mahasiswa extends CI_Controller {
         $this->load->view('mahasiswa/v_riwayat', $data);
         $this->load->view('template/footer');
     }
+
+    
 }

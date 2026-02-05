@@ -131,15 +131,18 @@ class M_Mahasiswa extends CI_Model {
         return $this->db->get()->row_array();
     }
 
-    // --- TAMBAHAN: Cek Status Ujian Skripsi (Sempro/Sidang) ---
+  // --- AMBIL STATUS DARI TABEL UJIAN_SKRIPSI ---
     public function get_status_ujian_terakhir($id_skripsi)
     {
-        $this->db->select('status, tanggal_daftar');
-        $this->db->from('ujian_skripsi');
+        // Select kolom status
+        $this->db->select('status'); 
+        $this->db->from('ujian_skripsi'); // <--- Ini nyambung ke tabel ujian_skripsi
         $this->db->where('id_skripsi', $id_skripsi);
-        // Kita ambil yang paling baru (jika pernah mengulang sebelumnya)
+        
+        // Ambil yang paling terakhir (berdasarkan ID terbesar atau Tanggal)
         $this->db->order_by('id', 'DESC'); 
         $this->db->limit(1);
+        
         return $this->db->get()->row_array();
     }
 }
