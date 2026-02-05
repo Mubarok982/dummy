@@ -125,9 +125,9 @@
                                                 </div>
                                                 
                                                 <?php if($m['id_skripsi']): ?>
-                                                <button type="button" class="btn btn-xs btn-outline-warning mt-2 btn-block" data-toggle="modal" data-target="#modalEditPembimbing<?= $m['id_skripsi']; ?>">
+                                                <a href="<?php echo base_url('dosen/edit_dospem/' . $m['id_skripsi']); ?>" class="btn btn-xs btn-outline-warning mt-2 btn-block">
                                                     <i class="fas fa-edit mr-1"></i> Ganti Pembimbing
-                                                </button>
+                                                </a>
                                                 <?php endif; ?>
                                             </td>
 
@@ -157,54 +157,7 @@
                                             </td>
                                         </tr>
 
-                                        <?php if($m['id_skripsi']): ?>
-                                        <div class="modal fade" id="modalEditPembimbing<?= $m['id_skripsi']; ?>" tabindex="-1" role="dialog" aria-hidden="true">
-                                            <div class="modal-dialog" role="document">
-                                                <div class="modal-content">
-                                                    <div class="modal-header bg-warning">
-                                                        <h5 class="modal-title text-dark"><i class="fas fa-user-edit mr-2"></i> Ganti Pembimbing</h5>
-                                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                            <span aria-hidden="true">&times;</span>
-                                                        </button>
-                                                    </div>
-                                                    <form action="<?= base_url('dosen/update_pembimbing'); ?>" method="POST">
-                                                        <div class="modal-body">
-                                                            <p class="text-sm">Ubah dosen pembimbing untuk mahasiswa: <b><?= $m['nama']; ?></b></p>
-                                                            <input type="hidden" name="id_skripsi" value="<?= $m['id_skripsi']; ?>">
-                                                            
-                                                            <div class="form-group">
-                                                                <label>Pembimbing 1</label>
-                                                                <select name="pembimbing1" class="form-control select2" style="width: 100%;" required>
-                                                                    <option value="">-- Pilih Dosen --</option>
-                                                                    <?php if(isset($list_dosen)): foreach($list_dosen as $d): ?>
-                                                                        <option value="<?= $d['id']; ?>" <?= ($d['nama'] == $m['p1']) ? 'selected' : ''; ?>>
-                                                                            <?= $d['nama']; ?>
-                                                                        </option>
-                                                                    <?php endforeach; endif; ?>
-                                                                </select>
-                                                            </div>
 
-                                                            <div class="form-group">
-                                                                <label>Pembimbing 2</label>
-                                                                <select name="pembimbing2" class="form-control select2" style="width: 100%;" required>
-                                                                    <option value="">-- Pilih Dosen --</option>
-                                                                    <?php if(isset($list_dosen)): foreach($list_dosen as $d): ?>
-                                                                        <option value="<?= $d['id']; ?>" <?= ($d['nama'] == $m['p2']) ? 'selected' : ''; ?>>
-                                                                            <?= $d['nama']; ?>
-                                                                        </option>
-                                                                    <?php endforeach; endif; ?>
-                                                                </select>
-                                                            </div>
-                                                        </div>
-                                                        <div class="modal-footer justify-content-between">
-                                                            <button type="button" class="btn btn-default btn-sm" data-dismiss="modal">Batal</button>
-                                                            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save mr-1"></i> Simpan Perubahan</button>
-                                                        </div>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <?php endif; ?>
                                         <?php endforeach; ?>
                                     <?php endif; ?>
                                 </tbody>

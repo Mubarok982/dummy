@@ -469,74 +469,125 @@ public function kinerja_dosen_csv()
     fclose($output);
 }
 
-public function get_semester_report($id_dosen)
-{
-    // 1. Security Check: Hanya Kaprodi
-    if ($this->session->userdata('is_kaprodi') != 1) {
-        echo '<div class="text-center py-4 text-danger"><i class="fas fa-exclamation-triangle fa-2x"></i><p class="mt-2">Akses ditolak.</p></div>';
-        return;
-    }
-
-    $semester = $this->input->get('semester');
-    $prodi = $this->input->get('prodi');
-
-    // Ambil data dosen
-    $dosen = $this->db->select('a.nama, d.nidk')
-                     ->from('mstr_akun a')
-                     ->join('data_dosen d', 'a.id = d.id')
-                     ->where('a.id', $id_dosen)
-                     ->get()
-                     ->row_array();
-
-    if (!$dosen) {
-        echo '<div class="text-center py-4 text-danger"><i class="fas fa-exclamation-triangle fa-2x"></i><p class="mt-2">Data dosen tidak ditemukan.</p></div>';
-        return;
-    }
-
-    // Ambil aktivitas berdasarkan semester dan prodi
-    $aktivitas = $this->M_Log->get_dosen_activity_by_semester($id_dosen, $semester, $prodi);
-
-    // Hitung total
-    $total_aktivitas = 0;
-    foreach ($aktivitas as $act) {
-        $total_aktivitas += $act['total_aksi'];
-    }
-
-    // Tampilkan laporan
-    echo '<div class="row">';
-    echo '<div class="col-md-6">';
-    echo '<h6 class="font-weight-bold text-info">Informasi Dosen</h6>';
-    echo '<p class="mb-1"><strong>Nama:</strong> ' . $dosen['nama'] . '</p>';
-    echo '<p class="mb-1"><strong>NIDK:</strong> ' . $dosen['nidk'] . '</p>';
-    echo '<p class="mb-1"><strong>Semester:</strong> ' . ($semester ?: 'Semua') . '</p>';
-    echo '<p class="mb-1"><strong>Prodi:</strong> ' . ($prodi ?: 'Semua') . '</p>';
-    echo '</div>';
-    echo '<div class="col-md-6">';
-    echo '<h6 class="font-weight-bold text-success">Ringkasan Aktivitas</h6>';
-    echo '<p class="mb-1"><strong>Total Koreksi:</strong> <span class="badge badge-success">' . $total_aktivitas . ' kali</span></p>';
-    echo '<p class="mb-1"><strong>Jumlah Hari Aktif:</strong> <span class="badge badge-info">' . count($aktivitas) . ' hari</span></p>';
-    echo '</div>';
-    echo '</div>';
-
-    if (!empty($aktivitas)) {
-        echo '<div class="mt-4">';
-        echo '<h6 class="font-weight-bold text-primary">Detail Aktivitas per Hari</h6>';
-        echo '<div class="table-responsive">';
-        echo '<table class="table table-sm table-striped">';
-        echo '<thead class="bg-light"><tr><th>Tanggal</th><th>Jumlah Koreksi</th><th>Detail</th></tr></thead>';
-        echo '<tbody>';
-        foreach ($aktivitas as $act) {
-            echo '<tr>';
-            echo '<td>' . date('d M Y', strtotime($act['tanggal'])) . '</td>';
-            echo '<td><span class="badge badge-primary">' . $act['total_aksi'] . '</span></td>';
-            echo '<td>' . $act['detail'] . '</td>';
-            echo '</tr>';
+    public function edit_dospem($id_skripsi)
+    {
+        // Hanya Kaprodi yang boleh akses
+        if ($this->session->userdata('is_kaprodi') != 1) {
+            $this->session->set_flashdata('pesan_error', 'Akses ditolak. Fitur ini hanya untuk Kaprodi.');
+            redirect('dosen/monitoring_prodi');
         }
-        echo '</tbody></table></div></div>';
-    } else {
-        echo '<div class="text-center py-4 text-muted"><i class="fas fa-info-circle fa-2x mb-2"></i><br>Tidak ada aktivitas pada periode ini.</div>';
+
+        $data['title'] = 'Edit Dosen Pembimbing';
+        $data['skripsi'] = $this->M_Data->get_skripsi_by_id($id_skripsi);
+        $data['dosen_list'] = $this->M_Data->get_dosen_pembimbing_list();
+
+        if (!$data['skripsi']) {
+            $this->session->set_flashdata('pesan_error', 'Data skripsi tidak ditemukan!');
+            redirect('dosen/monitoring_prodi');
+        }
+
+        $this->load->view('template/header', $data);
+        $this->load->view('template/sidebar', $data);
+        $this->load->view('dosen/v_edit_dospem', $data);
+        $this->load->view('template/footer');
     }
-}
+
+    public function update_dospem()
+    {
+        // Hanya Kaprodi yang boleh akses
+        if ($this->session->userdata('is_kaprodi') != 1) {
+            $this->session->set_flashdata('pesan_error', 'Akses ditolak. Fitur ini hanya untuk Kaprodi.');
+            redirect('dosen/monitoring_prodi');
+        }
+
+        $id_skripsi = $this->input->post('id_skripsi');
+        $pembimbing1 = $this->input->post('pembimbing1');
+        $pembimbing2 = $this->input->post('pembimbing2');
+
+        if ($id_skripsi && $pembimbing1 && $pembimbing2) {
+            // Validasi: P1 dan P2 tidak boleh sama
+            if ($pembimbing1 == $pembimbing2) {
+                $this->session->set_flashdata('pesan_error', 'Gagal: Pembimbing 1 dan 2 tidak boleh sama.');
+                redirect('dosen/edit_dospem/' . $id_skripsi);
+            }
+
+            $this->M_Data->assign_pembimbing($id_skripsi, $pembimbing1, $pembimbing2);
+            $this->session->set_flashdata('pesan_sukses', 'Dosen Pembimbing berhasil diperbarui!');
+            $this->M_Log->record('Edit Dospem', 'Kaprodi mengubah dosen pembimbing skripsi ID: ' . $id_skripsi);
+        } else {
+            $this->session->set_flashdata('pesan_error', 'Gagal memperbarui dosen pembimbing. Data tidak lengkap.');
+        }
+        redirect('dosen/monitoring_prodi');
+    }
+
+    public function get_semester_report($id_dosen)
+    {
+        // 1. Security Check: Hanya Kaprodi
+        if ($this->session->userdata('is_kaprodi') != 1) {
+            echo '<div class="text-center py-4 text-danger"><i class="fas fa-exclamation-triangle fa-2x"></i><p class="mt-2">Akses ditolak.</p></div>';
+            return;
+        }
+
+        $semester = $this->input->get('semester');
+        $prodi = $this->input->get('prodi');
+
+        // Ambil data dosen
+        $dosen = $this->db->select('a.nama, d.nidk')
+                         ->from('mstr_akun a')
+                         ->join('data_dosen d', 'a.id = d.id')
+                         ->where('a.id', $id_dosen)
+                         ->get()
+                         ->row_array();
+
+        if (!$dosen) {
+            echo '<div class="text-center py-4 text-danger"><i class="fas fa-exclamation-triangle fa-2x"></i><p class="mt-2">Data dosen tidak ditemukan.</p></div>';
+            return;
+        }
+
+        // Ambil aktivitas berdasarkan semester dan prodi
+        $aktivitas = $this->M_Log->get_dosen_activity_by_semester($id_dosen, $semester, $prodi);
+
+        // Hitung total
+        $total_aktivitas = 0;
+        foreach ($aktivitas as $act) {
+            $total_aktivitas += $act['total_aksi'];
+        }
+
+        // Tampilkan laporan
+        echo '<div class="row">';
+        echo '<div class="col-md-6">';
+        echo '<h6 class="font-weight-bold text-info">Informasi Dosen</h6>';
+        echo '<p class="mb-1"><strong>Nama:</strong> ' . $dosen['nama'] . '</p>';
+        echo '<p class="mb-1"><strong>NIDK:</strong> ' . $dosen['nidk'] . '</p>';
+        echo '<p class="mb-1"><strong>Semester:</strong> ' . ($semester ?: 'Semua') . '</p>';
+        echo '<p class="mb-1"><strong>Prodi:</strong> ' . ($prodi ?: 'Semua') . '</p>';
+        echo '</div>';
+        echo '<div class="col-md-6">';
+        echo '<h6 class="font-weight-bold text-success">Ringkasan Aktivitas</h6>';
+        echo '<p class="mb-1"><strong>Total Koreksi:</strong> <span class="badge badge-success">' . $total_aktivitas . ' kali</span></p>';
+        echo '<p class="mb-1"><strong>Jumlah Hari Aktif:</strong> <span class="badge badge-info">' . count($aktivitas) . ' hari</span></p>';
+        echo '</div>';
+        echo '</div>';
+
+        if (!empty($aktivitas)) {
+            echo '<div class="mt-4">';
+            echo '<h6 class="font-weight-bold text-primary">Detail Aktivitas per Hari</h6>';
+            echo '<div class="table-responsive">';
+            echo '<table class="table table-sm table-striped">';
+            echo '<thead class="bg-light"><tr><th>Tanggal</th><th>Jumlah Koreksi</th><th>Detail</th></tr></thead>';
+            echo '<tbody>';
+            foreach ($aktivitas as $act) {
+                echo '<tr>';
+                echo '<td>' . date('d M Y', strtotime($act['tanggal'])) . '</td>';
+                echo '<td><span class="badge badge-primary">' . $act['total_aksi'] . '</span></td>';
+                echo '<td>' . $act['detail'] . '</td>';
+                echo '</tr>';
+            }
+            echo '</tbody></table></div></div>';
+        } else {
+            echo '<div class="text-center py-4 text-muted"><i class="fas fa-info-circle fa-2x mb-2"></i><br>Tidak ada aktivitas pada periode ini.</div>';
+        }
+    }
 
     // --- MENU KAPRODI: Manajemen Akun ---
     public function manajemen_akun()

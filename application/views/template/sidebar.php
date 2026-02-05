@@ -126,6 +126,30 @@
             <p>Kinerja Dosen</p>
           </a>
         </li>
+
+        <li class="nav-item">
+          <a href="<?php echo base_url('operator/mahasiswa_siap_sempro'); ?>"
+            class="nav-link <?php echo ($this->uri->segment(2) == 'mahasiswa_siap_sempro') ? 'active' : ''; ?>">
+            <i class="nav-icon fas fa-user-graduate text-warning"></i>
+            <p>Siap Sempro</p>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="<?php echo base_url('operator/mahasiswa_siap_pendadaran'); ?>"
+            class="nav-link <?php echo ($this->uri->segment(2) == 'mahasiswa_siap_pendadaran') ? 'active' : ''; ?>">
+            <i class="nav-icon fas fa-graduation-cap text-warning"></i>
+            <p>Siap Pendadaran</p>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="<?php echo base_url('operator/list_revisi'); ?>"
+            class="nav-link <?php echo ($this->uri->segment(2) == 'list_revisi') ? 'active' : ''; ?>">
+            <i class="nav-icon fas fa-edit text-warning"></i>
+            <p>Progres Mahasiswa</p>
+          </a>
+        </li>
       <?php endif; ?>
 
       <li class="nav-header">PENGATURAN</li>

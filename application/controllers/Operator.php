@@ -6,16 +6,20 @@ class Operator extends CI_Controller {
     public function __construct()
     {
         parent::__construct();
-        // Cek Login
-        if ($this->session->userdata('role') != 'operator' || !$this->session->userdata('is_login')) {
+        // Cek Login - Izinkan operator atau kaprodi (dosen dengan is_kaprodi=1)
+        $role = $this->session->userdata('role');
+        $is_kaprodi = $this->session->userdata('is_kaprodi');
+        $is_login = $this->session->userdata('is_login');
+
+        if (!$is_login || ($role != 'operator' && !($role == 'dosen' && $is_kaprodi == 1))) {
             redirect('auth/login');
         }
 
         // Load Semua Model yang Dibutuhkan di Sini
-        $this->load->model('M_Data'); 
+        $this->load->model('M_Data');
         $this->load->model('M_Log');
         $this->load->model('operator/M_skripsi_opt');
-        $this->load->model('operator/M_akun_opt'); 
+        $this->load->model('operator/M_akun_opt');
         $this->load->model('operator/M_laporan_opt'); // Penting untuk fitur Kinerja
     }
 
