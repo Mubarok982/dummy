@@ -156,9 +156,26 @@ class M_akun_opt extends CI_Model {
     public function delete_user($id)
     {
         $this->db->trans_start();
+
+        // Delete related records first to avoid foreign key errors
+        // Delete ujian_skripsi related to user's skripsi
+        $this->db->where('id_skripsi IN (SELECT id FROM skripsi WHERE id_mahasiswa = ' . $id . ')')->delete('ujian_skripsi');
+        // Delete skripsi
+        $this->db->where('id_mahasiswa', $id)->delete('skripsi');
+        // Delete progres_skripsi
+        $this->db->where('npm', '(SELECT npm FROM data_mahasiswa WHERE id = ' . $id . ')')->delete('progres_skripsi');
+        // Delete messages
+        $this->db->where('id_pengirim', $id)->or_where('id_penerima', $id)->delete('tbl_pesan');
+        // Delete log_aktivitas
+        $this->db->where('id_user', $id)->delete('log_aktivitas');
+
+        // Delete detail tables
         $this->db->where('id', $id)->delete('data_dosen');
         $this->db->where('id', $id)->delete('data_mahasiswa');
+
+        // Finally delete master account
         $this->db->where('id', $id)->delete('mstr_akun');
+
         $this->db->trans_complete();
         return $this->db->trans_status();
     }

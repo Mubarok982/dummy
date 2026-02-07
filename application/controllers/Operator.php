@@ -18,6 +18,7 @@ class Operator extends CI_Controller {
         // Load Semua Model yang Dibutuhkan di Sini
         $this->load->model('M_Data');
         $this->load->model('M_Log');
+        $this->load->model('M_Mahasiswa');
         $this->load->model('operator/M_skripsi_opt');
         $this->load->model('operator/M_akun_opt');
         $this->load->model('operator/M_laporan_opt'); // Penting untuk fitur Kinerja
@@ -237,7 +238,70 @@ class Operator extends CI_Controller {
     public function mahasiswa_siap_sempro()
     {
         $data['title'] = 'Mahasiswa Siap Sempro';
-        $data['mahasiswa'] = $this->M_Data->get_mahasiswa_siap_sempro();
+
+        // Get filter parameters
+        $keyword = $this->input->get('keyword');
+        $prodi = $this->input->get('prodi');
+        $angkatan = $this->input->get('angkatan');
+        $sort_by = $this->input->get('sort_by') ?: 'nama';
+        $sort_order = $this->input->get('sort_order') ?: 'asc';
+
+        // Get all data first
+        $all_data = $this->M_Data->get_mahasiswa_siap_sempro();
+
+        // Apply filters
+        $filtered_data = [];
+        foreach ($all_data as $item) {
+            $match = true;
+
+            // Keyword search (nama, npm, judul)
+            if ($keyword) {
+                $search_text = strtolower($item['nama'] . ' ' . $item['npm'] . ' ' . ($item['judul'] ?? ''));
+                if (strpos($search_text, strtolower($keyword)) === false) {
+                    $match = false;
+                }
+            }
+
+            // Prodi filter
+            if ($prodi && $prodi != 'all') {
+                if (($item['prodi'] ?? '') != $prodi) {
+                    $match = false;
+                }
+            }
+
+            // Angkatan filter
+            if ($angkatan && $angkatan != 'all') {
+                if (($item['angkatan'] ?? '') != $angkatan) {
+                    $match = false;
+                }
+            }
+
+            if ($match) {
+                $filtered_data[] = $item;
+            }
+        }
+
+        // Apply sorting
+        usort($filtered_data, function($a, $b) use ($sort_by, $sort_order) {
+            $val_a = strtolower($a[$sort_by] ?? '');
+            $val_b = strtolower($b[$sort_by] ?? '');
+            if ($sort_order == 'desc') {
+                return $val_b <=> $val_a;
+            } else {
+                return $val_a <=> $val_b;
+            }
+        });
+
+        $data['mahasiswa'] = $filtered_data;
+        $data['keyword'] = $keyword;
+        $data['prodi'] = $prodi;
+        $data['angkatan'] = $angkatan;
+        $data['sort_by'] = $sort_by;
+        $data['sort_order'] = $sort_order;
+
+        // Load dynamic filter options
+        $data['list_prodi'] = $this->M_Data->get_all_prodi();
+        $data['list_angkatan'] = $this->M_Data->get_unique_angkatan();
 
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
@@ -248,7 +312,66 @@ class Operator extends CI_Controller {
     public function mahasiswa_siap_pendadaran()
     {
         $data['title'] = 'Mahasiswa Siap Pendadaran';
-        $data['mahasiswa'] = $this->M_Data->get_mahasiswa_siap_pendadaran();
+
+        // Get filter parameters
+        $keyword = $this->input->get('keyword');
+        $prodi = $this->input->get('prodi');
+        $angkatan = $this->input->get('angkatan');
+        $sort_by = $this->input->get('sort_by') ?: 'nama';
+        $sort_order = $this->input->get('sort_order') ?: 'asc';
+
+        // Get all data first
+        $all_data = $this->M_Data->get_mahasiswa_siap_pendadaran();
+
+        // Apply filters
+        $filtered_data = [];
+        foreach ($all_data as $item) {
+            $match = true;
+
+            // Keyword search (nama, npm, judul)
+            if ($keyword) {
+                $search_text = strtolower($item['nama'] . ' ' . $item['npm'] . ' ' . ($item['judul'] ?? ''));
+                if (strpos($search_text, strtolower($keyword)) === false) {
+                    $match = false;
+                }
+            }
+
+            // Prodi filter
+            if ($prodi && $prodi != 'all') {
+                if (($item['prodi'] ?? '') != $prodi) {
+                    $match = false;
+                }
+            }
+
+            // Angkatan filter
+            if ($angkatan && $angkatan != 'all') {
+                if (($item['angkatan'] ?? '') != $angkatan) {
+                    $match = false;
+                }
+            }
+
+            if ($match) {
+                $filtered_data[] = $item;
+            }
+        }
+
+        // Apply sorting
+        usort($filtered_data, function($a, $b) use ($sort_by, $sort_order) {
+            $val_a = strtolower($a[$sort_by] ?? '');
+            $val_b = strtolower($b[$sort_by] ?? '');
+            if ($sort_order == 'desc') {
+                return $val_b <=> $val_a;
+            } else {
+                return $val_a <=> $val_b;
+            }
+        });
+
+        $data['mahasiswa'] = $filtered_data;
+        $data['keyword'] = $keyword;
+        $data['prodi'] = $prodi;
+        $data['angkatan'] = $angkatan;
+        $data['sort_by'] = $sort_by;
+        $data['sort_order'] = $sort_order;
 
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
@@ -258,15 +381,11 @@ class Operator extends CI_Controller {
 
     public function list_revisi()
     {
-        $data['title'] = 'Riwayat Progress Mahasiswa';
+        $data['title'] = 'Progres Mahasiswa';
         $keyword = $this->input->get('keyword');
 
-        if (!$keyword) {
-            // Jika belum ada filter, kosongkan tabel
-            $data['list_revisi'] = [];
-        } else {
-            $data['list_revisi'] = $this->M_Data->get_riwayat_progress($keyword);
-        }
+        // Get all progress data with optional filters, sorted by last upload
+        $data['list_revisi'] = $this->M_Data->get_riwayat_progress($keyword);
 
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
@@ -307,10 +426,71 @@ class Operator extends CI_Controller {
    public function acc_judul()
     {
         $data['title'] = 'Persetujuan Judul Skripsi';
-        $data['mahasiswa'] = $this->M_Data->get_all_mahasiswa_lengkap(); 
-        
-        // TAMBAHAN: Ambil list dosen untuk dropdown edit
-        $data['dosen_list'] = $this->M_Data->get_dosen_pembimbing_list(); 
+
+        // Get filter parameters
+        $keyword = $this->input->get('keyword');
+        $status = $this->input->get('status');
+        $prodi = $this->input->get('prodi');
+        $sort_by = $this->input->get('sort_by') ?: 'nama';
+        $sort_order = $this->input->get('sort_order') ?: 'asc';
+
+        // Get all data first
+        $all_data = $this->M_Data->get_all_mahasiswa_lengkap();
+
+        // Apply filters
+        $filtered_data = [];
+        foreach ($all_data as $item) {
+            $match = true;
+
+            // Keyword search (nama, npm, judul)
+            if ($keyword) {
+                $search_text = strtolower($item['nama'] . ' ' . $item['npm'] . ' ' . ($item['judul'] ?? ''));
+                if (strpos($search_text, strtolower($keyword)) === false) {
+                    $match = false;
+                }
+            }
+
+            // Status filter
+            if ($status && $status != 'all') {
+                if (($item['status_acc_kaprodi'] ?? 'menunggu') != $status) {
+                    $match = false;
+                }
+            }
+
+            // Prodi filter
+            if ($prodi && $prodi != 'all') {
+                if (($item['prodi'] ?? '') != $prodi) {
+                    $match = false;
+                }
+            }
+
+            if ($match) {
+                $filtered_data[] = $item;
+            }
+        }
+
+        // Apply sorting
+        usort($filtered_data, function($a, $b) use ($sort_by, $sort_order) {
+            $val_a = strtolower($a[$sort_by] ?? '');
+            $val_b = strtolower($b[$sort_by] ?? '');
+            if ($sort_order == 'desc') {
+                return $val_b <=> $val_a;
+            } else {
+                return $val_a <=> $val_b;
+            }
+        });
+
+        $data['mahasiswa'] = $filtered_data;
+        $data['dosen_list'] = $this->M_Data->get_dosen_pembimbing_list();
+        $data['keyword'] = $keyword;
+        $data['status'] = $status;
+        $data['prodi'] = $prodi;
+        $data['sort_by'] = $sort_by;
+        $data['sort_order'] = $sort_order;
+
+        // Load dynamic filter options
+        $data['list_prodi'] = $this->M_Data->get_all_prodi();
+        $data['list_status_acc'] = $this->M_Data->get_unique_status_acc_kaprodi();
 
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
@@ -623,7 +803,66 @@ public function get_detail_kinerja_ajax()
     public function cek_plagiarisme_list()
     {
         $data['title'] = 'Cek Plagiarisme';
-        $data['list_plagiasi'] = $this->M_Data->get_all_plagiarisme_bab_1();
+
+        // Get filter parameters
+        $keyword = $this->input->get('keyword');
+        $status = $this->input->get('status');
+        $prodi = $this->input->get('prodi');
+        $sort_by = $this->input->get('sort_by') ?: 'nama';
+        $sort_order = $this->input->get('sort_order') ?: 'asc';
+
+        // Get all data first
+        $all_data = $this->M_Data->get_all_plagiarisme_bab_1();
+
+        // Apply filters
+        $filtered_data = [];
+        foreach ($all_data as $item) {
+            $match = true;
+
+            // Keyword search (nama, npm)
+            if ($keyword) {
+                $search_text = strtolower($item['nama'] . ' ' . $item['npm']);
+                if (strpos($search_text, strtolower($keyword)) === false) {
+                    $match = false;
+                }
+            }
+
+            // Status filter
+            if ($status && $status != 'all') {
+                if ($item['status_plagiasi'] != $status) {
+                    $match = false;
+                }
+            }
+
+            // Prodi filter (assuming prodi is in the data, if not, need to join)
+            // For now, skip prodi filter as data may not have it directly
+
+            if ($match) {
+                $filtered_data[] = $item;
+            }
+        }
+
+        // Apply sorting
+        usort($filtered_data, function($a, $b) use ($sort_by, $sort_order) {
+            $val_a = strtolower($a[$sort_by] ?? '');
+            $val_b = strtolower($b[$sort_by] ?? '');
+            if ($sort_order == 'desc') {
+                return $val_b <=> $val_a;
+            } else {
+                return $val_a <=> $val_b;
+            }
+        });
+
+        $data['list_plagiasi'] = $filtered_data;
+        $data['keyword'] = $keyword;
+        $data['status'] = $status;
+        $data['prodi'] = $prodi;
+        $data['sort_by'] = $sort_by;
+        $data['sort_order'] = $sort_order;
+
+        // Load dynamic filter options
+        $data['list_prodi'] = $this->M_Data->get_all_prodi();
+        $data['list_status_plagiarisme'] = $this->M_Data->get_unique_status_plagiarisme();
 
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
@@ -722,6 +961,39 @@ public function get_detail_kinerja_ajax()
     }
 
     // --- FITUR BARU: UPDATE PEMBIMBING ---
+    public function submit_koreksi_operator()
+    {
+        $id_progres = $this->input->post('id_progres');
+        $komentar_dosen1 = $this->input->post('komentar_dosen1');
+        $komentar_dosen2 = $this->input->post('komentar_dosen2');
+        $status_progres1 = $this->input->post('status_progres1');
+        $status_progres2 = $this->input->post('status_progres2');
+        $id_skripsi = $this->input->post('id_skripsi');
+
+        // Determine nilai text based on progress
+        $nilai_text1 = ($status_progres1 == 100) ? 'ACC' : (($status_progres1 == 50) ? 'ACC Sebagian' : 'Revisi');
+        $nilai_text2 = ($status_progres2 == 100) ? 'ACC' : (($status_progres2 == 50) ? 'ACC Sebagian' : 'Revisi');
+
+        $data = [
+            'komentar_dosen1' => $komentar_dosen1,
+            'komentar_dosen2' => $komentar_dosen2,
+            'progres_dosen1' => $status_progres1,
+            'progres_dosen2' => $status_progres2,
+            'nilai_dosen1' => $nilai_text1,
+            'nilai_dosen2' => $nilai_text2,
+            'tgl_verifikasi' => date('Y-m-d H:i:s')
+        ];
+
+        if ($this->M_Mahasiswa->update_progres($id_progres, $data)) {
+            $this->M_Log->record('Koreksi Operator', 'Operator memberikan koreksi BAB untuk ID: ' . $id_progres);
+            $this->session->set_flashdata('pesan_sukses', 'Koreksi berhasil disimpan.');
+        } else {
+            $this->session->set_flashdata('pesan_error', 'Terjadi kesalahan saat menyimpan koreksi.');
+        }
+
+        redirect('operator/list_revisi');
+    }
+
     public function update_pembimbing()
     {
         $id_skripsi = $this->input->post('id_skripsi');
@@ -729,7 +1001,7 @@ public function get_detail_kinerja_ajax()
         $pembimbing2 = $this->input->post('pembimbing2');
 
         if ($id_skripsi && $pembimbing1 && $pembimbing2) {
-            
+
             // Cek apakah pembimbing sama
             if ($pembimbing1 == $pembimbing2) {
                 $this->session->set_flashdata('pesan_error', 'Gagal: Pembimbing 1 dan 2 tidak boleh sama.');

@@ -59,12 +59,12 @@ class M_Mahasiswa extends CI_Model {
     
     public function get_progres_by_skripsi($id_skripsi)
     {
-        // Langkah 1: Cari tahu NPM pemilik skripsi
-        $this->db->select('M.npm');
+        // Langkah 1: Cari tahu NPM dan Judul pemilik skripsi
+        $this->db->select('M.npm, S.judul');
         $this->db->from('skripsi S');
         $this->db->join('data_mahasiswa M', 'S.id_mahasiswa = M.id');
         $this->db->where('S.id', $id_skripsi);
-        
+
         $data_mhs = $this->db->get()->row_array();
 
         if (!$data_mhs) {
@@ -72,10 +72,18 @@ class M_Mahasiswa extends CI_Model {
         }
 
         $npm_mahasiswa = $data_mhs['npm'];
+        $judul_skripsi = $data_mhs['judul'];
 
-        // Langkah 2: Ambil progres berdasarkan NPM
+        // Langkah 2: Ambil progres berdasarkan NPM dan tambahkan judul
         $this->db->order_by('bab', 'ASC');
-        return $this->db->get_where('progres_skripsi', ['npm' => $npm_mahasiswa])->result_array();
+        $progres = $this->db->get_where('progres_skripsi', ['npm' => $npm_mahasiswa])->result_array();
+
+        // Tambahkan judul ke setiap row progres
+        foreach ($progres as &$p) {
+            $p['judul'] = $judul_skripsi;
+        }
+
+        return $progres;
     }
     
     public function insert_progres($data)

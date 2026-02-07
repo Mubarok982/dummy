@@ -39,15 +39,16 @@
                                     <thead class="bg-light">
                                         <tr>
                                             <th class="text-center" style="width: 8%;">BAB</th>
+                                            <th style="width: 20%;">Judul Skripsi</th>
                                             <th style="width: 25%;">Status Kelulusan</th>
-                                            <th style="width: 47%;">Catatan Dosen</th>
-                                            <th class="text-center" style="width: 20%;">Detail</th>
+                                            <th style="width: 37%;">Catatan Dosen</th>
+                                            <th class="text-center" style="width: 10%;">Detail</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <?php if (empty($progres)): ?>
                                             <tr>
-                                                <td colspan="4" class="text-center py-5 text-muted">
+                                                <td colspan="5" class="text-center py-5 text-muted">
                                                     <i class="fas fa-clipboard-list fa-3x mb-3 text-gray"></i><br>
                                                     <span class="font-weight-bold">Belum ada riwayat bimbingan.</span>
                                                 </td>
@@ -59,6 +60,10 @@
                                                     <span class="badge badge-info badge-pill px-3 py-2 shadow-sm" style="font-size: 1rem;">
                                                         <?php echo $p['bab']; ?>
                                                     </span>
+                                                </td>
+
+                                                <td class="align-top pt-3">
+                                                    <strong><?php echo $p['judul']; ?></strong>
                                                 </td>
 
                                                 <td class="align-top pt-3">

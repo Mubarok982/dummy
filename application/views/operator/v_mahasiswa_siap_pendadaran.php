@@ -19,53 +19,98 @@
         <div class="container-fluid">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Mahasiswa Siap Pendadaran (BAB 4 ACC)</h3>
+                    <h3 class="card-title">Mahasiswa Siap Pendadaran</h3>
                 </div>
-                <div class="card-body table-responsive">
-                    <table class="table table-bordered table-striped">
-                        <thead>
-                            <tr>
-                                <th>No</th>
-                                <th>Foto</th>
-                                <th>NPM</th>
-                                <th>Nama</th>
-                                <th>Prodi</th>
-                                <th>Angkatan</th>
-                                <th>Judul Skripsi</th>
-                                <th>Pembimbing 1</th>
-                                <th>Pembimbing 2</th>
-                                <th>Tanggal ACC</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if (!empty($mahasiswa)): ?>
-                                <?php $no = 1; foreach ($mahasiswa as $mhs): ?>
-                                    <tr>
-                                        <td><?php echo $no++; ?></td>
-                                        <td>
-                                            <?php if (!empty($mhs['foto'])): ?>
-                                                <img src="<?php echo base_url('uploads/profile/' . $mhs['foto']); ?>" alt="Foto" class="img-thumbnail" width="50">
-                                            <?php else: ?>
-                                                <img src="<?php echo base_url('assets/image/default.png'); ?>" alt="Foto" class="img-thumbnail" width="50">
-                                            <?php endif; ?>
-                                        </td>
-                                        <td><?php echo $mhs['npm']; ?></td>
-                                        <td><?php echo $mhs['nama']; ?></td>
-                                        <td><?php echo $mhs['prodi']; ?></td>
-                                        <td><?php echo $mhs['angkatan']; ?></td>
-                                        <td><?php echo $mhs['judul']; ?></td>
-                                        <td><?php echo $mhs['nama_p1']; ?></td>
-                                        <td><?php echo $mhs['nama_p2']; ?></td>
-                                        <td><?php echo date('d/m/Y H:i', strtotime($mhs['tgl_acc'])); ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php else: ?>
+                <div class="card-body">
+                    <!-- Filter Form -->
+                    <form method="GET" action="<?php echo base_url('operator/mahasiswa_siap_pendadaran'); ?>" class="mb-3">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <input type="text" name="keyword" class="form-control" placeholder="Cari nama/NPM/judul..." value="<?php echo $keyword; ?>">
+                            </div>
+                            <div class="col-md-3">
+                                <select name="prodi" class="form-control">
+                                    <option value="all">Semua Prodi</option>
+                                    <?php foreach ($list_prodi as $prodi_option): ?>
+                                        <option value="<?php echo $prodi_option['prodi']; ?>" <?php echo ($prodi == $prodi_option['prodi']) ? 'selected' : ''; ?>><?php echo $prodi_option['prodi']; ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select name="angkatan" class="form-control">
+                                    <option value="all">Semua Angkatan</option>
+                                    <?php foreach ($list_angkatan as $angkatan_option): ?>
+                                        <option value="<?php echo $angkatan_option['angkatan']; ?>" <?php echo ($angkatan == $angkatan_option['angkatan']) ? 'selected' : ''; ?>><?php echo $angkatan_option['angkatan']; ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-search"></i> Filter</button>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-3">
+                                <select name="sort_by" class="form-control">
+                                    <option value="nama" <?php echo ($sort_by == 'nama') ? 'selected' : ''; ?>>Urut: Nama</option>
+                                    <option value="npm" <?php echo ($sort_by == 'npm') ? 'selected' : ''; ?>>Urut: NPM</option>
+                                    <option value="angkatan" <?php echo ($sort_by == 'angkatan') ? 'selected' : ''; ?>>Urut: Angkatan</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select name="sort_order" class="form-control">
+                                    <option value="asc" <?php echo ($sort_order == 'asc') ? 'selected' : ''; ?>>Ascending</option>
+                                    <option value="desc" <?php echo ($sort_order == 'desc') ? 'selected' : ''; ?>>Descending</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped">
+                            <thead>
                                 <tr>
-                                    <td colspan="10" class="text-center">Belum ada mahasiswa yang siap pendadaran.</td>
+                                    <th>No</th>
+                                    <th>Foto</th>
+                                    <th>NPM</th>
+                                    <th>Nama</th>
+                                    <th>Prodi</th>
+                                    <th>Angkatan</th>
+                                    <th>Judul Skripsi</th>
+                                    <th>Pembimbing 1</th>
+                                    <th>Pembimbing 2</th>
+                                    <th>Tanggal ACC</th>
                                 </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                <?php if (!empty($mahasiswa)): ?>
+                                    <?php $no = 1; foreach ($mahasiswa as $mhs): ?>
+                                        <tr>
+                                            <td><?php echo $no++; ?></td>
+                                            <td>
+                                                <?php if (!empty($mhs['foto'])): ?>
+                                                    <img src="<?php echo base_url('uploads/profile/' . $mhs['foto']); ?>" alt="Foto" class="img-thumbnail" width="50">
+                                                <?php else: ?>
+                                                    <img src="<?php echo base_url('assets/image/default.png'); ?>" alt="Foto" class="img-thumbnail" width="50">
+                                                <?php endif; ?>
+                                            </td>
+                                            <td><?php echo $mhs['npm']; ?></td>
+                                            <td><?php echo $mhs['nama']; ?></td>
+                                            <td><?php echo $mhs['prodi']; ?></td>
+                                            <td><?php echo $mhs['angkatan']; ?></td>
+                                            <td><?php echo $mhs['judul']; ?></td>
+                                            <td><?php echo $mhs['nama_p1']; ?></td>
+                                            <td><?php echo $mhs['nama_p2']; ?></td>
+                                            <td><?php echo date('d/m/Y H:i', strtotime($mhs['tgl_acc'])); ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="10" class="text-center">Belum ada mahasiswa yang siap pendadaran.</td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>

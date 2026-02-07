@@ -433,7 +433,7 @@ public function get_mahasiswa_siap_sempro()
         $this->db->select('
             p.id, p.npm, p.bab, p.file, p.komentar_dosen1, p.komentar_dosen2, p.nilai_dosen1, p.nilai_dosen2, p.progres_dosen1, p.progres_dosen2, p.tgl_upload, p.tgl_verifikasi,
             a.nama as nama_mhs, m.prodi,
-            s.judul,
+            s.id as id_skripsi, s.judul,
             d1.nama as nama_p1,
             d2.nama as nama_p2
         ');
@@ -531,7 +531,7 @@ public function get_mahasiswa_siap_sempro()
         $this->db->join('mstr_akun d1', 's.pembimbing1 = d1.id', 'left');
         $this->db->join('mstr_akun d2', 's.pembimbing2 = d2.id', 'left');
 
-        $this->db->where('p.bab', 4);
+        $this->db->where('p.bab', 6);
         $this->db->where('p.progres_dosen1', 100);
         $this->db->where('p.progres_dosen2', 100);
 
@@ -554,6 +554,61 @@ public function get_mahasiswa_siap_sempro()
         $this->db->where('s.id', $id_skripsi);
 
         return $this->db->get()->row_array();
+    }
+
+    // --- GET ALL UNIQUE PRODI ---
+    public function get_all_prodi()
+    {
+        $this->db->select('DISTINCT(prodi) as prodi');
+        $this->db->from('data_mahasiswa');
+        $this->db->where('prodi !=', '');
+        $this->db->order_by('prodi', 'ASC');
+        $mahasiswa_prodi = $this->db->get()->result_array();
+
+        $this->db->select('DISTINCT(prodi) as prodi');
+        $this->db->from('data_dosen');
+        $this->db->where('prodi !=', '');
+        $this->db->order_by('prodi', 'ASC');
+        $dosen_prodi = $this->db->get()->result_array();
+
+        // Merge and unique
+        $all_prodi = array_merge($mahasiswa_prodi, $dosen_prodi);
+        $unique_prodi = array_unique(array_column($all_prodi, 'prodi'));
+        sort($unique_prodi);
+
+        return array_map(function($prodi) {
+            return ['prodi' => $prodi];
+        }, $unique_prodi);
+    }
+
+    // --- GET UNIQUE ANGKATAN ---
+    public function get_unique_angkatan()
+    {
+        $this->db->select('DISTINCT(angkatan) as angkatan');
+        $this->db->from('data_mahasiswa');
+        $this->db->where('angkatan IS NOT NULL');
+        $this->db->order_by('angkatan', 'DESC');
+        return $this->db->get()->result_array();
+    }
+
+    // --- GET UNIQUE STATUS ACC KAPRODI ---
+    public function get_unique_status_acc_kaprodi()
+    {
+        $this->db->select('DISTINCT(status_acc_kaprodi) as status');
+        $this->db->from('skripsi');
+        $this->db->where('status_acc_kaprodi IS NOT NULL');
+        $this->db->order_by('status_acc_kaprodi', 'ASC');
+        return $this->db->get()->result_array();
+    }
+
+    // --- GET UNIQUE STATUS PLAGIARISME ---
+    public function get_unique_status_plagiarisme()
+    {
+        $this->db->select('DISTINCT(status_plagiasi) as status');
+        $this->db->from('progres_skripsi');
+        $this->db->where('status_plagiasi IS NOT NULL');
+        $this->db->order_by('status_plagiasi', 'ASC');
+        return $this->db->get()->result_array();
     }
 
 

@@ -29,8 +29,49 @@
             <div class="card card-outline card-primary shadow-sm">
                 <div class="card-header">
                     <h3 class="card-title"><i class="fas fa-list-alt mr-1"></i> Daftar Pengajuan Cek Plagiarisme</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
                 </div>
-                <div class="card-body table-responsive">
+                <div class="card-body">
+                    <!-- Filter Form -->
+                    <form method="GET" action="<?php echo base_url('operator/cek_plagiarisme_list'); ?>" class="mb-3">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <input type="text" name="keyword" class="form-control" placeholder="Cari nama/NPM..." value="<?php echo $keyword; ?>">
+                            </div>
+                            <div class="col-md-3">
+                                <select name="status" class="form-control">
+                                    <option value="all">Semua Status</option>
+                                    <option value="Menunggu" <?php echo ($status == 'Menunggu') ? 'selected' : ''; ?>>Menunggu</option>
+                                    <option value="Lulus" <?php echo ($status == 'Lulus') ? 'selected' : ''; ?>>Lulus</option>
+                                    <option value="Tolak" <?php echo ($status == 'Tolak') ? 'selected' : ''; ?>>Tolak</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select name="sort_by" class="form-control">
+                                    <option value="nama" <?php echo ($sort_by == 'nama') ? 'selected' : ''; ?>>Urut: Nama</option>
+                                    <option value="npm" <?php echo ($sort_by == 'npm') ? 'selected' : ''; ?>>Urut: NPM</option>
+                                    <option value="persentase_kemiripan" <?php echo ($sort_by == 'persentase_kemiripan') ? 'selected' : ''; ?>>Urut: Persentase</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-search"></i> Filter</button>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-3">
+                                <select name="sort_order" class="form-control">
+                                    <option value="asc" <?php echo ($sort_order == 'asc') ? 'selected' : ''; ?>>Ascending</option>
+                                    <option value="desc" <?php echo ($sort_order == 'desc') ? 'selected' : ''; ?>>Descending</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div class="table-responsive">
                     <table id="tabelPlagiasi" class="table table-hover table-striped text-nowrap align-middle">
                         <thead class="bg-light">
                             <tr class="text-center">

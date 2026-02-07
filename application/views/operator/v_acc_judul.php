@@ -68,7 +68,51 @@
                             </div>
                         </div>
                         
-                        <div class="card-body table-responsive p-0" style="height: 600px;">
+                        <div class="card-body">
+                            <!-- Filter Form -->
+                            <form method="GET" action="<?php echo base_url('operator/acc_judul'); ?>" class="mb-3">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <input type="text" name="keyword" class="form-control" placeholder="Cari nama/NPM/judul..." value="<?php echo $keyword; ?>">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <select name="status" class="form-control">
+                                            <option value="all">Semua Status</option>
+                                            <?php foreach ($list_status_acc as $status_option): ?>
+                                                <option value="<?php echo $status_option['status']; ?>" <?php echo ($status == $status_option['status']) ? 'selected' : ''; ?>><?php echo $status_option['status']; ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <select name="prodi" class="form-control">
+                                            <option value="all">Semua Prodi</option>
+                                            <?php foreach ($list_prodi as $prodi_option): ?>
+                                                <option value="<?php echo $prodi_option['prodi']; ?>" <?php echo ($prodi == $prodi_option['prodi']) ? 'selected' : ''; ?>><?php echo $prodi_option['prodi']; ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-search"></i> Filter</button>
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-md-3">
+                                        <select name="sort_by" class="form-control">
+                                            <option value="nama" <?php echo ($sort_by == 'nama') ? 'selected' : ''; ?>>Urut: Nama</option>
+                                            <option value="npm" <?php echo ($sort_by == 'npm') ? 'selected' : ''; ?>>Urut: NPM</option>
+                                            <option value="angkatan" <?php echo ($sort_by == 'angkatan') ? 'selected' : ''; ?>>Urut: Angkatan</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <select name="sort_order" class="form-control">
+                                            <option value="asc" <?php echo ($sort_order == 'asc') ? 'selected' : ''; ?>>Ascending</option>
+                                            <option value="desc" <?php echo ($sort_order == 'desc') ? 'selected' : ''; ?>>Descending</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </form>
+
+                            <div class="table-responsive" style="height: 600px;">
                             <table class="table table-head-fixed table-hover text-nowrap table-striped align-middle" id="tableAcc">
                                 <thead>
                                 <tr class="text-center">
