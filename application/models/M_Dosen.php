@@ -218,12 +218,13 @@ public function update_status_judul($id_skripsi, $status)
     return $this->db->update('skripsi', ['status_acc_kaprodi' => $status]);
 }
 
-public function get_list_angkatan($prodi)
+public function get_list_angkatan()
     {
         $this->db->distinct();
         $this->db->select('angkatan');
         $this->db->from('data_mahasiswa');
-        $this->db->where('prodi', $prodi);
+        $this->db->where('prodi');
+        $this->db->where("angkatan != ''");
         $this->db->order_by('angkatan', 'DESC');
         return $this->db->get()->result_array();
     }
@@ -266,6 +267,82 @@ public function get_stats_kaprodi($prodi)
 
     return $stats;
 }
+
+public function get_bimbingan_list($id_dosen, $keyword = null, $prodi = null, $angkatan = null, $sort_by = 'nama_mhs', $sort_order = 'asc') 
+    {
+        // 1. SELECT DATA
+        // Perhatikan: Kita ambil 'ma.nama' (dari mstr_akun), bukan 'm.nama'
+        $this->db->select('
+            s.id as id_skripsi, 
+            s.judul, 
+            m.npm, 
+            ma.nama as nama_mhs, 
+            m.prodi,      
+            m.angkatan,   
+            p1.nama as nama_p1,
+            p2.nama as nama_p2
+        ');
+        
+        $this->db->from('skripsi s');
+        
+        // 2. JOIN TABLE
+        // Join ke data detail mahasiswa (ambil prodi, npm, angkatan)
+        $this->db->join('data_mahasiswa m', 's.id_mahasiswa = m.id');
+        
+        // JOIN WAJIB: Join ke akun mahasiswa untuk ambil NAMA (ma)
+        $this->db->join('mstr_akun ma', 'm.id = ma.id');
+        
+        // Join Pembimbing
+        $this->db->join('mstr_akun p1', 's.pembimbing1 = p1.id', 'left');
+        $this->db->join('mstr_akun p2', 's.pembimbing2 = p2.id', 'left');
+        
+        // 3. FILTER DOSEN (Apakah user ini P1 atau P2?)
+        $this->db->group_start();
+        $this->db->where('s.pembimbing1', $id_dosen);
+        $this->db->or_where('s.pembimbing2', $id_dosen);
+        $this->db->group_end();
+
+        // 4. FILTER PENCARIAN & DROPDOWN
+        if ($keyword) {
+            $this->db->group_start();
+            $this->db->like('ma.nama', $keyword); // Ganti m.nama jadi ma.nama
+            $this->db->or_like('m.npm', $keyword);
+            $this->db->or_like('s.judul', $keyword);
+            $this->db->group_end();
+        }
+        if ($prodi && $prodi != 'all') {
+            $this->db->where('m.prodi', $prodi);
+        }
+        if ($angkatan && $angkatan != 'all') {
+            $this->db->where('m.angkatan', $angkatan);
+        }
+
+        // 5. SORTING
+        if ($sort_by == 'nama_mhs') {
+            $this->db->order_by('ma.nama', $sort_order); // Sort berdasarkan nama di akun
+        } elseif ($sort_by == 'npm') {
+            $this->db->order_by('m.npm', $sort_order);
+        } elseif ($sort_by == 'angkatan') {
+            $this->db->order_by('m.angkatan', $sort_order);
+        } else {
+            // Default sort
+            $this->db->order_by('ma.nama', 'ASC');
+        }
+
+        return $this->db->get()->result_array();
+    }
+
+    // 2. TAMBAHKAN FUNGSI INI (Untuk Dropdown Filter)
+    public function get_list_prodi()
+    {
+        $this->db->distinct();
+        $this->db->select('prodi');
+        $this->db->from('data_mahasiswa');
+        $this->db->where("prodi != ''");
+        return $this->db->get()->result_array();
+    }
+
+  
 
 }
 

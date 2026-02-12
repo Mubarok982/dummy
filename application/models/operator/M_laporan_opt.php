@@ -35,11 +35,21 @@ class M_laporan_opt extends CI_Model {
         $result = $this->db->get()->result_array();
         
         foreach ($result as $key => $mhs) {
-            $progres = $this->db->order_by('bab', 'DESC')->limit(1)->get_where('progres_skripsi', ['npm' => $mhs['npm']])->row_array();
+            // Revisi: Menggunakan get_where array agar lebih aman
+            $progres = $this->db->order_by('bab', 'DESC')
+                                ->limit(1)
+                                ->get_where('progres_skripsi', ['npm' => $mhs['npm']])
+                                ->row_array();
+            
             if ($progres) {
                 $result[$key]['last_bab'] = 'BAB ' . $progres['bab'];
-                $result[$key]['status_p1'] = $progres['nilai_dosen1'];
-                $result[$key]['status_p2'] = $progres['nilai_dosen2'];
+                
+                // Revisi: Cek ketersediaan kolom (Anti Error)
+                $val_p1 = isset($progres['progres_dosen1']) ? $progres['progres_dosen1'] : (isset($progres['status_p1']) ? $progres['status_p1'] : 0);
+                $val_p2 = isset($progres['progres_dosen2']) ? $progres['progres_dosen2'] : (isset($progres['status_p2']) ? $progres['status_p2'] : 0);
+                
+                $result[$key]['status_p1'] = $val_p1 . '%';
+                $result[$key]['status_p2'] = $val_p2 . '%';
             } else {
                 $result[$key]['last_bab'] = 'Belum Mulai';
                 $result[$key]['status_p1'] = '-';
@@ -75,14 +85,13 @@ class M_laporan_opt extends CI_Model {
         return $this->db->get()->result_array();
     }
 
-// Ambil detail kinerja dosen berdasarkan filter
-    public function get_detail_kinerja($id_dosen, $start_date, $end_date, $prodi = null)
+  public function get_detail_kinerja($id_dosen, $start_date, $end_date, $prodi = null)
     {
-        // 1. Query Total Mahasiswa (Logic Tetap)
+        // 1. Hitung Total Mahasiswa (Tetap)
         $this->db->select('COUNT(DISTINCT s.id_mahasiswa) as total_mhs');
         $this->db->from('skripsi s');
         $this->db->join('data_mahasiswa m', 's.id_mahasiswa = m.id');
-        $this->db->where("('$start_date' <= s.tgl_pengajuan_judul)");
+        $this->db->where("s.tgl_pengajuan_judul IS NOT NULL");
         $this->db->group_start();
             $this->db->where('s.pembimbing1', $id_dosen);
             $this->db->or_where('s.pembimbing2', $id_dosen);
@@ -93,32 +102,27 @@ class M_laporan_opt extends CI_Model {
         }
         $data_mhs = $this->db->get()->row_array();
 
-        // 2. Query Riwayat Aktivitas
+        // 2. Ambil Riwayat (PERBAIKAN: Join ke mstr_akun untuk ambil Nama)
         $this->db->select('
-            ps.bab, 
-            ps.created_at, 
-            ps.progres_dosen1 AS status_p1,  
-            ps.progres_dosen2 AS status_p2, 
-            m.nama_ortu_dengan_gelar as nama_mahasiswa, 
-            ma.nama as nama_asli_mahasiswa, 
+            ps.*, 
+            ma.nama as nama_mahasiswa,  -- Ambil nama dari tabel akun (ma)
             m.npm,
-            m.prodi
+            m.prodi,
+            s.pembimbing1,
+            s.pembimbing2
         ');
         $this->db->from('progres_skripsi ps');
         
-        // PERBAIKAN ALUR JOIN:
-        // progres_skripsi -> data_mahasiswa (via NPM)
-        $this->db->join('data_mahasiswa m', 'ps.npm = m.npm');
-        // data_mahasiswa -> mstr_akun (via ID, untuk ambil Nama)
-        $this->db->join('mstr_akun ma', 'm.id = ma.id'); 
-        // data_mahasiswa -> skripsi (via ID Mahasiswa, untuk cek pembimbing)
-        $this->db->join('skripsi s', 'm.id = s.id_mahasiswa');
+        // --- JOIN LOGIC ---
+        $this->db->join('data_mahasiswa m', 'ps.npm = m.npm');       // Hubungkan Progres ke Mhs via NPM
+        $this->db->join('mstr_akun ma', 'm.id = ma.id');             // TAMBAHAN: Hubungkan Mhs ke Akun via ID (untuk dapat Nama)
+        $this->db->join('skripsi s', 'm.id = s.id_mahasiswa');       // Hubungkan Mhs ke Skripsi
         
         // Filter Waktu
         $this->db->where('ps.created_at >=', $start_date . ' 00:00:00');
         $this->db->where('ps.created_at <=', $end_date . ' 23:59:59');
 
-        // Filter Dosen (Cek apakah dosen ini pembimbing skripsi mahasiswa tsb)
+        // Filter Dosen
         $this->db->group_start();
             $this->db->where('s.pembimbing1', $id_dosen);
             $this->db->or_where('s.pembimbing2', $id_dosen);
@@ -132,29 +136,22 @@ class M_laporan_opt extends CI_Model {
         $this->db->order_by('ps.created_at', 'DESC');
         $riwayat = $this->db->get()->result_array();
 
-        // Mapping nama mahasiswa agar konsisten dengan view
-        foreach ($riwayat as $key => $val) {
-            // Gunakan nama asli dari akun jika ada, jika tidak gunakan dari data mahasiswa
-            $riwayat[$key]['nama_mahasiswa'] = !empty($val['nama_asli_mahasiswa']) ? $val['nama_asli_mahasiswa'] : $val['nama_mahasiswa'];
-        }
-
         return [
             'total_mhs_bimbingan' => $data_mhs['total_mhs'],
             'riwayat_aktivitas' => $riwayat
         ];
     }
-    // --- TAMBAHAN BARU: Ambil List Semua Prodi ---
+    
     public function get_all_prodi()
     {
         $this->db->distinct();
         $this->db->select('prodi');
         $this->db->from('data_mahasiswa');
-        $this->db->where("prodi != ''"); // Pastikan tidak mengambil data kosong
+        $this->db->where("prodi != ''"); 
         $this->db->order_by('prodi', 'ASC');
         return $this->db->get()->result_array();
     }
 
-    // --- TAMBAHAN BARU: Ambil Daftar Semester Dinamis dari Database ---
     public function get_all_semesters()
     {
         $this->db->select('tgl_pengajuan_judul');
@@ -170,39 +167,25 @@ class M_laporan_opt extends CI_Model {
             foreach ($query->result_array() as $row) {
                 $date = $row['tgl_pengajuan_judul'];
                 $timestamp = strtotime($date);
-                $month = date('n', $timestamp); // 1-12
+                $month = date('n', $timestamp);
                 $year = date('Y', $timestamp);
                 
-                // LOGIKA PEMBAGIAN SEMESTER (Sesuai Controller)
-                // Ganjil: September (9) s.d Februari (2)
-                // Genap: Maret (3) s.d Agustus (8)
-                
-                if ($month >= 9) { // Sept - Des
-                    $start_year = $year;
-                    $end_year = $year + 1;
-                    $type = 'Ganjil';
-                } elseif ($month <= 2) { // Jan - Feb
-                    $start_year = $year - 1;
-                    $end_year = $year;
-                    $type = 'Ganjil';
-                } else { // Maret - Agustus
-                    $start_year = $year - 1;
-                    $end_year = $year;
-                    $type = 'Genap';
+                if ($month >= 9) { 
+                    $sem_label = 'Gasal ' . $year . '-' . ($year + 1);
+                } elseif ($month <= 2) { 
+                    $sem_label = 'Gasal ' . ($year - 1) . '-' . $year;
+                } else { 
+                    $sem_label = 'Genap ' . ($year - 1) . '-' . $year;
                 }
                 
-                $sem_label = $start_year . '/' . $end_year . ' ' . $type;
-                
-                // Masukkan ke array jika belum ada (agar unik)
                 if (!in_array($sem_label, $semesters)) {
                     $semesters[] = $sem_label;
                 }
             }
         }
         
-        // Jika data kosong, berikan default
         if (empty($semesters)) {
-            $semesters[] = date('Y').'/'.(date('Y')+1).' Ganjil';
+            $semesters[] = 'Gasal ' . date('Y') . '-' . (date('Y')+1);
         }
 
         return $semesters;

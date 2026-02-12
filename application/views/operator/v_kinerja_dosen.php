@@ -224,43 +224,67 @@
     </div>
     <?php endforeach; ?>
 <?php endif; ?>
-
 <script>
+    // 1. Fungsi Load Data (Pakai Fetch API - Tanpa jQuery)
     function loadSemesterReport(idDosen) {
-        var form = $('#filter-form-' + idDosen);
-        var semester = form.find('select[name="semester"]').val();
-        var prodi = form.find('select[name="prodi"]').val();
-        var container = $('#report-content-' + idDosen);
+        var form = document.getElementById('filter-form-' + idDosen);
+        if (!form) return;
 
-        container.html('<div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x text-info"></i><p class="mt-2">Mengambil data dari database...</p></div>');
+        var semester = form.querySelector('select[name="semester"]').value;
+        var prodi = form.querySelector('select[name="prodi"]').value;
+        var container = document.getElementById('report-content-' + idDosen);
 
-        $.ajax({
-            url: '<?php echo base_url("operator/get_detail_kinerja_ajax"); ?>',
-            type: 'POST',
-            data: {
-                id_dosen: idDosen,
-                semester: semester,
-                prodi: prodi
-            },
-            success: function(response) {
-                container.html(response);
-            },
-            error: function(xhr, status, error) {
-                container.html('<div class="alert alert-danger text-center">Gagal memuat data.</div>');
-                console.error("AJAX Error: " + error);
-            }
+        // Tampilkan Loading
+        container.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x text-info"></i><p class="mt-2">Sedang mengambil data...</p></div>';
+
+        // Siapkan Data Form
+        var formData = new FormData();
+        formData.append('id_dosen', idDosen);
+        formData.append('semester', semester);
+        formData.append('prodi', prodi);
+
+        // Kirim Request (Vanilla JS)
+        fetch('<?php echo base_url("operator/get_detail_kinerja_ajax"); ?>', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) { throw new Error("HTTP error " + response.status); }
+            return response.text();
+        })
+        .then(html => {
+            container.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            container.innerHTML = '<div class="alert alert-danger text-center">Gagal memuat data (Koneksi/Server Error).</div>';
         });
     }
 
-    $(document).ready(function() {
-        $('[data-target^="#modal-detail-"]').on('shown.bs.modal', function (e) {
-            var btn = $(e.relatedTarget);
-            var targetId = btn.data('target'); 
-            var idDosen = targetId.split('-')[2]; 
-            
-            if($('#report-content-' + idDosen).children().length <= 1) { 
-                loadSemesterReport(idDosen);
-            }
+    // 2. Event Listener untuk Tombol "Lihat Detail" (Tanpa jQuery)
+    document.addEventListener("DOMContentLoaded", function() {
+        // Cari semua tombol yang membuka modal
+        var buttons = document.querySelectorAll('button[data-toggle="modal"]');
+        
+        buttons.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                // Ambil ID Target Modal (contoh: #modal-detail-123)
+                var targetSelector = this.getAttribute('data-target');
+                if(!targetSelector) return;
+
+                // Ambil ID Dosen dari string tersebut
+                var parts = targetSelector.split('-');
+                var idDosen = parts[parts.length - 1]; // Ambil angka terakhir
+
+                // Cek apakah konten masih kosong (belum di-load)
+                var container = document.getElementById('report-content-' + idDosen);
+                if (container && container.children.length <= 1) {
+                    // Beri jeda sedikit agar modal tampil dulu
+                    setTimeout(function(){ 
+                        loadSemesterReport(idDosen); 
+                    }, 200);
+                }
+            });
         });
     });
 </script>

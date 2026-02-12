@@ -37,72 +37,43 @@ public function __construct()
         $id_dosen = $this->session->userdata('id');
         $data['title'] = 'Daftar Mahasiswa Bimbingan';
 
-        // Get filter parameters
+        // 1. Ambil Parameter Filter dari URL
         $keyword = $this->input->get('keyword');
         $prodi = $this->input->get('prodi');
         $angkatan = $this->input->get('angkatan');
-        $sort_by = $this->input->get('sort_by') ?: 'nama_mhs';
-        $sort_order = $this->input->get('sort_order') ?: 'asc';
+        $sort_by = $this->input->get('sort_by') ? $this->input->get('sort_by') : 'nama_mhs';
+        $sort_order = $this->input->get('sort_order') ? $this->input->get('sort_order') : 'asc';
 
-        // Get all data first
-        $all_data = $this->M_Dosen->get_mahasiswa_bimbingan($id_dosen);
-
-        // Apply filters
-        $filtered_data = [];
-        foreach ($all_data as $item) {
-            $match = true;
-
-            // Keyword search (nama_mhs, npm, judul)
-            if ($keyword) {
-                $search_text = strtolower($item['nama_mhs'] . ' ' . $item['npm'] . ' ' . ($item['judul'] ?? ''));
-                if (strpos($search_text, strtolower($keyword)) === false) {
-                    $match = false;
-                }
-            }
-
-            // Prodi filter (assuming prodi is in the data)
-            if ($prodi && $prodi != 'all') {
-                if (($item['prodi'] ?? '') != $prodi) {
-                    $match = false;
-                }
-            }
-
-            // Angkatan filter
-            if ($angkatan && $angkatan != 'all') {
-                if (($item['angkatan'] ?? '') != $angkatan) {
-                    $match = false;
-                }
-            }
-
-            if ($match) {
-                $filtered_data[] = $item;
-            }
-        }
-
-        // Apply sorting
-        usort($filtered_data, function($a, $b) use ($sort_by, $sort_order) {
-            $val_a = strtolower($a[$sort_by] ?? '');
-            $val_b = strtolower($b[$sort_by] ?? '');
-            if ($sort_order == 'desc') {
-                return $val_b <=> $val_a;
-            } else {
-                return $val_a <=> $val_b;
-            }
-        });
-
-        $data['bimbingan'] = $filtered_data;
+        // 2. Kirim Balik Parameter ke View (Agar form filter terisi otomatis)
         $data['keyword'] = $keyword;
         $data['prodi'] = $prodi;
         $data['angkatan'] = $angkatan;
         $data['sort_by'] = $sort_by;
         $data['sort_order'] = $sort_order;
 
+        // 3. AMBIL DATA UTAMA (Gunakan Fungsi Model yang sudah ada filternya)
+        // Kita pakai fungsi 'get_bimbingan_list' yang kita buat di Model sebelumnya
+        // Biarkan Database yang bekerja memfilter, bukan PHP.
+        $data['bimbingan'] = $this->M_Dosen->get_bimbingan_list(
+            $id_dosen, 
+            $keyword, 
+            $prodi, 
+            $angkatan, 
+            $sort_by, 
+            $sort_order
+        );
+
+        // 4. AMBIL DATA DROPDOWN (INI YANG BIKIN ERROR TADI)
+        // Kita wajib mengirim $list_prodi dan $list_angkatan ke view
+        $data['list_prodi'] = $this->M_Dosen->get_list_prodi();
+        $data['list_angkatan'] = $this->M_Dosen->get_list_angkatan();
+
+        // 5. Load View
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
         $this->load->view('dosen/v_bimbingan_list', $data);
         $this->load->view('template/footer');
     }
-
     // --- Detail Progres Bimbingan dan Pemberian Nilai ---
 
     public function progres_detail($id_skripsi)

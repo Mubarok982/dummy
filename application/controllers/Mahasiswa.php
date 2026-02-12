@@ -79,11 +79,6 @@ class Mahasiswa extends CI_Controller {
 
             $this->M_Mahasiswa->insert_skripsi($data);
             $this->session->set_flashdata('pesan_sukses', 'Pengajuan judul baru berhasil dikirim.');
-
-            // Reset progress: Delete existing progress to restart from bab 1
-            $npm = $this->session->userdata('npm');
-            $this->db->where('npm', $npm)->delete('progres_skripsi');
-
             $this->M_Log->record('Judul', 'Mengajukan judul baru: ' . $data['judul']);
             redirect('mahasiswa/pengajuan_judul');
         }

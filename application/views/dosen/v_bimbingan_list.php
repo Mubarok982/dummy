@@ -70,7 +70,6 @@
                             <thead>
                                 <tr>
                                     <th>No</th>
-                                    <th>Foto</th>
                                     <th>NPM</th>
                                     <th>Nama</th>
                                     <th>Prodi</th>
@@ -86,13 +85,6 @@
                                     <?php $no = 1; foreach ($bimbingan as $mhs): ?>
                                         <tr>
                                             <td><?php echo $no++; ?></td>
-                                            <td>
-                                                <?php if (!empty($mhs['foto'])): ?>
-                                                    <img src="<?php echo base_url('uploads/profile/' . $mhs['foto']); ?>" alt="Foto" class="img-thumbnail" width="50">
-                                                <?php else: ?>
-                                                    <img src="<?php echo base_url('assets/image/default.png'); ?>" alt="Foto" class="img-thumbnail" width="50">
-                                                <?php endif; ?>
-                                            </td>
                                             <td><?php echo $mhs['npm']; ?></td>
                                             <td><?php echo $mhs['nama_mhs']; ?></td>
                                             <td><?php echo $mhs['prodi']; ?></td>

@@ -662,58 +662,46 @@ class Operator extends CI_Controller {
     // --- AJAX HANDLER (Untuk Modal Detail Kinerja) ---
 public function get_detail_kinerja_ajax()
     {
-        // 1. Ambil data dari POST
-        $id_dosen = $this->input->post('id_dosen');
+        $id_dosen = $this->input->post('id_dosen'); // ID Dosen yang sedang dilihat
         $semester_str = $this->input->post('semester'); 
         $prodi = $this->input->post('prodi');
 
-        // 2. Default Semester jika kosong (Ambil tahun saat ini)
+        // Default Semester
         if (empty($semester_str)) {
             $currYear = date('Y');
             $nextYear = $currYear + 1;
-            // Default ke Gasal tahun ini
             $semester_str = "Gasal " . $currYear . "-" . $nextYear; 
         }
 
-        // 3. LOGIKA BARU: Parsing Semester & Tahun (Fleksibel)
-        // Mencari kata "Gasal" atau "Genap" (case insensitive)
+        // Logic Parsing Semester
         $is_gasal = (stripos($semester_str, 'Gasal') !== false);
-        
-        // Mencari Tahun (Format YYYY-YYYY atau YYYY/YYYY)
-        // Regex akan menangkap dua angka 4 digit yang dipisah tanda apapun
         preg_match('/(\d{4}).*?(\d{4})/', $semester_str, $matches);
 
         if (isset($matches[1]) && isset($matches[2])) {
-            $tahun_awal = $matches[1]; // Contoh: 2024
-            $tahun_akhir = $matches[2]; // Contoh: 2025
+            $tahun_awal = $matches[1]; 
+            $tahun_akhir = $matches[2];
         } else {
-            // Fallback jika format tahun tidak ketemu
             $tahun_awal = date('Y');
             $tahun_akhir = date('Y') + 1;
         }
 
-        // 4. Tentukan Rentang Tanggal Berdasarkan Logic getAcademicSemester
+        // Set Tanggal SQL
         if ($is_gasal) {
-            // Logic Gasal: Bulan 9 (Tahun Awal) s/d Bulan 2 (Tahun Akhir)
-            // Contoh: Gasal 2024-2025 = 01 Sept 2024 s.d 28/29 Feb 2025
             $start_date = $tahun_awal . '-09-01';
-            // Gunakan 'last day of' untuk menangani kabisat (28 atau 29 Feb) otomatis
             $end_date   = date("Y-m-t", strtotime($tahun_akhir . "-02-01"));
         } else {
-            // Logic Genap: Bulan 3 s/d Bulan 8 (Semuanya di Tahun Akhir)
-            // Contoh: Genap 2024-2025 = 01 Maret 2025 s.d 31 Agust 2025
             $start_date = $tahun_akhir . '-03-01';
             $end_date   = $tahun_akhir . '-08-31';
         }
 
-        // 5. Ambil Data dari Model (Pastikan Model M_laporan_opt sudah benar)
+        // Panggil Model (Pastikan model sudah menggunakan ps.* dan join skripsi s)
         $data = $this->M_laporan_opt->get_detail_kinerja($id_dosen, $start_date, $end_date, $prodi);
         
-        // 6. Render HTML
+        // Render HTML
         if (empty($data['riwayat_aktivitas'])) {
             echo '<div class="alert alert-warning text-center"><i class="fas fa-info-circle"></i> Tidak ada aktivitas bimbingan pada semester/prodi ini.</div>';
         } else {
-            // Info Box
+            // Summary Info
             echo '<div class="row mb-3">
                     <div class="col-6">
                         <div class="info-box bg-light shadow-none border">
@@ -728,7 +716,7 @@ public function get_detail_kinerja_ajax()
                         <div class="info-box bg-light shadow-none border">
                             <span class="info-box-icon bg-success"><i class="fas fa-check-circle"></i></span>
                             <div class="info-box-content">
-                                <span class="info-box-text">Total Aktivitas (Revisi/ACC)</span>
+                                <span class="info-box-text">Total Aktivitas</span>
                                 <span class="info-box-number">' . count($data['riwayat_aktivitas']) . ' Kali</span>
                             </div>
                         </div>
@@ -743,8 +731,8 @@ public function get_detail_kinerja_ajax()
                                 <th style="width: 15%">Tanggal</th>
                                 <th style="width: 25%">Mahasiswa</th>
                                 <th style="width: 15%">Aktivitas</th>
-                                <th style="width: 15%">Naskah</th>
-                                <th style="width: 30%">Komentar / Status</th>
+                                <th style="width: 10%">File</th>
+                                <th style="width: 35%">Status/Komentar</th>
                             </tr>
                         </thead>
                         <tbody>';
@@ -752,49 +740,79 @@ public function get_detail_kinerja_ajax()
             foreach ($data['riwayat_aktivitas'] as $row) {
                 $tgl = date('d/m/Y H:i', strtotime($row['created_at']));
                 
-                // Logic Cek Role Dosen (P1/P2) untuk menampilkan komentar yang tepat
-                $komentar = '-';
+                // --- LOGIKA UTAMA: TENTUKAN PERAN DOSEN (P1 atau P2) ---
+                // Kita bandingkan ID Dosen yang dilihat ($id_dosen) dengan data di skripsi
+                
+                $peran = ''; // P1 atau P2
                 $status_progres = 0;
+                $komentar = '-';
 
-                // Pastikan key array sesuai dengan return dari Model
+                // Cek apakah dia Pembimbing 1?
                 if ($row['pembimbing1'] == $id_dosen) {
-                    $komentar = isset($row['nilai_dosen1']) ? $row['nilai_dosen1'] : '-';
-                    $status_progres = $row['status_p1'];
-                } elseif ($row['pembimbing2'] == $id_dosen) {
-                    $komentar = isset($row['nilai_dosen2']) ? $row['nilai_dosen2'] : '-';
-                    $status_progres = $row['status_p2'];
+                    $peran = 'P1';
+                    // Ambil status P1
+                    $status_progres = isset($row['progres_dosen1']) ? $row['progres_dosen1'] : (isset($row['status_p1']) ? $row['status_p1'] : 0);
+                    
+                    // Ambil Komentar P1 (Prioritaskan komentar_dosen1, fallback ke nilai_dosen1)
+                    if (!empty($row['komentar_dosen1'])) {
+                        $komentar = $row['komentar_dosen1'];
+                    } elseif (!empty($row['nilai_dosen1'])) {
+                        $komentar = $row['nilai_dosen1'];
+                    }
+                } 
+                // Cek apakah dia Pembimbing 2?
+                elseif ($row['pembimbing2'] == $id_dosen) {
+                    $peran = 'P2';
+                    // Ambil status P2
+                    $status_progres = isset($row['progres_dosen2']) ? $row['progres_dosen2'] : (isset($row['status_p2']) ? $row['status_p2'] : 0);
+                    
+                    // Ambil Komentar P2 (Prioritaskan komentar_dosen2, fallback ke nilai_dosen2)
+                    if (!empty($row['komentar_dosen2'])) {
+                        $komentar = $row['komentar_dosen2'];
+                    } elseif (!empty($row['nilai_dosen2'])) {
+                        $komentar = $row['nilai_dosen2'];
+                    }
                 }
 
-                // Styling Badge
-                $badge_class = 'secondary';
-                if ($status_progres == 100) $badge_class = 'success';
-                elseif ($status_progres > 0) $badge_class = 'warning';
-                else $badge_class = 'danger';
+                // Handle jika komentar masih kosong/strip
+                if (trim($komentar) == '' || $komentar == '-') {
+                    $komentar = 'Tidak ada catatan.';
+                }
 
-                // Link File
-                $link_file = base_url('uploads/progres/' . $row['file']);
+                // --- AMBIL FILE ---
+                $nama_file = isset($row['file']) ? $row['file'] : (isset($row['file_progres']) ? $row['file_progres'] : 'default.pdf');
+                $link_file = base_url('uploads/progres/' . $nama_file);
                 
+                // Styling Badge
+                $badge_class = ($status_progres == 100) ? 'success' : (($status_progres > 0) ? 'warning' : 'danger');
+
                 echo '<tr>
                         <td class="text-center small">' . $tgl . '</td>
                         <td>
                             <b>' . $row['nama_mahasiswa'] . '</b><br>
-                            <small class="text-muted">' . $row['npm'] . ' - ' . $row['prodi'] . '</small>
+                            <small class="text-muted">' . $row['npm'] . '</small>
                         </td>
                         <td class="text-center">
-                            Koreksi <b>BAB ' . $row['bab'] . '</b>
+                            Bab ' . $row['bab'] . '
                         </td>
                         <td class="text-center">
                             <a href="' . $link_file . '" target="_blank" class="btn btn-xs btn-outline-primary">
-                                <i class="fas fa-file-pdf mr-1"></i> Lihat
+                                <i class="fas fa-file-pdf"></i>
                             </a>
                         </td>
                         <td>
-                            <span class="badge badge-' . $badge_class . ' mb-1">' . $status_progres . '%</span><br>
-                            <small class="font-italic text-muted">"' . ($komentar ? $komentar : 'Belum ada catatan') . '"</small>
+                            <div class="d-flex flex-column">
+                                <div class="mb-1">
+                                    <span class="badge badge-' . $badge_class . '">' . $status_progres . '%</span>
+                                    <span class="badge badge-light border ml-1">' . $peran . '</span>
+                                </div>
+                                <small class="text-muted font-italic text-wrap" style="max-width: 300px;">
+                                    <i class="fas fa-quote-left mr-1 text-xs"></i>' . $komentar . '
+                                </small>
+                            </div>
                         </td>
                       </tr>';
             }
-
             echo '</tbody></table></div>';
         }
     }
