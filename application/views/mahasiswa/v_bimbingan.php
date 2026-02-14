@@ -26,15 +26,10 @@
             
             $skripsi = isset($skripsi) ? $skripsi : null;
             $status_acc = isset($skripsi['status_acc_kaprodi']) ? $skripsi['status_acc_kaprodi'] : '';
-            
-            // Mengambil status dari controller (pastikan controller mengirim $status_ujian)
-            // Nilai yang diharapkan: 'Berlangsung', 'Lulus', 'Perbaikan', 'Mengulang', atau null
-            $status_ujian = isset($status_ujian) ? $status_ujian : null; 
-            
+            $status_ujian = isset($status_ujian) ? $status_ujian : null; // Status Sempro
             $status_sempro_db = isset($skripsi['status_sempro']) ? $skripsi['status_sempro'] : '';
             $is_acc_diterima = ($status_acc == 'diterima');
 
-            // Ambil Batas Bab dari Controller (D3=5, S1=6). Default 6 jika tidak dikirim.
             $max_bab_prodi = isset($max_bab) ? $max_bab : 6; 
             ?>
 
@@ -115,7 +110,7 @@
                         $target_bab = 1; 
                         $is_revisi = false;
                         
-                        // Default UI Variables
+                        // Default UI
                         $status_card = 'card-primary';
                         $text_header = 'Upload Progres Baru';
                         $alert_style = 'callout-info';
@@ -124,7 +119,7 @@
                         $lock_msg = "";
                         $notif_type = ""; 
 
-                        // 1. Cek Progres Terakhir (Menentukan Bab secara Normal)
+                        // 1. Cek Progres Terakhir (Normal Flow)
                         if (isset($last_progres) && !empty($last_progres)) {
                             $lp = (object) $last_progres;
                             if ($lp->progres_dosen1 == 100 && $lp->progres_dosen2 == 100) {
@@ -142,38 +137,37 @@
                         // GATEKEEPER SEMPRO (LOGIKA STATUS UJIAN)
                         // ============================================================
                         
-                        // KASUS 1: MENGULANG (Prioritas Tertinggi -> KUNCI FORM)
+                        // KASUS 1: MENGULANG -> TAMPILKAN NOTIF & TUTUP FORM
                         if ($status_ujian == 'Mengulang') {
                             $is_locked = true; 
                             $notif_type = "mengulang"; 
                             $lock_msg = "Anda dinyatakan Mengulang. Silakan ajukan judul baru.";
                         }
                         
-                        // KASUS 2: SEDANG BERLANGSUNG -> KUNCI FORM
+                        // KASUS 2: SEDANG BERLANGSUNG -> TAMPILKAN NOTIF & TUTUP FORM
                         elseif ($status_ujian == 'Berlangsung') {
                             $is_locked = true;
-                            $lock_msg = "Sidang Seminar Proposal sedang berlangsung. Akses upload ditutup sementara hingga nilai keluar.";
+                            $notif_type = "sempro_berlangsung";
+                            $lock_msg = "Sidang sedang berlangsung. Upload ditutup.";
                         }
 
-                        // KASUS 3: PERBAIKAN -> BUKA FORM (TARGET BAB 3)
+                        // KASUS 3: PERBAIKAN -> BUKA FORM & PAKSA KE BAB 3
                         elseif ($status_ujian == 'Perbaikan') {
-                            $target_bab = 3; // Paksa ke Bab 3
+                            $target_bab = 3; 
                             $is_revisi = true;
-                            $is_locked = false; // Buka
+                            $is_locked = false; 
                             $notif_type = "revisi_sempro";
                             $status_card = 'card-warning';
                             $pesan_info = '<b>STATUS: PERBAIKAN SEMPRO.</b> Silakan upload revisi naskah (Bab 1-3) sesuai masukan penguji.';
                         }
 
-                        // KASUS 4: DITERIMA / LULUS -> BUKA FORM ( LANJUT BAB 4)
+                        // KASUS 4: DITERIMA / LULUS -> BUKA FORM (NORMAL FLOW KE BAB 4)
                         elseif ($status_ujian == 'Lulus' || $status_ujian == 'Diterima') {
-                            $is_locked = false; // Buka
-                            // Secara otomatis $target_bab akan menjadi 4 jika Bab 3 sudah 100% di logic awal
-                            // Jadi tidak perlu diset manual, biarkan logic progres berjalan
+                            $is_locked = false;
+                            // Target bab otomatis jadi 4 karena Bab 3 sudah 100%
                         }
 
-                        // KASUS 5: SIAP SEMPRO (Belum daftar/Belum sidang) -> KUNCI FORM
-                        // Jika target bab sudah 4 (Bab 3 selesai) tapi belum ada status ujian
+                        // KASUS 5: SIAP SEMPRO (Belum ada status ujian) -> TAMPILKAN NOTIF & TUTUP FORM
                         elseif ($target_bab == 4 && $status_sempro_db == 'Siap Sempro' && empty($status_ujian)) {
                             $notif_type = "siap_sempro"; 
                             $is_locked = true; 
@@ -189,7 +183,6 @@
                             $target_bab = $max_bab_prodi; 
                         }
                         
-                        // Safety Cap
                         if ($target_bab > 6) $target_bab = 6;
                         ?>
 
@@ -201,6 +194,41 @@
                                     <p class="text-white">Bab 1-3 selesai. Silakan daftar sidang.</p>
                                     <a href="http://website-administrasi.com" target="_blank" class="btn btn-light font-weight-bold shadow pulse-button">
                                         <i class="fas fa-external-link-alt mr-2"></i> Daftar Sempro
+                                    </a>
+                                </div>
+                            </div>
+
+                        <?php elseif ($notif_type == 'sempro_berlangsung'): ?>
+                            <div class="card bg-gradient-primary shadow-lg mb-4">
+                                <div class="card-body text-center p-4">
+                                    <div class="mb-3"><i class="fas fa-calendar-check fa-4x text-white"></i></div>
+                                    <h3 class="font-weight-bold text-white">Seminar Proposal Sedang Berlangsung</h3>
+                                    <p class="text-white">Selamat! Anda telah dijadwalkan/sedang menempuh Seminar Proposal.</p>
+                                    <div class="alert alert-light d-inline-block p-3 mt-2 shadow-sm text-dark text-left">
+                                        <h6 class="font-weight-bold mb-2"><i class="fas fa-info-circle text-primary mr-1"></i> Instruksi:</h6>
+                                        <ul class="mb-0 pl-3 text-sm">
+                                            <li>Selesaikan administrasi di website administrasi.</li>
+                                            <li>Pantau jadwal dan hasil sidang Anda.</li>
+                                            <li>Form upload ditutup sementara hingga hasil keluar.</li>
+                                        </ul>
+                                    </div>
+                                    <div class="mt-4">
+                                        <a href="http://website-administrasi.com" target="_blank" class="btn btn-light font-weight-bold shadow pulse-button">
+                                            <i class="fas fa-external-link-alt mr-2"></i> Website Administrasi
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                        <?php elseif ($notif_type == 'mengulang'): ?>
+                            <div class="card bg-gradient-danger shadow-lg mb-4">
+                                <div class="card-body text-center p-4">
+                                    <div class="mb-3"><i class="fas fa-times-circle fa-4x text-white"></i></div>
+                                    <h3 class="font-weight-bold text-white">Status: Mengulang</h3>
+                                    <p class="text-white">Mohon maaf, berdasarkan hasil sidang, Anda dinyatakan harus <b>MENGULANG</b>.</p>
+                                    <p class="text-white small">Akses upload ditutup. Silakan ajukan judul baru.</p>
+                                    <a href="<?php echo base_url('mahasiswa/pengajuan_judul'); ?>" class="btn btn-light font-weight-bold shadow">
+                                        <i class="fas fa-edit mr-2"></i> Ajukan Judul Baru
                                     </a>
                                 </div>
                             </div>
@@ -218,24 +246,12 @@
                                     </div>
                                 </div>
                             </div>
-
-                        <?php elseif ($notif_type == 'mengulang'): ?>
-                            <div class="card bg-gradient-danger shadow-lg mb-4">
-                                <div class="card-body text-center p-4">
-                                    <div class="mb-3"><i class="fas fa-exclamation-triangle fa-4x text-white"></i></div>
-                                    <h3 class="font-weight-bold text-white">Status: Mengulang Sempro</h3>
-                                    <p class="text-white">Berdasarkan hasil sidang, Anda diwajibkan untuk <b>Submit Judul Baru</b>.</p>
-                                    <a href="<?php echo base_url('mahasiswa/pengajuan_judul'); ?>" class="btn btn-light font-weight-bold shadow">
-                                        <i class="fas fa-edit mr-2"></i> Ajukan Judul Baru
-                                    </a>
-                                </div>
-                            </div>
                         <?php endif; ?>
 
 
                         <?php if ($is_locked): ?>
                             
-                            <?php if ($notif_type != 'siap_pendadaran' && $notif_type != 'siap_sempro' && $notif_type != 'mengulang'): ?>
+                            <?php if (!in_array($notif_type, ['siap_pendadaran', 'siap_sempro', 'mengulang', 'sempro_berlangsung'])): ?>
                                 <div class="card shadow mb-4 border-left-secondary">
                                     <div class="card-body text-center text-muted py-5">
                                         <div class="mb-3"><i class="fas fa-lock fa-4x text-gray-300"></i></div>
@@ -370,6 +386,7 @@
     }
     .bg-gradient-success { background: linear-gradient(45deg, #28a745, #20c997); }
     .bg-gradient-info { background: linear-gradient(45deg, #17a2b8, #117a8b); }
+    .bg-gradient-primary { background: linear-gradient(45deg, #007bff, #0056b3); }
     .bg-gradient-danger { background: linear-gradient(45deg, #dc3545, #e4606d); }
 </style>
 
