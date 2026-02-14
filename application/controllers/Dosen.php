@@ -187,27 +187,73 @@ public function __construct()
     {
         if ($this->session->userdata('is_kaprodi') != 1) {
             $this->session->set_flashdata('pesan_error', 'Akses ditolak. Fitur ini hanya untuk Kaprodi.');
-            redirect('dosen/bimbingan_list');
+            redirect('dosen/bimbing_an_list');
         }
 
         $prodi = $this->session->userdata('prodi');
         
         // Ambil data filter dari URL (GET request)
+        $keyword = $this->input->get('keyword');
         $angkatan_filter = $this->input->get('angkatan');
+        $sort_by = $this->input->get('sort_by') ?: 'nama';
+        $sort_order = $this->input->get('sort_order') ?: 'asc';
 
         $data['title'] = 'Monitoring Mahasiswa Prodi ' . $prodi;
         
         // Ambil list angkatan untuk dropdown
         $data['list_angkatan'] = $this->M_Dosen->get_list_angkatan($prodi);
-        $data['selected_angkatan'] = $angkatan_filter; // Untuk menandai dropdown yang dipilih
+        $data['selected_angkatan'] = $angkatan_filter;
 
-        // Ambil data mahasiswa dengan filter
-        $data['mahasiswa_prodi'] = $this->M_Dosen->get_all_mahasiswa_prodi($prodi, $angkatan_filter);
+        // Ambil semua data mahasiswa
+        $all_data = $this->M_Dosen->get_all_mahasiswa_prodi($prodi, NULL);
+
+        // Apply filters
+        $filtered_data = [];
+        foreach ($all_data as $item) {
+            $match = true;
+
+            // Keyword search (nama, npm, judul)
+            if ($keyword) {
+                $search_text = strtolower(($item['nama'] ?? '') . ' ' . ($item['npm'] ?? '') . ' ' . ($item['judul'] ?? ''));
+                if (strpos($search_text, strtolower($keyword)) === false) {
+                    $match = false;
+                }
+            }
+
+            // Angkatan filter
+            if ($angkatan_filter && $angkatan_filter != 'all') {
+                if (($item['angkatan'] ?? '') != $angkatan_filter) {
+                    $match = false;
+                }
+            }
+
+            if ($match) {
+                $filtered_data[] = $item;
+            }
+        }
+
+        // Apply sorting
+        usort($filtered_data, function($a, $b) use ($sort_by, $sort_order) {
+            $val_a = strtolower($a[$sort_by] ?? '');
+            $val_b = strtolower($b[$sort_by] ?? '');
+            if ($sort_order == 'desc') {
+                return $val_b <=> $val_a;
+            } else {
+                return $val_a <=> $val_b;
+            }
+        });
+
+        $data['mahasiswa_prodi'] = $filtered_data;
+        
+        // Send filter parameters to view
+        $data['keyword'] = $keyword;
+        $data['sort_by'] = $sort_by;
+        $data['sort_order'] = $sort_order;
 
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
         $this->load->view('dosen/v_monitoring_prodi', $data);
-        $this->load->view('template/footer'); // Pastikan footer view sudah dikosongkan isinya seperti request sebelumnya
+        $this->load->view('template/footer');
 
         $data['list_dosen'] = $this->M_Data->get_dosen_pembimbing_list(); 
     }

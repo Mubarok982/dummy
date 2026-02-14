@@ -51,7 +51,7 @@
 
             <div class="row">
                 
-                <div class="col-md-5">
+                <div class="col-md-4">
                     <div class="card card-primary card-outline shadow mb-4">
                         <div class="card-body box-profile">
                             <div class="text-center">
@@ -92,32 +92,9 @@
                             </a>
                         </div>
                     </div>
-                    
-                    <div class="card card-primary card-outline shadow collapsed-card">
-                        <div class="card-header">
-                            <h3 class="card-title"><i class="fas fa-comments mr-2"></i> Kontak Pembimbing</h3>
-                            <div class="card-tools">
-                                <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-plus"></i></button>
-                            </div>
-                        </div>
-                        <div class="card-body p-0">
-                            <ul class="list-group list-group-flush">
-                                <?php if ($is_acc_diterima): ?>
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <span><i class="fas fa-user-graduate mr-2 text-success"></i> Pembimbing 1</span>
-                                        <a href="<?php echo base_url('chat?id_lawan=' . $skripsi['pembimbing1']); ?>" class="badge badge-info"><i class="fas fa-comment"></i> Chat</a>
-                                    </li>
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <span><i class="fas fa-user-graduate mr-2 text-success"></i> Pembimbing 2</span>
-                                        <a href="<?php echo base_url('chat?id_lawan=' . $skripsi['pembimbing2']); ?>" class="badge badge-info"><i class="fas fa-comment"></i> Chat</a>
-                                    </li>
-                                <?php endif; ?>
-                            </ul>
-                        </div>
-                    </div>
                 </div>
 
-                <div class="col-md-7">
+                <div class="col-md-8">
                     
                     <?php if (!$is_acc_diterima): ?>
                         <div class="alert alert-warning shadow">

@@ -43,15 +43,29 @@
                             
                             <div class="col-md-3 col-sm-6 my-1">
                                 <select name="prodi" class="form-control form-control-sm">
-                                    <option value="">- Semua Program Studi -</option>
-                                    <option value="Teknik Informatika S1" <?php echo ($this->input->get('prodi') == 'Teknik Informatika S1') ? 'selected' : ''; ?>>Teknik Informatika S1</option>
-                                    <option value="Teknologi Informasi D3" <?php echo ($this->input->get('prodi') == 'Teknologi Informasi D3') ? 'selected' : ''; ?>>Teknologi Informasi D3</option>
+                                    <option value="all">- Semua Program Studi -</option>
+                                    <?php if(!empty($list_prodi)): ?>
+                                        <?php foreach ($list_prodi as $prodi_option): ?>
+                                            <option value="<?php echo $prodi_option['prodi']; ?>" <?php echo ($prodi == $prodi_option['prodi']) ? 'selected' : ''; ?>><?php echo $prodi_option['prodi']; ?></option>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </select>
+                            </div>
+
+                            <div class="col-md-3 col-sm-6 my-1">
+                                <select name="angkatan" class="form-control form-control-sm">
+                                    <option value="all">- Semua Angkatan -</option>
+                                    <?php if(!empty($list_angkatan)): ?>
+                                        <?php foreach ($list_angkatan as $angkatan_option): ?>
+                                            <option value="<?php echo $angkatan_option['angkatan']; ?>" <?php echo ($angkatan == $angkatan_option['angkatan']) ? 'selected' : ''; ?>><?php echo $angkatan_option['angkatan']; ?></option>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
                                 </select>
                             </div>
 
                             <div class="col-md-4 col-sm-12 my-1">
                                 <div class="input-group input-group-sm">
-                                    <input type="text" name="keyword" class="form-control" placeholder="Cari Nama / NPM / Judul..." value="<?php echo $this->input->get('keyword'); ?>">
+                                    <input type="text" name="keyword" class="form-control" placeholder="Cari Nama / NPM / Judul..." value="<?php echo $keyword; ?>">
                                     <div class="input-group-append">
                                         <button type="submit" class="btn btn-primary">
                                             <i class="fas fa-search"></i> Cari
@@ -60,10 +74,29 @@
                                 </div>
                             </div>
 
-                            <?php if($this->input->get('prodi') || $this->input->get('keyword')): ?>
+                        </div>
+                        <div class="form-row align-items-center mt-1">
+                            
+                            <div class="col-md-3 col-sm-6 my-1">
+                                <select name="sort_by" class="form-control form-control-sm">
+                                    <option value="nama" <?php echo ($sort_by == 'nama') ? 'selected' : ''; ?>>Urut: Nama</option>
+                                    <option value="npm" <?php echo ($sort_by == 'npm') ? 'selected' : ''; ?>>Urut: NPM</option>
+                                    <option value="prodi" <?php echo ($sort_by == 'prodi') ? 'selected' : ''; ?>>Urut: Prodi</option>
+                                    <option value="angkatan" <?php echo ($sort_by == 'angkatan') ? 'selected' : ''; ?>>Urut: Angkatan</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-3 col-sm-6 my-1">
+                                <select name="sort_order" class="form-control form-control-sm">
+                                    <option value="asc" <?php echo ($sort_order == 'asc') ? 'selected' : ''; ?>>Ascending</option>
+                                    <option value="desc" <?php echo ($sort_order == 'desc') ? 'selected' : ''; ?>>Descending</option>
+                                </select>
+                            </div>
+
+                            <?php if($prodi || $keyword || $angkatan || ($sort_by != 'nama') || ($sort_order != 'asc')): ?>
                             <div class="col-auto my-1">
                                 <a href="<?php echo base_url('operator/monitoring_progres'); ?>" class="btn btn-outline-danger btn-sm" title="Reset Filter">
-                                    <i class="fas fa-times"></i>
+                                    <i class="fas fa-undo"></i> Reset
                                 </a>
                             </div>
                             <?php endif; ?>

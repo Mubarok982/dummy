@@ -382,10 +382,70 @@ class Operator extends CI_Controller {
     public function list_revisi()
     {
         $data['title'] = 'Progres Mahasiswa';
-        $keyword = $this->input->get('keyword');
 
-        // Get all progress data with optional filters, sorted by last upload
-        $data['list_revisi'] = $this->M_Data->get_riwayat_progress($keyword);
+        // Get filter parameters
+        $keyword = $this->input->get('keyword');
+        $prodi = $this->input->get('prodi');
+        $angkatan = $this->input->get('angkatan');
+        $sort_by = $this->input->get('sort_by') ?: 'nama_mhs';
+        $sort_order = $this->input->get('sort_order') ?: 'asc';
+
+        // Get all data first
+        $all_data = $this->M_Data->get_riwayat_progress($keyword);
+
+        // Apply filters
+        $filtered_data = [];
+        foreach ($all_data as $item) {
+            $match = true;
+
+            // Keyword search (nama, npm, judul)
+            if ($keyword) {
+                $search_text = strtolower(($item['nama_mhs'] ?? '') . ' ' . ($item['npm'] ?? '') . ' ' . ($item['judul'] ?? ''));
+                if (strpos($search_text, strtolower($keyword)) === false) {
+                    $match = false;
+                }
+            }
+
+            // Prodi filter
+            if ($prodi && $prodi != 'all') {
+                if (($item['prodi'] ?? '') != $prodi) {
+                    $match = false;
+                }
+            }
+
+            // Angkatan filter
+            if ($angkatan && $angkatan != 'all') {
+                if (($item['angkatan'] ?? '') != $angkatan) {
+                    $match = false;
+                }
+            }
+
+            if ($match) {
+                $filtered_data[] = $item;
+            }
+        }
+
+        // Apply sorting
+        usort($filtered_data, function($a, $b) use ($sort_by, $sort_order) {
+            $val_a = strtolower($a[$sort_by] ?? '');
+            $val_b = strtolower($b[$sort_by] ?? '');
+            if ($sort_order == 'desc') {
+                return $val_b <=> $val_a;
+            } else {
+                return $val_a <=> $val_b;
+            }
+        });
+
+        $data['list_revisi'] = $filtered_data;
+        $data['keyword'] = $keyword;
+        $data['prodi'] = $prodi;
+        $data['angkatan'] = $angkatan;
+        $data['sort_by'] = $sort_by;
+        $data['sort_order'] = $sort_order;
+
+        // Load dynamic filter options
+        $data['list_prodi'] = $this->M_Data->get_all_prodi();
+        $data['list_angkatan'] = $this->M_Data->get_unique_angkatan();
 
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
@@ -564,12 +624,65 @@ class Operator extends CI_Controller {
         $data['title'] = 'Monitoring Progres Bimbingan';
         $this->load->library('pagination');
 
+        // Get filter parameters
         $prodi = $this->input->get('prodi');
         $keyword = $this->input->get('keyword');
+        $angkatan = $this->input->get('angkatan');
+        $sort_by = $this->input->get('sort_by') ?: 'nama';
+        $sort_order = $this->input->get('sort_order') ?: 'asc';
 
-        // Gunakan M_laporan_opt agar konsisten
+        // Get all data first (for sorting/filtering without pagination complexity)
+        $all_data = $this->M_laporan_opt->get_laporan_progres($prodi, $keyword, NULL, NULL);
+
+        // Apply filters
+        $filtered_data = [];
+        foreach ($all_data as $item) {
+            $match = true;
+
+            // Keyword search (nama, npm, judul)
+            if ($keyword) {
+                $search_text = strtolower(($item['nama'] ?? '') . ' ' . ($item['npm'] ?? '') . ' ' . ($item['judul'] ?? ''));
+                if (strpos($search_text, strtolower($keyword)) === false) {
+                    $match = false;
+                }
+            }
+
+            // Prodi filter
+            if ($prodi && $prodi != 'all') {
+                if (($item['prodi'] ?? '') != $prodi) {
+                    $match = false;
+                }
+            }
+
+            // Angkatan filter
+            if ($angkatan && $angkatan != 'all') {
+                if (($item['angkatan'] ?? '') != $angkatan) {
+                    $match = false;
+                }
+            }
+
+            if ($match) {
+                $filtered_data[] = $item;
+            }
+        }
+
+        // Apply sorting
+        usort($filtered_data, function($a, $b) use ($sort_by, $sort_order) {
+            $val_a = strtolower($a[$sort_by] ?? '');
+            $val_b = strtolower($b[$sort_by] ?? '');
+            if ($sort_order == 'desc') {
+                return $val_b <=> $val_a;
+            } else {
+                return $val_a <=> $val_b;
+            }
+        });
+
+        // Calculate total rows after filtering
+        $total_rows = count($filtered_data);
+
+        // Pagination
         $config['base_url'] = base_url('operator/monitoring_progres');
-        $config['total_rows'] = $this->M_laporan_opt->count_laporan_progres($prodi, $keyword);
+        $config['total_rows'] = $total_rows;
         $config['per_page'] = 10;
         $config['reuse_query_string'] = TRUE;
         $config['page_query_string'] = TRUE;
@@ -579,11 +692,24 @@ class Operator extends CI_Controller {
         $this->pagination->initialize($config);
 
         $page = $this->input->get('page') ? $this->input->get('page') : 0;
-        $data['laporan'] = $this->M_laporan_opt->get_laporan_progres($prodi, $keyword, $config['per_page'], $page);
+        
+        // Slice data for pagination
+        $data['laporan'] = array_slice($filtered_data, $page, $config['per_page']);
 
         $data['pagination'] = $this->pagination->create_links();
-        $data['total_rows'] = $config['total_rows'];
+        $data['total_rows'] = $total_rows;
         $data['start_index'] = $page;
+
+        // Send filter parameters to view
+        $data['keyword'] = $keyword;
+        $data['prodi'] = $prodi;
+        $data['angkatan'] = $angkatan;
+        $data['sort_by'] = $sort_by;
+        $data['sort_order'] = $sort_order;
+
+        // Load dynamic filter options
+        $data['list_prodi'] = $this->M_laporan_opt->get_all_prodi();
+        $data['list_angkatan'] = $this->M_Data->get_unique_angkatan();
 
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);

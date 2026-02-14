@@ -18,7 +18,7 @@
     <section class="content">
         <div class="container-fluid">
             
-            <div class="card card-outline card-primary collapsed-card shadow-sm">
+            <div class="card card-outline card-primary shadow-sm">
                 <div class="card-header">
                     <h3 class="card-title"><i class="fas fa-filter mr-1"></i> Filter Data</h3>
                     <div class="card-tools">
