@@ -3,10 +3,9 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Dosen extends CI_Controller
 {
-public function __construct()
+    public function __construct()
     {
         parent::__construct();
-        // 1. Cek Login & Role
         if ($this->session->userdata('role') != 'dosen' || !$this->session->userdata('is_login')) {
             redirect('auth/login');
         }
@@ -14,46 +13,35 @@ public function __construct()
         $this->load->model(['M_Data', 'M_Dosen', 'M_Log']);
         $this->load->model('operator/M_akun_opt');
 
-        // 2. LOGIKA FORCE REDIRECT DOSEN
         $id_user = $this->session->userdata('id');
-        
-        // Ambil data detail dosen
         $detail = $this->db->get_where('data_dosen', ['id' => $id_user])->row_array();
 
-        // Halaman yang diizinkan: profil, update_profil, dan logout
         $allowed_methods = ['profil', 'update_profil', 'logout'];
         $current_method = $this->router->method;
 
-        // Cek jika NIDK atau Prodi kosong
         if ((empty($detail['nidk']) || empty($detail['prodi'])) && !in_array($current_method, $allowed_methods)) {
             $this->session->set_flashdata('pesan_error', '⚠️ Mohon lengkapi <b>NIDK</b> dan <b>Program Studi</b> Anda di Profil terlebih dahulu.');
             redirect('dosen/profil');
         }
     }
-    // --- Menu Utama Dosen: Daftar Mahasiswa Bimbingan ---
 
     public function bimbingan_list()
     {
         $id_dosen = $this->session->userdata('id');
         $data['title'] = 'Daftar Mahasiswa Bimbingan';
 
-        // 1. Ambil Parameter Filter dari URL
         $keyword = $this->input->get('keyword');
         $prodi = $this->input->get('prodi');
         $angkatan = $this->input->get('angkatan');
         $sort_by = $this->input->get('sort_by') ? $this->input->get('sort_by') : 'nama_mhs';
         $sort_order = $this->input->get('sort_order') ? $this->input->get('sort_order') : 'asc';
 
-        // 2. Kirim Balik Parameter ke View (Agar form filter terisi otomatis)
         $data['keyword'] = $keyword;
         $data['prodi'] = $prodi;
         $data['angkatan'] = $angkatan;
         $data['sort_by'] = $sort_by;
         $data['sort_order'] = $sort_order;
 
-        // 3. AMBIL DATA UTAMA (Gunakan Fungsi Model yang sudah ada filternya)
-        // Kita pakai fungsi 'get_bimbingan_list' yang kita buat di Model sebelumnya
-        // Biarkan Database yang bekerja memfilter, bukan PHP.
         $data['bimbingan'] = $this->M_Dosen->get_bimbingan_list(
             $id_dosen, 
             $keyword, 
@@ -63,18 +51,14 @@ public function __construct()
             $sort_order
         );
 
-        // 4. AMBIL DATA DROPDOWN (INI YANG BIKIN ERROR TADI)
-        // Kita wajib mengirim $list_prodi dan $list_angkatan ke view
         $data['list_prodi'] = $this->M_Dosen->get_list_prodi();
         $data['list_angkatan'] = $this->M_Dosen->get_list_angkatan();
 
-        // 5. Load View
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
         $this->load->view('dosen/v_bimbingan_list', $data);
         $this->load->view('template/footer');
     }
-    // --- Detail Progres Bimbingan dan Pemberian Nilai ---
 
     public function progres_detail($id_skripsi)
     {
@@ -82,7 +66,6 @@ public function __construct()
         $data['title'] = 'Detail Progres Bimbingan';
         $data['skripsi'] = $this->M_Dosen->get_skripsi_details($id_skripsi);
 
-        // Pastikan dosen adalah pembimbing untuk skripsi ini
         if ($data['skripsi']['pembimbing1'] != $id_dosen && $data['skripsi']['pembimbing2'] != $id_dosen) {
             $this->session->set_flashdata('pesan_error', 'Anda bukan dosen pembimbing untuk skripsi ini.');
             redirect('dosen/bimbingan_list');
@@ -100,47 +83,37 @@ public function __construct()
    public function submit_koreksi()
     {
         $id_progres = $this->input->post('id_progres');
-        $is_p1      = $this->input->post('is_p1'); // 1 atau 0
+        $is_p1      = $this->input->post('is_p1'); 
         $komentar   = $this->input->post('komentar');
-        $status_progres = $this->input->post('status_progres'); // 0, 50, 100
+        $status_progres = $this->input->post('status_progres'); 
         $id_skripsi = $this->input->post('id_skripsi');
 
-        // 1. AMBIL DATA PLAGIASI DARI DATABASE
-        // Pastikan Model mengambil kolom 'status_plagiasi' dan 'persentase_kemiripan'
         $cek_plagiat = $this->M_Dosen->get_plagiarisme_result($id_progres);
 
-        // 2. CEK LOGIKA PLAGIASI (Khusus Bab 1 atau yang ada datanya)
-        // Jika data plagiasi ditemukan (artinya ini Bab 1)
         if ($cek_plagiat) {
             
-            // A. Jika Admin Belum Verifikasi (Masih 'Menunggu')
             if ($cek_plagiat['status_plagiasi'] == 'Menunggu') {
                 $this->session->set_flashdata('pesan_error', 'Gagal: Admin belum memverifikasi hasil Cek Plagiarisme. Harap tunggu admin.');
                 redirect('dosen/progres_detail/' . $id_skripsi);
-                return; // Stop eksekusi
+                return; 
             }
 
-            // B. Jika Admin Menolak (Status 'Tolak')
-            // Maka Dosen dipaksa memberikan Revisi (Nilai 0), apapun inputannya
             if ($cek_plagiat['status_plagiasi'] == 'Tolak') {
-                $status_progres = 0; // Paksa Revisi
+                $status_progres = 0; 
                 $persen = $cek_plagiat['persentase_kemiripan'];
                 
-                // Tambahkan pesan sistem ke komentar
                 $komentar .= "\n\n[SYSTEM]: Progres ini DITOLAK otomatis karena Tingkat Plagiarisme tinggi ($persen%). Silakan revisi dan upload ulang.";
             }
         }
 
-        // 3. SIAPKAN DATA UPDATE
         $data = [];
-        // Tentukan Nilai Text (Revisi/ACC Sebagian/ACC)
         $nilai_text = ($status_progres == 100) ? 'ACC' : (($status_progres == 50) ? 'ACC Sebagian' : 'Revisi');
 
         if ($is_p1) {
             $data['komentar_dosen1'] = $komentar;
             $data['progres_dosen1']  = $status_progres;
             $data['nilai_dosen1']    = $nilai_text;
-            $data['tgl_koreksi_d1']  = date('Y-m-d H:i:s'); // Catat waktu koreksi
+            $data['tgl_koreksi_d1']  = date('Y-m-d H:i:s'); 
         } else {
             $data['komentar_dosen2'] = $komentar;
             $data['progres_dosen2']  = $status_progres;
@@ -148,14 +121,11 @@ public function __construct()
             $data['tgl_koreksi_d2']  = date('Y-m-d H:i:s');
         }
 
-        // 4. EKSEKUSI UPDATE
         if ($this->M_Dosen->update_progres($id_progres, $data)) {
             
-            // Log Aktivitas
             $label_dosen = $is_p1 ? 'Pembimbing 1' : 'Pembimbing 2';
             $this->M_Log->record('Koreksi', "Memberikan nilai $nilai_text ($status_progres) sebagai $label_dosen", $id_progres);
 
-            // --- INTEGRASI FONNTE (Optional / Jika dipakai) ---
             $this->load->helper('fonnte');
             $skripsi_info = $this->M_Dosen->get_skripsi_details($id_skripsi);
             
@@ -171,7 +141,6 @@ public function __construct()
                 
                 kirim_wa_fonnte($skripsi_info['telepon'], $pesan_wa);
             }
-            // --------------------------------------------------
 
             $this->session->set_flashdata('pesan_sukses', 'Koreksi berhasil disimpan.');
         } else {
@@ -181,7 +150,6 @@ public function __construct()
         redirect('dosen/progres_detail/' . $id_skripsi);
     }
 
-    // --- Monitoring (Khusus Kaprodi) ---
 
   public function monitoring_prodi()
     {
@@ -192,7 +160,6 @@ public function __construct()
 
         $prodi = $this->session->userdata('prodi');
         
-        // Ambil data filter dari URL (GET request)
         $keyword = $this->input->get('keyword');
         $angkatan_filter = $this->input->get('angkatan');
         $sort_by = $this->input->get('sort_by') ?: 'nama';
@@ -200,19 +167,15 @@ public function __construct()
 
         $data['title'] = 'Monitoring Mahasiswa Prodi ' . $prodi;
         
-        // Ambil list angkatan untuk dropdown
         $data['list_angkatan'] = $this->M_Dosen->get_list_angkatan($prodi);
         $data['selected_angkatan'] = $angkatan_filter;
 
-        // Ambil semua data mahasiswa
         $all_data = $this->M_Dosen->get_all_mahasiswa_prodi($prodi, NULL);
 
-        // Apply filters
         $filtered_data = [];
         foreach ($all_data as $item) {
             $match = true;
 
-            // Keyword search (nama, npm, judul)
             if ($keyword) {
                 $search_text = strtolower(($item['nama'] ?? '') . ' ' . ($item['npm'] ?? '') . ' ' . ($item['judul'] ?? ''));
                 if (strpos($search_text, strtolower($keyword)) === false) {
@@ -220,7 +183,6 @@ public function __construct()
                 }
             }
 
-            // Angkatan filter
             if ($angkatan_filter && $angkatan_filter != 'all') {
                 if (($item['angkatan'] ?? '') != $angkatan_filter) {
                     $match = false;
@@ -232,7 +194,6 @@ public function __construct()
             }
         }
 
-        // Apply sorting
         usort($filtered_data, function($a, $b) use ($sort_by, $sort_order) {
             $val_a = strtolower($a[$sort_by] ?? '');
             $val_b = strtolower($b[$sort_by] ?? '');
@@ -245,7 +206,6 @@ public function __construct()
 
         $data['mahasiswa_prodi'] = $filtered_data;
         
-        // Send filter parameters to view
         $data['keyword'] = $keyword;
         $data['sort_by'] = $sort_by;
         $data['sort_order'] = $sort_order;
@@ -260,7 +220,6 @@ public function __construct()
 
     public function update_pembimbing()
     {
-        // Hanya Kaprodi yang boleh akses
         if ($this->session->userdata('is_kaprodi') != 1) {
             redirect('dosen/monitoring_prodi');
         }
@@ -271,7 +230,6 @@ public function __construct()
 
         if ($id_skripsi && $p1 && $p2) {
             
-            // Validasi: P1 dan P2 tidak boleh sama
             if ($p1 == $p2) {
                 $this->session->set_flashdata('pesan_error', 'Gagal: Pembimbing 1 dan 2 tidak boleh sama.');
                 redirect('dosen/monitoring_prodi');
@@ -282,7 +240,6 @@ public function __construct()
                 'pembimbing2' => $p2
             ];
 
-            // Update ke database
             $this->db->where('id', $id_skripsi);
             $this->db->update('skripsi', $data_update);
 
@@ -294,7 +251,6 @@ public function __construct()
         redirect('dosen/monitoring_prodi');
     }
 
-    // --- FITUR PROFIL DOSEN ---
 
     public function profil()
     {
@@ -306,7 +262,7 @@ public function __construct()
 
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
-        $this->load->view('dosen/v_profil', $data); // View khusus dosen
+        $this->load->view('dosen/v_profil', $data); 
         $this->load->view('template/footer');
     }
 
@@ -316,44 +272,36 @@ public function __construct()
         $this->load->model('M_Data');
         $this->load->library('upload');
 
-        // Validasi Input Dasar
         $this->form_validation->set_rules('nama', 'Nama Lengkap', 'required|trim');
-        $this->form_validation->set_rules('telepon', 'Nomor Telepon', 'trim|numeric'); // Tambah validasi telepon
+        $this->form_validation->set_rules('telepon', 'Nomor Telepon', 'trim|numeric'); 
 
         if ($this->form_validation->run() == FALSE) {
             $this->session->set_flashdata('pesan_error', 'Gagal: ' . validation_errors());
             redirect('dosen/profil');
         }
 
-        // 1. Data Akun (Tabel mstr_akun)
         $akun_data = [
             'nama' => $this->input->post('nama', true)
         ];
 
-        // 2. Data Detail Dosen (Tabel data_dosen)
-        // Masukkan 'telepon' ke sini karena kolom 'telepon' ada di tabel data_dosen
         $detail_data = [
             'telepon' => $this->input->post('telepon', true)
         ];
 
-        // 3. PROSES UPLOAD FOTO PROFIL
         if (!empty($_FILES['foto']['name'])) {
-            // Reset config upload
             $this->upload->initialize(array(), TRUE);
 
             $config_foto['upload_path']   = './uploads/profile/';
             $config_foto['allowed_types'] = 'jpg|jpeg|png|webp';
-            $config_foto['max_size']      = 5120; // 5MB
+            $config_foto['max_size']      = 5120; 
             $config_foto['file_name']     = 'dosen_profile_' . $id_user . '_' . time();
             $config_foto['overwrite']     = true;
 
-            // Buat folder jika belum ada
             if (!is_dir($config_foto['upload_path'])) mkdir($config_foto['upload_path'], 0777, true);
 
             $this->upload->initialize($config_foto);
 
             if ($this->upload->do_upload('foto')) {
-                // Hapus foto lama
                 $old_data = $this->db->get_where('mstr_akun', ['id' => $id_user])->row_array();
                 if ($old_data && !empty($old_data['foto']) && file_exists(FCPATH . 'uploads/profile/' . $old_data['foto'])) {
                     unlink(FCPATH . 'uploads/profile/' . $old_data['foto']);
@@ -368,33 +316,26 @@ public function __construct()
             }
         }
 
-        // 4. PROSES TTD DIGITAL (Dari Canvas Base64)
         $ttd_base64 = $this->input->post('ttd_base64');
         
         if (!empty($ttd_base64)) {
-            // Format string: "data:image/png;base64,iVBORw0KGgoAAA..."
             $image_parts = explode(";base64,", $ttd_base64);
             
             if (count($image_parts) == 2) {
                 $image_base64 = base64_decode($image_parts[1]);
                 
-                // Siapkan folder
                 $path_ttd = './uploads/ttd/';
                 if (!is_dir($path_ttd)) mkdir($path_ttd, 0777, true);
 
-                // Buat nama file unik
                 $file_name = 'ttd_dosen_' . $id_user . '_' . time() . '.png';
                 $file_path = FCPATH . 'uploads/ttd/' . $file_name;
 
-                // Simpan file
                 if (file_put_contents($file_path, $image_base64)) {
-                    // Hapus TTD lama jika ada
                     $old_detail = $this->db->get_where('data_dosen', ['id' => $id_user])->row_array();
                     if ($old_detail && !empty($old_detail['ttd']) && file_exists(FCPATH . 'uploads/ttd/' . $old_detail['ttd'])) {
                         unlink(FCPATH . 'uploads/ttd/' . $old_detail['ttd']);
                     }
 
-                    // Masukkan ke array update detail
                     $detail_data['ttd'] = $file_name;
                 } else {
                     $this->session->set_flashdata('pesan_error', 'Gagal menyimpan file Tanda Tangan.');
@@ -404,11 +345,8 @@ public function __construct()
             }
         }
 
-        // 5. EKSEKUSI UPDATE KE DATABASE
-        // Parameter ke-3 'dosen' memberitahu model untuk update tabel data_dosen
         if ($this->M_Data->update_user($id_user, $akun_data, 'dosen', $detail_data)) {
             $this->session->set_flashdata('pesan_sukses', 'Profil berhasil diperbarui!');
-            // Update nama di session jika berubah
             if(isset($akun_data['nama'])) {
                 $this->session->set_userdata('nama', $akun_data['nama']);
             }
@@ -418,23 +356,20 @@ public function __construct()
 
         redirect('dosen/profil');
     }
-    // --- MENU KAPRODI: Kinerja Dosen ---
+
     public function kinerja_dosen()
     {
-        // 1. Security Check: Hanya Kaprodi
         if ($this->session->userdata('is_kaprodi') != 1) {
             redirect('dosen/bimbingan_list');
         }
 
         $data['title'] = 'Kinerja Dosen';
         $this->load->library('pagination');
-        $this->load->model('M_Data'); // Load M_Data jika belum ada di construct
+        $this->load->model('M_Data'); 
 
-        // 2. Ambil Data Session & Filter
         $prodi_kaprodi = $this->session->userdata('prodi');
         $keyword = $this->input->get('keyword');
 
-        // 3. Konfigurasi Pagination
         $config['base_url'] = base_url('dosen/kinerja_dosen');
         $config['total_rows'] = $this->M_Dosen->count_dosen_by_prodi($prodi_kaprodi, $keyword);
         $config['per_page'] = 10;
@@ -443,7 +378,6 @@ public function __construct()
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
 
-        // Styling Pagination
         $config['full_tag_open']    = '<ul class="pagination pagination-sm m-0 float-right">';
         $config['full_tag_close']   = '</ul>';
         $config['first_link']       = '&laquo;';
@@ -466,11 +400,9 @@ public function __construct()
 
         $this->pagination->initialize($config);
 
-        // 4. Ambil Data Dosen (Filtered by Prodi)
         $page = $this->input->get('page') ? $this->input->get('page') : 0;
         $data['dosen_list'] = $this->M_Dosen->get_dosen_by_prodi($prodi_kaprodi, $keyword, $config['per_page'], $page);
         
-        // 5. Hitung Aktivitas (Sama seperti Operator)
         foreach ($data['dosen_list'] as $key => $dosen) {
             $aktivitas = $this->M_Log->get_dosen_activity_summary($dosen['id']);
             $data['dosen_list'][$key]['aktivitas'] = $aktivitas;
@@ -487,67 +419,65 @@ public function __construct()
 
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
-        $this->load->view('dosen/v_kinerja_dosen_prodi', $data); // View Baru
+        $this->load->view('dosen/v_kinerja_dosen_prodi', $data); 
         $this->load->view('template/footer');
     }
 
-public function setuju_judul($id_skripsi)
-{
-    if ($this->session->userdata('is_kaprodi') != 1) redirect('auth/login');
+    public function setuju_judul($id_skripsi)
+    {
+        if ($this->session->userdata('is_kaprodi') != 1) redirect('auth/login');
 
-    if ($this->M_Dosen->update_status_judul($id_skripsi, 'diterima')) {
-        $this->session->set_flashdata('pesan_sukses', 'Judul dan Pembimbing berhasil disetujui.');
-    }
-    redirect('dosen/monitoring_prodi');
-}
-
-public function tolak_judul($id_skripsi)
-{
-    if ($this->session->userdata('is_kaprodi') != 1) redirect('auth/login');
-
-    if ($this->M_Dosen->update_status_judul($id_skripsi, 'ditolak')) {
-        $this->session->set_flashdata('pesan_error', 'Judul dan Pembimbing ditolak.');
-    }
-    redirect('dosen/monitoring_prodi');
-}
-
-public function kinerja_dosen_csv()
-{
-    // 1. Security Check: Hanya Kaprodi
-    if ($this->session->userdata('is_kaprodi') != 1) {
-        redirect('dosen/bimbingan_list');
+        if ($this->M_Dosen->update_status_judul($id_skripsi, 'diterima')) {
+            $this->session->set_flashdata('pesan_sukses', 'Judul dan Pembimbing berhasil disetujui.');
+        }
+        redirect('dosen/monitoring_prodi');
     }
 
-    $keyword = $this->input->get('keyword');
-    $prodi_kaprodi = $this->session->userdata('prodi');
+    public function tolak_judul($id_skripsi)
+    {
+        if ($this->session->userdata('is_kaprodi') != 1) redirect('auth/login');
 
-    $dosen_list = $this->M_Dosen->get_dosen_by_prodi($prodi_kaprodi, $keyword, NULL, NULL);
-
-    header('Content-Type: text/csv');
-    header('Content-Disposition: attachment; filename="Laporan_Kinerja_Dosen_'.date('Y-m-d').'.csv"');
-
-    $output = fopen('php://output', 'w');
-    fputcsv($output, array('No', 'Nama Dosen', 'NIDK', 'Total Aktivitas Koreksi'));
-
-    $no = 1;
-    foreach ($dosen_list as $dosen) {
-        $aktivitas = $this->M_Log->get_dosen_activity_summary($dosen['id']);
-        $total = 0;
-        foreach($aktivitas as $act) { $total += $act['total_aksi']; }
-
-        fputcsv($output, array(
-            $no++,
-            $dosen['nama'],
-            "'".$dosen['nidk'],
-            $total
-        ));
+        if ($this->M_Dosen->update_status_judul($id_skripsi, 'ditolak')) {
+            $this->session->set_flashdata('pesan_error', 'Judul dan Pembimbing ditolak.');
+        }
+        redirect('dosen/monitoring_prodi');
     }
-    fclose($output);
-}
+
+    public function kinerja_dosen_csv()
+    {
+        if ($this->session->userdata('is_kaprodi') != 1) {
+            redirect('dosen/bimbingan_list');
+        }
+
+        $keyword = $this->input->get('keyword');
+        $prodi_kaprodi = $this->session->userdata('prodi');
+
+        $dosen_list = $this->M_Dosen->get_dosen_by_prodi($prodi_kaprodi, $keyword, NULL, NULL);
+
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="Laporan_Kinerja_Dosen_'.date('Y-m-d').'.csv"');
+
+        $output = fopen('php://output', 'w');
+        fputcsv($output, array('No', 'Nama Dosen', 'NIDK', 'Total Aktivitas Koreksi'));
+
+        $no = 1;
+        foreach ($dosen_list as $dosen) {
+            $aktivitas = $this->M_Log->get_dosen_activity_summary($dosen['id']);
+            $total = 0;
+            foreach($aktivitas as $act) { $total += $act['total_aksi']; }
+
+            fputcsv($output, array(
+                $no++,
+                $dosen['nama'],
+                "'".$dosen['nidk'],
+                $total
+            ));
+        }
+        fclose($output);
+    }
 
     public function edit_dospem($id_skripsi)
     {
-        // Hanya Kaprodi yang boleh akses
         if ($this->session->userdata('is_kaprodi') != 1) {
             $this->session->set_flashdata('pesan_error', 'Akses ditolak. Fitur ini hanya untuk Kaprodi.');
             redirect('dosen/monitoring_prodi');
@@ -570,7 +500,6 @@ public function kinerja_dosen_csv()
 
     public function update_dospem()
     {
-        // Hanya Kaprodi yang boleh akses
         if ($this->session->userdata('is_kaprodi') != 1) {
             $this->session->set_flashdata('pesan_error', 'Akses ditolak. Fitur ini hanya untuk Kaprodi.');
             redirect('dosen/monitoring_prodi');
@@ -581,7 +510,6 @@ public function kinerja_dosen_csv()
         $pembimbing2 = $this->input->post('pembimbing2');
 
         if ($id_skripsi && $pembimbing1 && $pembimbing2) {
-            // Validasi: P1 dan P2 tidak boleh sama
             if ($pembimbing1 == $pembimbing2) {
                 $this->session->set_flashdata('pesan_error', 'Gagal: Pembimbing 1 dan 2 tidak boleh sama.');
                 redirect('dosen/edit_dospem/' . $id_skripsi);
@@ -598,7 +526,6 @@ public function kinerja_dosen_csv()
 
     public function get_semester_report($id_dosen)
     {
-        // 1. Security Check: Hanya Kaprodi
         if ($this->session->userdata('is_kaprodi') != 1) {
             echo '<div class="text-center py-4 text-danger"><i class="fas fa-exclamation-triangle fa-2x"></i><p class="mt-2">Akses ditolak.</p></div>';
             return;
@@ -607,7 +534,6 @@ public function kinerja_dosen_csv()
         $semester = $this->input->get('semester');
         $prodi = $this->input->get('prodi');
 
-        // Ambil data dosen
         $dosen = $this->db->select('a.nama, d.nidk')
                          ->from('mstr_akun a')
                          ->join('data_dosen d', 'a.id = d.id')
@@ -620,16 +546,13 @@ public function kinerja_dosen_csv()
             return;
         }
 
-        // Ambil aktivitas berdasarkan semester dan prodi
         $aktivitas = $this->M_Log->get_dosen_activity_by_semester($id_dosen, $semester, $prodi);
 
-        // Hitung total
         $total_aktivitas = 0;
         foreach ($aktivitas as $act) {
             $total_aktivitas += $act['total_aksi'];
         }
 
-        // Tampilkan laporan
         echo '<div class="row">';
         echo '<div class="col-md-6">';
         echo '<h6 class="font-weight-bold text-info">Informasi Dosen</h6>';
@@ -665,10 +588,8 @@ public function kinerja_dosen_csv()
         }
     }
 
-    // --- MENU KAPRODI: Manajemen Akun ---
     public function manajemen_akun()
     {
-        // 1. Security Check: Hanya Kaprodi
         if ($this->session->userdata('is_kaprodi') != 1) {
             $this->session->set_flashdata('pesan_error', 'Akses ditolak. Fitur ini hanya untuk Kaprodi.');
             redirect('dosen/bimbingan_list');
@@ -681,7 +602,6 @@ public function kinerja_dosen_csv()
         $prodi = $this->input->get('prodi');
         $keyword = $this->input->get('keyword');
 
-        // Gunakan M_akun_opt agar konsisten
         $config['base_url'] = base_url('dosen/manajemen_akun');
         $config['total_rows'] = $this->M_akun_opt->count_all_users($role, $prodi, $keyword);
         $config['per_page'] = 15;
@@ -690,7 +610,6 @@ public function kinerja_dosen_csv()
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
 
-        // Styling Pagination
         $config['full_tag_open']    = '<ul class="pagination pagination-sm m-0 float-right">';
         $config['full_tag_close']   = '</ul>';
         $config['first_link']       = '<i class="fas fa-angle-double-left"></i>';
@@ -714,7 +633,6 @@ public function kinerja_dosen_csv()
         $this->pagination->initialize($config);
 
         $page = $this->input->get('page') ? $this->input->get('page') : 0;
-        // Gunakan M_akun_opt
         $data['users'] = $this->M_akun_opt->get_all_users_with_details($role, $prodi, $keyword, $config['per_page'], $page);
 
         $data['pagination'] = $this->pagination->create_links();
@@ -727,10 +645,8 @@ public function kinerja_dosen_csv()
         $this->load->view('template/footer');
     }
 
-    // --- EDIT AKUN (SESUAI REQUEST) ---
     public function edit_akun($id = null)
     {
-        // Security Check: Hanya Kaprodi
         if ($this->session->userdata('is_kaprodi') != 1) {
             $this->session->set_flashdata('pesan_error', 'Akses ditolak. Fitur ini hanya untuk Kaprodi.');
             redirect('dosen/bimbingan_list');
@@ -748,7 +664,6 @@ public function kinerja_dosen_csv()
 
         $data['title'] = 'Edit Akun: ' . $data['user']['nama'];
 
-        // Validasi
         $this->form_validation->set_rules('nama', 'Nama', 'required');
 
         if ($this->input->post('password')) {
@@ -758,10 +673,9 @@ public function kinerja_dosen_csv()
         if ($this->form_validation->run() == FALSE) {
             $this->load->view('template/header', $data);
             $this->load->view('template/sidebar', $data);
-            $this->load->view('operator/v_tambah_edit_akun', $data); // Reuse operator's view
+            $this->load->view('operator/v_tambah_edit_akun', $data); 
             $this->load->view('template/footer');
         } else {
-            // Ambil Role
             $role = $data['user']['role'];
 
             $akun_data = [
@@ -800,7 +714,6 @@ public function kinerja_dosen_csv()
 
     public function delete_akun($id)
     {
-        // Security Check: Hanya Kaprodi
         if ($this->session->userdata('is_kaprodi') != 1) {
             $this->session->set_flashdata('pesan_error', 'Akses ditolak. Fitur ini hanya untuk Kaprodi.');
             redirect('dosen/bimbingan_list');
@@ -812,6 +725,70 @@ public function kinerja_dosen_csv()
             $this->session->set_flashdata('pesan_error', 'Gagal menghapus akun.');
         }
         redirect('dosen/manajemen_akun');
+    }
+
+public function kinerja_dosen_kaprodi()
+    {
+        $prodi_kaprodi = $this->session->userdata('prodi'); 
+        $keyword = $this->input->get('keyword');
+        
+        $this->load->library('pagination');
+        $config['base_url'] = base_url('dosen/kinerja_dosen_kaprodi');
+        
+        $this->db->like('nama', $keyword);
+        $this->db->where('role', 'dosen'); 
+        
+        $config['total_rows'] = $this->db->count_all_results('mstr_akun'); 
+        $config['per_page'] = 10;
+        
+        // ... (Config Pagination Tetap Sama) ...
+        $config['full_tag_open'] = '<ul class="pagination pagination-sm m-0 float-right">';
+        $config['full_tag_close'] = '</ul>';
+        $config['num_tag_open'] = '<li class="page-item">';
+        $config['num_tag_close'] = '</li>';
+        $config['cur_tag_open'] = '<li class="page-item active"><a class="page-link" href="#">';
+        $config['cur_tag_close'] = '</a></li>';
+        $config['next_tag_open'] = '<li class="page-item">';
+        $config['next_tag_close'] = '</li>';
+        $config['prev_tag_open'] = '<li class="page-item">';
+        $config['prev_tag_close'] = '</li>';
+        $config['attributes'] = array('class' => 'page-link');
+        
+        $this->pagination->initialize($config);
+        
+        $data['start_index'] = ($this->uri->segment(3)) ? $this->uri->segment(3) : 0;
+        
+        $this->db->select('mstr_akun.id, mstr_akun.nama, data_dosen.nidk');
+        $this->db->from('mstr_akun');
+        $this->db->join('data_dosen', 'mstr_akun.id = data_dosen.id', 'left');
+        $this->db->where('mstr_akun.role', 'dosen');
+        
+        if($keyword){
+            $this->db->group_start();
+            $this->db->like('mstr_akun.nama', $keyword);
+            $this->db->or_like('data_dosen.nidk', $keyword);
+            $this->db->group_end();
+        }
+        
+        $this->db->limit($config['per_page'], $data['start_index']);
+        $dosen_raw = $this->db->get()->result_array();
+        
+        foreach($dosen_raw as $key => $val){
+            $dosen_raw[$key]['total_aksi'] = 0; 
+        }
+        
+        $data['dosen_list'] = $dosen_raw;
+        $data['pagination'] = $this->pagination->create_links();
+        $data['total_rows'] = $config['total_rows'];
+        $data['per_page'] = $config['per_page'];
+
+        // --- TAMBAHAN BARU: AMBIL LIST SEMESTER DARI DATABASE ---
+        $data['list_semester'] = $this->M_Dosen->get_all_semesters();
+        
+        $this->load->view('template/header', $data);
+        $this->load->view('template/sidebar', $data);
+        $this->load->view('dosen/v_kinerja_dosen_kaprodi', $data); 
+        $this->load->view('template/footer');
     }
 
 }

@@ -71,4 +71,6 @@ class M_skripsi_opt extends CI_Model {
         $this->db->where('id', $id_skripsi);
         return $this->db->update('skripsi', $data);
     }
+
+    
 }

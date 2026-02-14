@@ -342,6 +342,57 @@ public function get_bimbingan_list($id_dosen, $keyword = null, $prodi = null, $a
         return $this->db->get()->result_array();
     }
 
+    // --- TAMBAHKAN FUNGSI INI DI M_Dosen.php ---
+    
+    public function get_all_semesters()
+    {
+        // Ambil tanggal pengajuan judul tercepat sampai terbaru
+        $this->db->select('tgl_pengajuan_judul');
+        $this->db->from('skripsi');
+        $this->db->where('tgl_pengajuan_judul !=', '0000-00-00');
+        $this->db->where('tgl_pengajuan_judul IS NOT NULL');
+        $this->db->order_by('tgl_pengajuan_judul', 'DESC');
+        $query = $this->db->get();
+        
+        $semesters = [];
+        
+        if ($query->num_rows() > 0) {
+            foreach ($query->result_array() as $row) {
+                $date = $row['tgl_pengajuan_judul'];
+                $timestamp = strtotime($date);
+                $month = date('n', $timestamp); // 1-12
+                $year = date('Y', $timestamp);
+                
+                // LOGIKA SK: 
+                // Gasal: September (9) s.d Februari (2)
+                // Genap: Maret (3) s.d Agustus (8)
+                
+                if ($month >= 9) { 
+                    // Sept - Des (Contoh: Sept 2025 -> Gasal 2025-2026)
+                    $sem_label = 'Gasal ' . $year . '-' . ($year + 1);
+                } elseif ($month <= 2) { 
+                    // Jan - Feb (Contoh: Jan 2026 -> Gasal 2025-2026)
+                    $sem_label = 'Gasal ' . ($year - 1) . '-' . $year;
+                } else { 
+                    // Mar - Agust (Contoh: Mar 2026 -> Genap 2025-2026)
+                    $sem_label = 'Genap ' . ($year - 1) . '-' . $year;
+                }
+                
+                // Masukkan ke array jika belum ada (agar unik)
+                if (!in_array($sem_label, $semesters)) {
+                    $semesters[] = $sem_label;
+                }
+            }
+        }
+        
+        // Default jika data kosong
+        if (empty($semesters)) {
+            $semesters[] = 'Gasal ' . date('Y') . '-' . (date('Y')+1);
+        }
+
+        return $semesters;
+    }
+
   
 
 }

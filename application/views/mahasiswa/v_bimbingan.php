@@ -51,7 +51,7 @@
 
             <div class="row">
                 
-                <div class="col-md-4">
+                <div class="col-md-5">
                     <div class="card card-primary card-outline shadow mb-4">
                         <div class="card-body box-profile">
                             <div class="text-center">
@@ -92,9 +92,32 @@
                             </a>
                         </div>
                     </div>
+                    
+                    <div class="card card-primary card-outline shadow collapsed-card">
+                        <div class="card-header">
+                            <h3 class="card-title"><i class="fas fa-comments mr-2"></i> Kontak Pembimbing</h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-plus"></i></button>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <ul class="list-group list-group-flush">
+                                <?php if ($is_acc_diterima): ?>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <span><i class="fas fa-user-graduate mr-2 text-success"></i> Pembimbing 1</span>
+                                        <a href="<?php echo base_url('chat?id_lawan=' . $skripsi['pembimbing1']); ?>" class="badge badge-info"><i class="fas fa-comment"></i> Chat</a>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <span><i class="fas fa-user-graduate mr-2 text-success"></i> Pembimbing 2</span>
+                                        <a href="<?php echo base_url('chat?id_lawan=' . $skripsi['pembimbing2']); ?>" class="badge badge-info"><i class="fas fa-comment"></i> Chat</a>
+                                    </li>
+                                <?php endif; ?>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="col-md-8">
+                <div class="col-md-7">
                     
                     <?php if (!$is_acc_diterima): ?>
                         <div class="alert alert-warning shadow">
@@ -262,70 +285,43 @@
 
                         <?php endif; ?>
 
-                       <div class="card shadow mb-4">
-                            <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                                <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-history mr-2"></i> Riwayat Bimbingan</h6>
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-history mr-2"></i> Riwayat Upload Terakhir</h6>
                             </div>
-                            
-                            <div class="card-body p-0 table-responsive" style="max-height: 500px; overflow-y: auto;">
-                                <table class="table table-striped table-hover mb-0 align-middle small">
-                                    <thead class="bg-light sticky-top">
+                            <div class="card-body p-0">
+                                <table class="table table-striped mb-0 align-middle">
+                                    <thead class="bg-light">
                                         <tr>
-                                            <th style="width: 25%;">Tanggal & Status</th>
-                                            <th style="width: 15%;">Bab</th>
-                                            <th style="width: 45%;">Catatan Dosen</th>
-                                            <th style="width: 15%;">File</th>
+                                            <th>Bab</th>
+                                            <th>Tanggal</th>
+                                            <th>File</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <?php if (isset($progres_riwayat) && !empty($progres_riwayat)): ?>
-                                            <?php foreach ($progres_riwayat as $pr): 
-                                                $tgl_upload = strtotime($pr->created_at);
-                                                $tgl_judul_skrg = strtotime($skripsi['tgl_pengajuan_judul']);
-                                                $format_tgl = date('d M Y H:i', $tgl_upload);
-                                                
-                                                // Logika Deteksi Judul Lama vs Baru
-                                                // Jika file diupload SEBELUM tanggal pengajuan judul yg sekarang -> Judul Lama
-                                                // Toleransi 1 hari jaga-jaga beda jam
-                                                $is_old_title = ($tgl_upload < $tgl_judul_skrg);
-
-                                                $p1 = $pr->progres_dosen1;
-                                                $p2 = $pr->progres_dosen2;
-                                                $is_acc = ($p1 == 100 && $p2 == 100);
-                                                
-                                                $k1 = $pr->komentar_dosen1 ? "<b>P1:</b> ".$pr->komentar_dosen1 : "";
-                                                $k2 = $pr->komentar_dosen2 ? "<b>P2:</b> ".$pr->komentar_dosen2 : "";
-                                                $komentar = $k1 . ($k1 && $k2 ? "<br>" : "") . $k2;
-                                                if(empty($komentar)) $komentar = "<span class='text-muted font-italic'>- Menunggu koreksi -</span>";
+                                            <?php 
+                                            $limit_riwayat = array_slice($progres_riwayat, 0, 5); 
+                                            foreach ($limit_riwayat as $pr): 
+                                                $is_rev = (stripos($pr->file, '_REVISI') !== false);
                                             ?>
-                                                <tr class="<?= $is_old_title ? 'bg-light text-muted' : '' ?>">
+                                                <tr>
                                                     <td>
-                                                        <div><?= $format_tgl ?></div>
-                                                        <?php if ($is_old_title): ?>
-                                                            <span class="badge badge-secondary mt-1">Riwayat Judul Lama</span>
-                                                        <?php else: ?>
-                                                            <span class="badge badge-success mt-1">Judul Saat Ini</span>
-                                                        <?php endif; ?>
-                                                    </td>
-                                                    <td>
-                                                        <span class="font-weight-bold">BAB <?= $pr->bab ?></span>
-                                                        <br>
-                                                        <?php if($is_acc): ?>
-                                                            <span class="badge badge-primary">ACC</span>
-                                                        <?php else: ?>
-                                                            <span class="badge badge-warning">Revisi</span>
+                                                        <b>BAB <?= $pr->bab ?></b>
+                                                        <?php if ($is_rev): ?>
+                                                            <span class="badge badge-warning ml-1">Revisi</span>
                                                         <?php endif; ?>
                                                     </td> 
-                                                    <td><?= $komentar ?></td>
+                                                    <td><?= date('d M Y H:i', strtotime($pr->created_at)) ?></td>
                                                     <td>
-                                                        <a href="<?= base_url('uploads/progres/' . $pr->file) ?>" target="_blank" class="btn btn-sm btn-info shadow-sm">
+                                                        <a href="<?= base_url('uploads/progres/' . $pr->file) ?>" target="_blank" class="btn btn-sm btn-info">
                                                             <i class="fas fa-file-pdf"></i>
                                                         </a>
                                                     </td>
                                                 </tr>
                                             <?php endforeach; ?>
                                         <?php else: ?>
-                                            <tr><td colspan="4" class="text-center text-muted py-4">Belum ada riwayat bimbingan.</td></tr>
+                                            <tr><td colspan="3" class="text-center text-muted">Belum ada file.</td></tr>
                                         <?php endif; ?>
                                     </tbody>
                                 </table>
