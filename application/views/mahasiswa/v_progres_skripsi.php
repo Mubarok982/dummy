@@ -147,16 +147,17 @@
                                 <table class="table table-hover table-striped align-middle mb-0">
                                     <thead class="bg-light">
                                         <tr>
-                                            <th class="text-center" style="width: 10%;">BAB</th>
-                                            <th style="width: 25%;">Status Pembimbing</th>
-                                            <th style="width: 45%;">Catatan / Revisi</th>
-                                            <th class="text-center" style="width: 20%;">File & Tanggal</th>
+                                            <th class="text-center" style="width: 8%;">BAB</th>
+                                            <th style="width: 25%;">Judul Skripsi</th>
+                                            <th style="width: 22%;">Status Pembimbing</th>
+                                            <th style="width: 35%;">Catatan / Revisi</th>
+                                            <th class="text-center" style="width: 10%;">File & Tanggal</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <?php if (empty($progres)): ?>
                                             <tr>
-                                                <td colspan="4" class="text-center py-5 text-muted">
+                                                <td colspan="5" class="text-center py-5 text-muted">
                                                     <i class="far fa-folder-open fa-3x mb-3 text-gray"></i><br>
                                                     <span class="font-weight-bold">Belum ada data progres.</span><br>
                                                     <small>Silakan upload file Bab 1 Anda pada panel di sebelah kiri.</small>
@@ -169,6 +170,9 @@
                                                     <div class="badge badge-info badge-pill px-3 py-2 shadow-sm" style="font-size: 1rem;">
                                                         <?php echo $p['bab']; ?>
                                                     </div>
+                                                </td>
+                                                <td class="align-top pt-3">
+                                                    <strong><?php echo $skripsi['judul']; ?></strong>
                                                 </td>
 
                                                 <td class="align-top pt-3">

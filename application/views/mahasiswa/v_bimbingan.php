@@ -311,10 +311,11 @@
                                 <table class="table table-striped table-hover mb-0 align-middle small">
                                     <thead class="bg-light sticky-top">
                                         <tr>
-                                            <th style="width: 25%;">Tanggal & Status</th>
+                                            <th style="width: 20%;">Tanggal & Status</th>
+                                            <th style="width: 20%;">Judul Skripsi</th>
                                             <th style="width: 15%;">Bab</th>
-                                            <th style="width: 45%;">Catatan Dosen</th>
-                                            <th style="width: 15%;">File</th>
+                                            <th style="width: 35%;">Catatan Dosen</th>
+                                            <th style="width: 10%;">File</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -346,6 +347,9 @@
                                                         <?php endif; ?>
                                                     </td>
                                                     <td>
+                                                        <strong><?= $skripsi['judul'] ?></strong>
+                                                    </td>
+                                                    <td>
                                                         <span class="font-weight-bold">BAB <?= $pr->bab ?></span>
                                                         <br>
                                                         <?php if($is_acc): ?>
@@ -363,7 +367,7 @@
                                                 </tr>
                                             <?php endforeach; ?>
                                         <?php else: ?>
-                                            <tr><td colspan="4" class="text-center text-muted py-4">Belum ada riwayat bimbingan.</td></tr>
+                                            <tr><td colspan="5" class="text-center text-muted py-4">Belum ada riwayat bimbingan.</td></tr>
                                         <?php endif; ?>
                                     </tbody>
                                 </table>

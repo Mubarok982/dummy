@@ -66,18 +66,19 @@
                                 <thead>
                                     <tr class="bg-light text-center">
                                         <th style="width: 10%">Bab</th>
+                                        <th style="width: 20%">Judul Skripsi</th>
                                         <th style="width: 15%">Tanggal</th>
                                         <th style="width: 15%">Cek Plagiat</th>
-                                        <th style="width: 15%">Status P1</th>
-                                        <th style="width: 15%">Status P2</th>
+                                        <th style="width: 10%">Status P1</th>
+                                        <th style="width: 10%">Status P2</th>
                                         <th style="width: 10%">File</th>
-                                        <th style="width: 20%">Aksi</th>
+                                        <th style="width: 10%">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php if (empty($progres)): ?>
                                         <tr>
-                                            <td colspan="7" class="text-center py-5 text-muted">
+                                            <td colspan="8" class="text-center py-5 text-muted">
                                                 <i class="fas fa-folder-open fa-3x mb-3 text-gray-300"></i><br>
                                                 Mahasiswa belum mengunggah progres bimbingan.
                                             </td>
@@ -108,6 +109,9 @@
                                                         </span>
                                                     </div>
                                                 <?php endif; ?>
+                                            </td>
+                                            <td class="align-middle">
+                                                <strong><?php echo $skripsi['judul']; ?></strong>
                                             </td>
                                             
                                             <td class="align-middle text-center text-muted small">
