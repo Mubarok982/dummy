@@ -26,7 +26,7 @@
             
             $skripsi = isset($skripsi) ? $skripsi : null;
             $status_acc = isset($skripsi['status_acc_kaprodi']) ? $skripsi['status_acc_kaprodi'] : '';
-            $status_ujian = isset($status_ujian) ? $status_ujian : null; // Status Sempro
+            $status_ujian = isset($status_ujian) ? trim($status_ujian) : null; 
             $status_sempro_db = isset($skripsi['status_sempro']) ? $skripsi['status_sempro'] : '';
             $is_acc_diterima = ($status_acc == 'diterima');
 
@@ -104,28 +104,25 @@
                         
                         <?php 
                         // ============================================================
-                        // LOGIKA PENENTUAN BAB & PENGUNCIAN (CORE LOGIC)
+                        // LOGIKA PENENTUAN BAB DEFAULT
                         // ============================================================
                         
                         $target_bab = 1; 
                         $is_revisi = false;
                         
-                        // Default UI
                         $status_card = 'card-primary';
                         $text_header = 'Upload Progres Baru';
                         $alert_style = 'callout-info';
                         $pesan_info = 'Silakan upload file untuk melanjutkan progres.';
                         $is_locked = false;
-                        $lock_msg = "";
                         $notif_type = ""; 
 
-                        // 1. Cek Progres Terakhir (Normal Flow)
                         if (isset($last_progres) && !empty($last_progres)) {
                             $lp = (object) $last_progres;
                             if ($lp->progres_dosen1 == 100 && $lp->progres_dosen2 == 100) {
-                                $target_bab = $lp->bab + 1; // Naik Bab
+                                $target_bab = $lp->bab + 1; // Normalnya naik bab
                             } else {
-                                $target_bab = $lp->bab; // Tetap (Revisi)
+                                $target_bab = $lp->bab; 
                                 $is_revisi = true;
                                 $status_card = 'card-warning';
                                 $text_header = 'Upload Revisi';
@@ -134,48 +131,53 @@
                         }
 
                         // ============================================================
-                        // GATEKEEPER SEMPRO (LOGIKA STATUS UJIAN)
+                        // GATEKEEPER 1: SEMPRO (Meniru Pendadaran)
+                        // Logika: Kunci total semua aksi saat target_bab mencapai angka 4
                         // ============================================================
-                        
-                        // KASUS 1: MENGULANG -> TAMPILKAN NOTIF & TUTUP FORM
+                        if ($target_bab == 4) {
+                            
+                            // Kasus A: Jika sudah lulus, biarkan form terbuka dan masuk Bab 4
+                            if ($status_ujian == 'Diterima' || $status_ujian == 'Lulus' || $status_ujian == 'Selesai') {
+                                $is_locked = false; 
+                            } 
+                            
+                            // Kasus B: Jika Perbaikan, Form dibuka, TAPI paksa mundur target_bab ke 3
+                            elseif ($status_ujian == 'Perbaikan') {
+                                $target_bab = 3; 
+                                $is_revisi = true;
+                                $is_locked = false; 
+                                $notif_type = "revisi_sempro";
+                                $status_card = 'card-warning';
+                                $pesan_info = '<b>STATUS: PERBAIKAN SEMPRO.</b> Silakan upload revisi naskah (Bab 1-3).';
+                            }
+                            
+                            // Kasus C: Mengulang -> Tutup Form
+                            elseif ($status_ujian == 'Mengulang') {
+                                $is_locked = true;
+                                $notif_type = "mengulang";
+                            }
+                            
+                            // Kasus D: Sedang Berlangsung / Menunggu Ujian -> Tutup Form
+                            elseif ($status_ujian == 'Berlangsung' || $status_ujian == 'Menunggu') {
+                                $is_locked = true;
+                                $notif_type = "sempro_berlangsung";
+                            }
+                            
+                            // Kasus E: Default (Baru saja ACC Bab 3, belum ngapa-ngapain) -> Tutup Form Paksa
+                            else {
+                                $is_locked = true;
+                                $notif_type = "siap_sempro";
+                            }
+                        }
+
+                        // Pengaman: Jika admin tiba-tiba mengubah status jadi 'Mengulang' di tengah jalan
                         if ($status_ujian == 'Mengulang') {
-                            $is_locked = true; 
-                            $notif_type = "mengulang"; 
-                            $lock_msg = "Anda dinyatakan Mengulang. Silakan ajukan judul baru.";
-                        }
-                        
-                        // KASUS 2: SEDANG BERLANGSUNG -> TAMPILKAN NOTIF & TUTUP FORM
-                        elseif ($status_ujian == 'Berlangsung') {
                             $is_locked = true;
-                            $notif_type = "sempro_berlangsung";
-                            $lock_msg = "Sidang sedang berlangsung. Upload ditutup.";
-                        }
-
-                        // KASUS 3: PERBAIKAN -> BUKA FORM & PAKSA KE BAB 3
-                        elseif ($status_ujian == 'Perbaikan') {
-                            $target_bab = 3; 
-                            $is_revisi = true;
-                            $is_locked = false; 
-                            $notif_type = "revisi_sempro";
-                            $status_card = 'card-warning';
-                            $pesan_info = '<b>STATUS: PERBAIKAN SEMPRO.</b> Silakan upload revisi naskah (Bab 1-3) sesuai masukan penguji.';
-                        }
-
-                        // KASUS 4: DITERIMA / LULUS -> BUKA FORM (NORMAL FLOW KE BAB 4)
-                        elseif ($status_ujian == 'Lulus' || $status_ujian == 'Diterima') {
-                            $is_locked = false;
-                            // Target bab otomatis jadi 4 karena Bab 3 sudah 100%
-                        }
-
-                        // KASUS 5: SIAP SEMPRO (Belum ada status ujian) -> TAMPILKAN NOTIF & TUTUP FORM
-                        elseif ($target_bab == 4 && $status_sempro_db == 'Siap Sempro' && empty($status_ujian)) {
-                            $notif_type = "siap_sempro"; 
-                            $is_locked = true; 
-                            $lock_msg = "Form terkunci. Silakan daftar Seminar Proposal.";
+                            $notif_type = "mengulang";
                         }
 
                         // ============================================================
-                        // GATEKEEPER PENDADARAN
+                        // GATEKEEPER 2: PENDADARAN
                         // ============================================================
                         if ($target_bab > $max_bab_prodi) {
                             $notif_type = "siap_pendadaran";
@@ -191,7 +193,7 @@
                                 <div class="card-body text-center p-4">
                                     <div class="mb-3"><i class="fas fa-bullhorn fa-4x text-white"></i></div>
                                     <h3 class="font-weight-bold text-white">Siap Seminar Proposal</h3>
-                                    <p class="text-white">Bab 1-3 selesai. Silakan daftar sidang.</p>
+                                    <p class="text-white">Selamat, Bab 1-3 telah disetujui! Silakan daftar sidang.</p>
                                     <a href="http://website-administrasi.com" target="_blank" class="btn btn-light font-weight-bold shadow pulse-button">
                                         <i class="fas fa-external-link-alt mr-2"></i> Daftar Sempro
                                     </a>
@@ -202,19 +204,19 @@
                             <div class="card bg-gradient-primary shadow-lg mb-4">
                                 <div class="card-body text-center p-4">
                                     <div class="mb-3"><i class="fas fa-calendar-check fa-4x text-white"></i></div>
-                                    <h3 class="font-weight-bold text-white">Seminar Proposal Sedang Berlangsung</h3>
-                                    <p class="text-white">Selamat! Anda telah dijadwalkan/sedang menempuh Seminar Proposal.</p>
+                                    <h3 class="font-weight-bold text-white">Seminar Proposal Sedang Diproses</h3>
+                                    <p class="text-white">Selamat! Anda telah mendaftar/sedang menempuh Seminar Proposal.</p>
                                     <div class="alert alert-light d-inline-block p-3 mt-2 shadow-sm text-dark text-left">
                                         <h6 class="font-weight-bold mb-2"><i class="fas fa-info-circle text-primary mr-1"></i> Instruksi:</h6>
                                         <ul class="mb-0 pl-3 text-sm">
                                             <li>Selesaikan administrasi di website administrasi.</li>
                                             <li>Pantau jadwal dan hasil sidang Anda.</li>
-                                            <li>Form upload ditutup sementara hingga hasil keluar.</li>
+                                            <li>Form bimbingan dikunci sementara hingga hasil keluar.</li>
                                         </ul>
                                     </div>
                                     <div class="mt-4">
                                         <a href="http://website-administrasi.com" target="_blank" class="btn btn-light font-weight-bold shadow pulse-button">
-                                            <i class="fas fa-external-link-alt mr-2"></i> Website Administrasi
+                                            <i class="fas fa-external-link-alt mr-2"></i> Buka Website Administrasi
                                         </a>
                                     </div>
                                 </div>
@@ -256,7 +258,6 @@
                                     <div class="card-body text-center text-muted py-5">
                                         <div class="mb-3"><i class="fas fa-lock fa-4x text-gray-300"></i></div>
                                         <h5>Akses Upload Terkunci</h5>
-                                        <p class="mb-0"><?= $lock_msg ?></p>
                                     </div>
                                 </div>
                             <?php endif; ?>

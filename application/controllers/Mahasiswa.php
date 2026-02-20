@@ -156,8 +156,10 @@ class Mahasiswa extends CI_Controller {
 
         $data['progres_riwayat'] = $this->M_Mahasiswa->get_riwayat_progres($npm_mhs); 
         
-        // Ambil Status Ujian (Sempro/Pendadaran)
+     // Ambil Status Ujian (Sempro/Pendadaran)
         $ujian = $this->M_Mahasiswa->get_status_ujian_terakhir($data['skripsi']['id']);
+        
+        // Langsung ambil dari kolom status
         $data['status_ujian'] = $ujian ? $ujian['status'] : null;
         
         $this->load->view('template/header', $data);

@@ -52,10 +52,6 @@ class M_Mahasiswa extends CI_Model {
         ];
         return $this->db->update('skripsi', $update_data);
     }
-
-    // =======================================================================
-    // --- SEKSI PROGRES BIMBINGAN ---
-    // =======================================================================
     
     public function get_progres_by_skripsi($id_skripsi)
     {
@@ -140,14 +136,14 @@ class M_Mahasiswa extends CI_Model {
     }
 
   // --- AMBIL STATUS DARI TABEL UJIAN_SKRIPSI ---
-    public function get_status_ujian_terakhir($id_skripsi)
+   public function get_status_ujian_terakhir($id_skripsi)
     {
-        // Select kolom status
+        // Cukup select status saja
         $this->db->select('status'); 
-        $this->db->from('ujian_skripsi'); // <--- Ini nyambung ke tabel ujian_skripsi
+        $this->db->from('ujian_skripsi'); 
         $this->db->where('id_skripsi', $id_skripsi);
         
-        // Ambil yang paling terakhir (berdasarkan ID terbesar atau Tanggal)
+        // Ambil yang paling terakhir
         $this->db->order_by('id', 'DESC'); 
         $this->db->limit(1);
         
