@@ -40,19 +40,7 @@
                                 </div>
                             </div>
                             
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label>Angkatan</label>
-                                    <select class="form-control" name="angkatan">
-                                        <option value="">-- Semua --</option>
-                                        <?php 
-                                        $year_now = date('Y');
-                                        for($i = $year_now; $i >= 2015; $i--): ?>
-                                            <option value="<?= $i ?>" <?= (isset($f_angkatan) && $f_angkatan == $i) ? 'selected' : '' ?>><?= $i ?></option>
-                                        <?php endfor; ?>
-                                    </select>
-                                </div>
-                            </div>
+                            <!-- Angkatan filter removed as requested -->
 
                             <div class="col-md-3">
                                 <div class="form-group">

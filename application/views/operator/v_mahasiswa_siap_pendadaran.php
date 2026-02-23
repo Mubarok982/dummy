@@ -50,35 +50,13 @@
                                     <?php endforeach; ?>
                                 </select>
                             </div>
-                            <div class="col-md-3">
-                                <label>Angkatan</label>
-                                <select name="angkatan" class="form-control">
-                                    <option value="all">Semua Angkatan</option>
-                                    <?php foreach ($list_angkatan as $angkatan_option): ?>
-                                        <option value="<?php echo $angkatan_option['angkatan']; ?>" <?php echo ($angkatan == $angkatan_option['angkatan']) ? 'selected' : ''; ?>><?php echo $angkatan_option['angkatan']; ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
+                            <!-- Angkatan filter removed as per request -->
                             <div class="col-md-2">
                                 <label>&nbsp;</label>
                                 <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-search mr-1"></i> Filter</button>
                             </div>
                         </div>
-                        <div class="row mt-2">
-                            <div class="col-md-3">
-                                <select name="sort_by" class="form-control form-control-sm">
-                                    <option value="nama" <?php echo ($sort_by == 'nama') ? 'selected' : ''; ?>>Urut: Nama</option>
-                                    <option value="npm" <?php echo ($sort_by == 'npm') ? 'selected' : ''; ?>>Urut: NPM</option>
-                                    <option value="angkatan" <?php echo ($sort_by == 'angkatan') ? 'selected' : ''; ?>>Urut: Angkatan</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <select name="sort_order" class="form-control form-control-sm">
-                                    <option value="asc" <?php echo ($sort_order == 'asc') ? 'selected' : ''; ?>>Ascending (A-Z)</option>
-                                    <option value="desc" <?php echo ($sort_order == 'desc') ? 'selected' : ''; ?>>Descending (Z-A)</option>
-                                </select>
-                            </div>
-                        </div>
+                        <!-- Top sort controls removed; sorting via header click -->
                     </form>
 
                     <div class="table-responsive">
@@ -86,25 +64,23 @@
                             <thead class="bg-light">
                                 <tr class="text-center">
                                     <th style="width: 5%">No</th>
-                                    <th style="width: 10%">Foto</th>
-                                    <th>Mahasiswa</th>
-                                    <th>Judul Skripsi</th>
-                                    <th>Pembimbing</th>
-                                    <th>Tanggal ACC</th>
+                                    <th class="sortable" data-sort="nama">Mahasiswa</th>
+                                    <th class="sortable" data-sort="judul">Judul Skripsi</th>
+                                    <th class="sortable" data-sort="nama_p1">Pembimbing</th>
+                                    <th class="sortable" data-sort="tgl_daftar">Tanggal Daftar</th>
+                                    <th class="sortable" data-sort="status_ujian">Status</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php if (!empty($mahasiswa)): ?>
                                     <?php $no = 1; foreach ($mahasiswa as $mhs): ?>
                                         <tr>
-                                            <td class="text-center align-middle"><?php echo $no++; ?></td>
                                             <td class="text-center align-middle">
-                                                <?php if (!empty($mhs['foto'])): ?>
-                                                    <img src="<?php echo base_url('uploads/profile/' . $mhs['foto']); ?>" alt="Foto" class="img-thumbnail rounded-circle" style="width: 50px; height: 50px; object-fit: cover;">
-                                                <?php else: ?>
-                                                    <img src="<?php echo base_url('assets/image/default.png'); ?>" alt="Foto" class="img-thumbnail rounded-circle" style="width: 50px; height: 50px; object-fit: cover;">
-                                                <?php endif; ?>
+                                                <?php echo $no++; ?>
+                                                <br>
+                                                <small class="text-muted">ID: <?php echo isset($mhs['id_skripsi']) ? $mhs['id_skripsi'] : '-'; ?></small>
                                             </td>
+                                            <!-- Foto column removed as per request -->
                                             <td class="align-middle">
                                                 <strong><?php echo $mhs['nama']; ?></strong><br>
                                                 <small class="text-muted"><?php echo $mhs['npm']; ?></small><br>
@@ -117,16 +93,32 @@
                                                 2. <?php echo $mhs['nama_p2']; ?>
                                             </td>
                                             <td class="text-center align-middle">
-                                                <span class="badge badge-success px-2 py-1">
-                                                    <i class="fas fa-check-circle mr-1"></i>
-                                                    <?php echo date('d/m/Y', strtotime($mhs['tgl_acc'])); ?>
-                                                </span>
+                                                <?php if (!empty($mhs['tgl_daftar'])): ?>
+                                                    <span class="badge badge-success px-2 py-1">
+                                                        <i class="fas fa-check-circle mr-1"></i>
+                                                        <?php echo date('d/m/Y', strtotime($mhs['tgl_daftar'])); ?>
+                                                    </span>
+                                                <?php else: ?>
+                                                    -
+                                                <?php endif; ?>
+                                            </td>
+                                            <td class="text-center align-middle">
+                                                <?php 
+                                                    if ((isset($mhs['status_ujian']) && strtolower($mhs['status_ujian']) == 'mengulang') || (isset($mhs['status_acc_kaprodi']) && strtolower($mhs['status_acc_kaprodi']) == 'ditolak')) {
+                                                        echo '<span class="badge badge-danger">MENGULANG</span>';
+                                                    } else {
+                                                        $st = $mhs['status_ujian'] ?? '-';
+                                                        if ($st == 'Berlangsung') echo '<span class="badge badge-primary">'.$st.'</span>';
+                                                        elseif ($st == 'Diterima') echo '<span class="badge badge-success">'.$st.'</span>';
+                                                        else echo '<span class="badge badge-secondary">'.$st.'</span>';
+                                                    }
+                                                ?>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php else: ?>
-                                    <tr>
-                                        <td colspan="6" class="text-center py-5 text-muted">
+                                        <tr>
+                                            <td colspan="6" class="text-center py-5 text-muted">
                                             <i class="fas fa-user-graduate fa-3x mb-3 opacity-50"></i><br>
                                             Belum ada mahasiswa yang siap pendadaran.
                                         </td>

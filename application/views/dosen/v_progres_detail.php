@@ -64,13 +64,12 @@
                         <div class="card-body table-responsive p-0">
                             <table class="table table-hover table-striped text-nowrap align-middle">
                                 <thead>
-                                    <tr class="bg-light text-center">
+                                        <tr class="bg-light text-center">
                                         <th style="width: 10%">Bab</th>
                                         <th style="width: 20%">Judul Skripsi</th>
                                         <th style="width: 15%">Tanggal</th>
                                         <th style="width: 15%">Cek Plagiat</th>
-                                        <th style="width: 10%">Status P1</th>
-                                        <th style="width: 10%">Status P2</th>
+                                        <th style="width: 15%">Status Bimbingan</th>
                                         <th style="width: 10%">File</th>
                                         <th style="width: 10%">Aksi</th>
                                     </tr>
@@ -95,8 +94,14 @@
                                             $progres_field = $is_p1 ? 'progres_dosen1' : 'progres_dosen2';
                                             $nilai_field = $is_p1 ? 'nilai_dosen1' : 'nilai_dosen2';
 
-                                            // --- DETEKSI FILE REVISI (SAMA SEPERTI MAHASISWA) ---
-                                            $is_revisi_file = (stripos($p['file'], '_REVISI') !== false);
+                                            // --- DETEKSI FILE REVISI: tampilkan hanya jika memang ada versi sebelumnya ---
+                                            $is_revisi_file = false;
+                                            if (!empty($p['file']) && stripos($p['file'], '_REVISI') !== false) {
+                                                $version_count = $this->M_Dosen->count_progres_versions($skripsi['npm'], $p['bab']);
+                                                if ($version_count > 1) {
+                                                    $is_revisi_file = true;
+                                                }
+                                            }
                                         ?>
                                         <tr>
                                             <td class="align-middle text-center">
@@ -133,19 +138,34 @@
                                             </td>
 
                                             <td class="align-middle text-center">
-                                                <?php 
-                                                $badge1 = ($p['progres_dosen1'] == 100) ? 'success' : 'secondary';
-                                                if ($p['nilai_dosen1'] == 'Revisi') $badge1 = 'danger';
-                                                ?>
-                                                <span class="badge badge-<?php echo $badge1; ?> p-2"><?php echo $p['nilai_dosen1'] ?: '-'; ?></span>
-                                            </td>
+                                                <?php
+                                                // Gabungkan status P1/P2 menjadi Status Bimbingan (sama dengan tampilan mahasiswa)
+                                                $status_bimbingan = "BIMBINGAN";
+                                                $status_sempro_db = isset($skripsi['status_sempro']) ? $skripsi['status_sempro'] : '';
+                                                $prodi_mhs = isset($skripsi['prodi']) ? $skripsi['prodi'] : '';
+                                                $max_bab = (stripos($prodi_mhs, 'D3') !== false || stripos($prodi_mhs, 'Diploma 3') !== false) ? 5 : 6;
 
-                                            <td class="align-middle text-center">
-                                                <?php 
-                                                $badge2 = ($p['progres_dosen2'] == 100) ? 'success' : 'secondary';
-                                                if ($p['nilai_dosen2'] == 'Revisi') $badge2 = 'danger';
+                                                if ($status_sempro_db == 'Menunggu Plagiarisme') {
+                                                    $status_bimbingan = "MENUNGGU CEK PLAGIARISME";
+                                                } else {
+                                                    $is_acc = ($p['progres_dosen1'] == 100 && $p['progres_dosen2'] == 100);
+                                                    if ($is_acc && $p['bab'] >= $max_bab) {
+                                                        $status_bimbingan = "SIAP PENDADARAN";
+                                                    } elseif ($is_acc && $p['bab'] == 3) {
+                                                        $status_bimbingan = "SIAP SEMPRO";
+                                                    } elseif ($p['bab'] >= 4) {
+                                                        $status_bimbingan = "BIMBINGAN";
+                                                    } else {
+                                                        $status_bimbingan = "BIMBINGAN";
+                                                    }
+                                                }
+
+                                                $badge_class = 'badge-secondary';
+                                                if (strpos($status_bimbingan, 'SIAP PENDADARAN') !== false) $badge_class = 'badge-success';
+                                                elseif (strpos($status_bimbingan, 'SIAP SEMPRO') !== false) $badge_class = 'badge-info';
+                                                elseif (strpos($status_bimbingan, 'MENUNGGU') !== false) $badge_class = 'badge-warning';
                                                 ?>
-                                                <span class="badge badge-<?php echo $badge2; ?> p-2"><?php echo $p['nilai_dosen2'] ?: '-'; ?></span>
+                                                <span class="badge <?= $badge_class ?> px-2 py-1"><?= $status_bimbingan ?></span>
                                             </td>
 
                                             <td class="align-middle text-center">

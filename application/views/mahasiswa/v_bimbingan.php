@@ -54,10 +54,16 @@
                     <div class="card card-primary card-outline shadow mb-4">
                         <div class="card-body box-profile">
                             <div class="text-center">
-                                <img class="profile-user-img img-fluid img-circle" src="https://ui-avatars.com/api/?name=Skripsi&background=007bff&color=fff&size=128" alt="Skripsi Icon">
+                                <?php 
+                                    $foto_profil = !empty($skripsi['foto_mahasiswa']) ? $skripsi['foto_mahasiswa'] : 'default-avatar.png';
+                                    $foto_path = base_url('uploads/profile/' . $foto_profil);
+                                ?>
+                                <img class="profile-user-img img-fluid" style="border-radius: 50%; width: 128px; height: 128px; object-fit: cover;" src="<?php echo $foto_path; ?>" alt="Foto Profil" onerror="this.src='https://ui-avatars.com/api/?name=Student&background=007bff&color=fff&size=128'">
                             </div>
-                            <h3 class="profile-username text-center mt-3">Skripsi Saya</h3>
-                            <p class="text-muted text-center text-sm"><?php echo $skripsi['judul']; ?></p>
+                            <h3 class="profile-username text-center mt-3"><?php echo $skripsi['nama_mahasiswa']; ?></h3>
+                            <p class="text-muted text-center text-sm">
+                                <strong><?php echo $skripsi['tema']; ?></strong>
+                            </p>
 
                             <div class="text-center mb-3">
                                 <span class="badge badge-secondary">Target: Sampai Bab <?= $max_bab_prodi; ?></span>
@@ -71,16 +77,54 @@
                                     <b>Pembimbing 2</b> <a class="float-right"><?php echo $skripsi['nama_p2']; ?></a>
                                 </li>
                                 <li class="list-group-item">
-                                    <b>Status Sempro</b> 
-                                    <a class="float-right badge badge-info">
+                                    <b>Status Bimbingan</b> 
+                                    <a class="float-right">
                                         <?php 
-                                        if ($status_ujian) {
-                                            echo strtoupper($status_ujian);
-                                        } elseif ($status_sempro_db == 'Siap Sempro') {
-                                            echo "SIAP SEMPRO";
-                                        } else {
-                                            echo "BIMBINGAN";
+                                        // Logika Status Bimbingan dengan 4 tahapan (Robust Detection)
+                                        $status_bimbingan_label = "BIMBINGAN"; // default
+                                        
+                                        // Jika dinyatakan Mengulang atau judul ditolak -> tampilkan Mengulang
+                                        if ($status_ujian == 'Mengulang' || strtolower($status_acc) == 'ditolak') {
+                                            $status_bimbingan_label = "MENGULANG";
                                         }
+                                        // Tahapan 0: Menunggu Cek Plagiarisme
+                                        elseif ($status_sempro_db == 'Menunggu Plagiarisme') {
+                                            $status_bimbingan_label = "MENUNGGU CEK PLAGIARISME";
+                                        }
+                                        // Jika sudah punya progress, gunakan logic yang lebih akurat
+                                        elseif (isset($last_progres) && !empty($last_progres)) {
+                                            $lp = (object) $last_progres;
+                                            $bab_terakhir = $lp->bab;
+                                            $p1 = $lp->progres_dosen1;
+                                            $p2 = $lp->progres_dosen2;
+                                            $is_last_bab_acc = ($p1 == 100 && $p2 == 100);
+                                            
+                                            // Tahapan 4: SIAP PENDADARAN - Jika bab terakhir sudah ACC
+                                            if ($is_last_bab_acc && $bab_terakhir >= $max_bab_prodi) {
+                                                $status_bimbingan_label = "SIAP PENDADARAN";
+                                            }
+                                            // Tahapan 3: SIAP SEMPRO - Jika bab 3 ACC dan belum bab 4
+                                            elseif ($is_last_bab_acc && $bab_terakhir == 3) {
+                                                $status_bimbingan_label = "SIAP SEMPRO";
+                                            }
+                                            // Tahapan 2: BIMBINGAN - Jika sudah bab 4 atau lebih (kembali dari siap sempro)
+                                            elseif ($bab_terakhir >= 4) {
+                                                $status_bimbingan_label = "BIMBINGAN";
+                                            }
+                                            // Default: BIMBINGAN (sedang proses revisi atau menunggu approval)
+                                            else {
+                                                $status_bimbingan_label = "BIMBINGAN";
+                                            }
+                                        }
+                                        // Fallback ke status_sempro_db jika ada
+                                        elseif ($status_sempro_db == 'Siap Pendadaran') {
+                                            $status_bimbingan_label = "SIAP PENDADARAN";
+                                        }
+                                        elseif ($status_sempro_db == 'Siap Sempro') {
+                                            $status_bimbingan_label = "SIAP SEMPRO";
+                                        }
+                                        
+                                        echo $status_bimbingan_label;
                                         ?>
                                     </a>
                                 </li>
@@ -350,15 +394,47 @@
                                                     <td>
                                                         <strong><?= $skripsi['judul'] ?></strong>
                                                     </td>
+                                                    <?php
+                                                        $is_revisi_file = false;
+                                                        if (!empty($pr->file) && stripos($pr->file, '_REVISI') !== false) {
+                                                            $version_count = $this->M_Dosen->count_progres_versions($skripsi['npm'], $pr->bab);
+                                                            if ($version_count > 1) $is_revisi_file = true;
+                                                        }
+                                                    ?>
                                                     <td>
                                                         <span class="font-weight-bold">BAB <?= $pr->bab ?></span>
                                                         <br>
-                                                        <?php if($is_acc): ?>
-                                                            <span class="badge badge-primary">ACC</span>
-                                                        <?php else: ?>
-                                                            <span class="badge badge-warning">Revisi</span>
-                                                        <?php endif; ?>
-                                                    </td> 
+                                                        <?php
+                                                        // Logika badge status baru: Menunggu, Berlangsung, Dibatalkan, Selesai
+                                                        $badge_status = "Menunggu"; // default
+                                                        $badge_class = "badge-secondary";
+                                                        
+                                                        // Jika riwayat judul lama, tampilkan "Dibatalkan"
+                                                        if ($is_old_title) {
+                                                            $badge_status = "Dibatalkan";
+                                                            $badge_class = "badge-danger";
+                                                        }
+                                                        // Jika judul current dan sudah semua ACC, tampilkan "Selesai"
+                                                        elseif (!$is_old_title && $is_acc) {
+                                                            $badge_status = "Selesai";
+                                                            $badge_class = "badge-success";
+                                                        }
+                                                        // Jika judul current dan belum semua ACC, lihat status plagiarisme
+                                                        elseif (!$is_old_title && !$is_acc) {
+                                                            // Jika plagiarisme belum lulus, status "Menunggu"
+                                                            if ($status_sempro_db == 'Menunggu Plagiarisme') {
+                                                                $badge_status = "Menunggu";
+                                                                $badge_class = "badge-secondary";
+                                                            }
+                                                            // Jika plagiarisme sudah lulus, status "Berlangsung"
+                                                            else {
+                                                                $badge_status = "Berlangsung";
+                                                                $badge_class = "badge-info";
+                                                            }
+                                                        }
+                                                        ?>
+                                                        <span class="badge <?= $badge_class ?>"><?= $badge_status ?></span>
+                                                    </td>
                                                     <td><?= $komentar ?></td>
                                                     <td>
                                                         <a href="<?= base_url('uploads/progres/' . $pr->file) ?>" target="_blank" class="btn btn-sm btn-info shadow-sm">

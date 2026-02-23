@@ -44,19 +44,7 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Angkatan</label>
-                                    <select name="angkatan" class="form-control">
-                                        <option value="all">Semua Angkatan</option>
-                                        <?php if(!empty($list_angkatan)): ?>
-                                            <?php foreach ($list_angkatan as $angkatan_option): ?>
-                                                <option value="<?php echo $angkatan_option['angkatan']; ?>" <?php echo ($angkatan == $angkatan_option['angkatan']) ? 'selected' : ''; ?>><?php echo $angkatan_option['angkatan']; ?></option>
-                                            <?php endforeach; ?>
-                                        <?php endif; ?>
-                                    </select>
-                                </div>
-                            </div>
+                            <!-- Angkatan filter removed as requested -->
                             <div class="col-md-2">
                                 <div class="form-group">
                                     <label>&nbsp;</label><br>
@@ -64,36 +52,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="row mt-2">
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Urut Berdasarkan</label>
-                                    <select name="sort_by" class="form-control">
-                                        <option value="nama_mhs" <?php echo ($sort_by == 'nama_mhs') ? 'selected' : ''; ?>>Nama Mahasiswa</option>
-                                        <option value="npm" <?php echo ($sort_by == 'npm') ? 'selected' : ''; ?>>NPM</option>
-                                        <option value="prodi" <?php echo ($sort_by == 'prodi') ? 'selected' : ''; ?>>Prodi</option>
-                                        <option value="tgl_upload" <?php echo ($sort_by == 'tgl_upload') ? 'selected' : ''; ?>>Tanggal Upload</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Urutan</label>
-                                    <select name="sort_order" class="form-control">
-                                        <option value="asc" <?php echo ($sort_order == 'asc') ? 'selected' : ''; ?>>Ascending</option>
-                                        <option value="desc" <?php echo ($sort_order == 'desc') ? 'selected' : ''; ?>>Descending</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label>&nbsp;</label><br>
-                                    <?php if($prodi || $keyword || $angkatan || ($sort_by != 'nama_mhs') || ($sort_order != 'asc')): ?>
-                                        <a href="<?php echo base_url('operator/list_revisi'); ?>" class="btn btn-outline-danger btn-block"><i class="fas fa-undo"></i> Reset</a>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        </div>
+                        <!-- Top sort controls removed; sorting via table header clicks -->
                     </form>
                 </div>
             </div>
@@ -108,11 +67,11 @@
                         <thead>
                             <tr>
                                 <th>No</th>
-                                <th>NPM</th>
-                                <th>Nama Mahasiswa</th>
-                                <th>Prodi</th>
-                                <th>Judul Skripsi</th>
-                                <th>BAB</th>
+                                <th class="sortable" data-sort="npm">NPM</th>
+                                <th class="sortable" data-sort="nama_mhs">Nama Mahasiswa</th>
+                                <th class="sortable" data-sort="prodi">Prodi</th>
+                                <th class="sortable" data-sort="judul">Judul Skripsi</th>
+                                <th class="sortable" data-sort="bab">BAB</th>
                                 <th>File</th>
                                 <th>Komentar Dosen 1</th>
                                 <th>Komentar Dosen 2</th>
@@ -120,10 +79,10 @@
                                 <th>Nilai Dosen 2</th>
                                 <th>Progres Dosen 1 (%)</th>
                                 <th>Progres Dosen 2 (%)</th>
-                                <th>Tanggal Upload</th>
+                                <th class="sortable" data-sort="tgl_upload">Tanggal Upload</th>
                                 <th>Tanggal Verifikasi</th>
-                                <th>Pembimbing 1</th>
-                                <th>Pembimbing 2</th>
+                                <th class="sortable" data-sort="nama_p1">Pembimbing 1</th>
+                                <th class="sortable" data-sort="nama_p2">Pembimbing 2</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>

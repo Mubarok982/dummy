@@ -95,21 +95,7 @@
                                         <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-search"></i> Filter</button>
                                     </div>
                                 </div>
-                                <div class="row mt-2">
-                                    <div class="col-md-3">
-                                        <select name="sort_by" class="form-control">
-                                            <option value="nama" <?php echo ($sort_by == 'nama') ? 'selected' : ''; ?>>Urut: Nama</option>
-                                            <option value="npm" <?php echo ($sort_by == 'npm') ? 'selected' : ''; ?>>Urut: NPM</option>
-                                            <option value="angkatan" <?php echo ($sort_by == 'angkatan') ? 'selected' : ''; ?>>Urut: Angkatan</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <select name="sort_order" class="form-control">
-                                            <option value="asc" <?php echo ($sort_order == 'asc') ? 'selected' : ''; ?>>Ascending</option>
-                                            <option value="desc" <?php echo ($sort_order == 'desc') ? 'selected' : ''; ?>>Descending</option>
-                                        </select>
-                                    </div>
-                                </div>
+                                <!-- Top sort controls removed; header-click sorting used -->
                             </form>
 
                             <div class="table-responsive" style="height: 600px;">
@@ -117,9 +103,9 @@
                                 <thead>
                                 <tr class="text-center">
                                         <th style="width: 5%;">No</th>
-                                        <th style="width: 10%;">NPM</th>
-                                        <th class="text-left" style="width: 20%;">Nama Mahasiswa</th>
-                                        <th class="text-left" style="width: 25%;">Judul Skripsi</th>
+                                        <th style="width: 10%;" class="sortable" data-sort="npm">NPM</th>
+                                        <th class="text-left sortable" style="width: 20%;" data-sort="nama">Nama Mahasiswa</th>
+                                        <th class="text-left sortable" style="width: 25%;" data-sort="judul">Judul Skripsi</th>
                                         <th class="text-left" style="width: 20%;">Pembimbing</th>
                                         <th style="width: 10%;">Aksi</th>
                                     </tr>

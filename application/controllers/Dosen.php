@@ -157,67 +157,63 @@ class Dosen extends CI_Controller
             $this->session->set_flashdata('pesan_error', 'Akses ditolak. Fitur ini hanya untuk Kaprodi.');
             redirect('dosen/bimbingan_list');
         }
+        // Use operator's laporan model + view to avoid duplication
+        $this->load->model('operator/M_laporan_opt');
 
         $prodi = $this->session->userdata('prodi');
-        
         $keyword = $this->input->get('keyword');
-        $angkatan_filter = $this->input->get('angkatan');
         $sort_by = $this->input->get('sort_by') ?: 'nama';
         $sort_order = $this->input->get('sort_order') ?: 'asc';
 
-        $data['title'] = 'Monitoring Mahasiswa Prodi ' . $prodi;
-        
-        $data['list_angkatan'] = $this->M_Dosen->get_list_angkatan($prodi);
-        $data['selected_angkatan'] = $angkatan_filter;
+        // Use the same page title as operator for consistency
+        $data['title'] = 'Monitoring Progres Mahasiswa';
 
-        $all_data = $this->M_Dosen->get_all_mahasiswa_prodi($prodi, NULL);
+        // Get all data using shared model
+        $all_data = $this->M_laporan_opt->get_laporan_progres($prodi, $keyword, NULL, NULL);
 
-        $filtered_data = [];
-        foreach ($all_data as $item) {
-            $match = true;
-
-            if ($keyword) {
-                $search_text = strtolower(($item['nama'] ?? '') . ' ' . ($item['npm'] ?? '') . ' ' . ($item['judul'] ?? ''));
-                if (strpos($search_text, strtolower($keyword)) === false) {
-                    $match = false;
-                }
-            }
-
-            if ($angkatan_filter && $angkatan_filter != 'all') {
-                if (($item['angkatan'] ?? '') != $angkatan_filter) {
-                    $match = false;
-                }
-            }
-
-            if ($match) {
-                $filtered_data[] = $item;
-            }
-        }
-
-        usort($filtered_data, function($a, $b) use ($sort_by, $sort_order) {
+        // Apply server-side sorting (consistent with operator)
+        usort($all_data, function($a, $b) use ($sort_by, $sort_order) {
             $val_a = strtolower($a[$sort_by] ?? '');
             $val_b = strtolower($b[$sort_by] ?? '');
-            if ($sort_order == 'desc') {
-                return $val_b <=> $val_a;
-            } else {
-                return $val_a <=> $val_b;
-            }
+            if ($sort_order == 'desc') return $val_b <=> $val_a;
+            return $val_a <=> $val_b;
         });
 
-        $data['mahasiswa_prodi'] = $filtered_data;
-        
+        // Pagination same as operator
+        $total_rows = count($all_data);
+        $config['base_url'] = base_url('dosen/monitoring_prodi');
+        $config['total_rows'] = $total_rows;
+        $config['per_page'] = 10;
+        $config['reuse_query_string'] = TRUE;
+        $config['page_query_string'] = TRUE;
+        $config['query_string_segment'] = 'page';
+        // use shared helper for pagination configuration
+        $this->load->helper('pagination_custom');
+        config_pagination($config);
+        $this->load->library('pagination');
+        $this->pagination->initialize($config);
+
+        $page = $this->input->get('page') ? $this->input->get('page') : 0;
+        $data['laporan'] = array_slice($all_data, $page, $config['per_page']);
+        $data['pagination'] = $this->pagination->create_links();
+        $data['total_rows'] = $total_rows;
+        $data['start_index'] = $page;
+
         $data['keyword'] = $keyword;
         $data['prodi'] = $prodi_kaprodi;
         $data['angkatan'] = $angkatan;
         $data['sort_by'] = $sort_by;
         $data['sort_order'] = $sort_order;
 
+        // Filters for UI
+        $data['list_prodi'] = $this->M_Data->get_all_prodi();
+        $data['list_angkatan'] = $this->M_Data->get_unique_angkatan();
+
+        // Reuse operator view to avoid duplicated templates
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
-        $this->load->view('dosen/v_monitoring_prodi', $data);
+        $this->load->view('operator/v_monitoring_progres', $data);
         $this->load->view('template/footer');
-
-        $data['list_dosen'] = $this->M_Data->get_dosen_pembimbing_list(); 
     }
 
     public function update_pembimbing()
@@ -710,7 +706,10 @@ class Dosen extends CI_Controller
             redirect('dosen/bimbingan_list');
         }
 
-        if ($this->M_akun_opt->delete_user($id)) {
+        $res = $this->M_akun_opt->delete_user($id);
+        if ($res === 'blocked') {
+            $this->session->set_flashdata('pesan_error', 'Penghapusan diblokir: mahasiswa ini memiliki riwayat skripsi/progres/ujian.');
+        } elseif ($res) {
             $this->session->set_flashdata('pesan_sukses', 'Akun berhasil dihapus!');
         } else {
             $this->session->set_flashdata('pesan_error', 'Gagal menghapus akun.');

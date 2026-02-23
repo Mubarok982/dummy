@@ -36,33 +36,12 @@
                                     <?php endforeach; ?>
                                 </select>
                             </div>
-                            <div class="col-md-3">
-                                <select name="angkatan" class="form-control">
-                                    <option value="all">Semua Angkatan</option>
-                                    <?php foreach ($list_angkatan as $angkatan_option): ?>
-                                        <option value="<?php echo $angkatan_option['angkatan']; ?>" <?php echo ($angkatan == $angkatan_option['angkatan']) ? 'selected' : ''; ?>><?php echo $angkatan_option['angkatan']; ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
+                            <!-- Angkatan filter removed as requested -->
                             <div class="col-md-2">
                                 <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-search"></i> Filter</button>
                             </div>
                         </div>
-                        <div class="row mt-2">
-                            <div class="col-md-3">
-                                <select name="sort_by" class="form-control">
-                                    <option value="nama_mhs" <?php echo ($sort_by == 'nama_mhs') ? 'selected' : ''; ?>>Urut: Nama</option>
-                                    <option value="npm" <?php echo ($sort_by == 'npm') ? 'selected' : ''; ?>>Urut: NPM</option>
-                                    <option value="angkatan" <?php echo ($sort_by == 'angkatan') ? 'selected' : ''; ?>>Urut: Angkatan</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <select name="sort_order" class="form-control">
-                                    <option value="asc" <?php echo ($sort_order == 'asc') ? 'selected' : ''; ?>>Ascending</option>
-                                    <option value="desc" <?php echo ($sort_order == 'desc') ? 'selected' : ''; ?>>Descending</option>
-                                </select>
-                            </div>
-                        </div>
+                        <!-- Top sort controls removed; use header-click sorting -->
                     </form>
 
                     <div class="table-responsive">
@@ -70,13 +49,13 @@
                             <thead>
                                 <tr>
                                     <th>No</th>
-                                    <th>NPM</th>
-                                    <th>Nama</th>
-                                    <th>Prodi</th>
-                                    <th>Angkatan</th>
-                                    <th>Judul Skripsi</th>
-                                    <th>Pembimbing 1</th>
-                                    <th>Pembimbing 2</th>
+                                    <th class="sortable" data-sort="npm">NPM</th>
+                                    <th class="sortable" data-sort="nama_mhs">Nama</th>
+                                    <th class="sortable" data-sort="prodi">Prodi</th>
+                                    <th class="sortable" data-sort="angkatan">Angkatan</th>
+                                    <th class="sortable" data-sort="judul">Judul Skripsi</th>
+                                    <th class="sortable" data-sort="nama_p1">Pembimbing 1</th>
+                                    <th class="sortable" data-sort="nama_p2">Pembimbing 2</th>
                                     <th>Aksi</th>
                                 </tr>
                             </thead>

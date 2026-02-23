@@ -155,17 +155,47 @@ class M_akun_opt extends CI_Model {
 
     public function delete_user($id)
     {
+        // Check: jika user adalah mahasiswa dan memiliki data terkait (skripsi/progres/ujian), jangan hapus
+        $mahasiswa = $this->db->get_where('data_mahasiswa', ['id' => $id])->row_array();
+        if ($mahasiswa) {
+            $npm = $mahasiswa['npm'] ?? null;
+
+            // Jika ada skripsi terkait -> jangan hapus
+            $has_skripsi = $this->db->get_where('skripsi', ['id_mahasiswa' => $id])->num_rows() > 0;
+            // Jika ada progres terkait -> jangan hapus
+            $has_progres = (!empty($npm)) && ($this->db->get_where('progres_skripsi', ['npm' => $npm])->num_rows() > 0);
+            // Jika ada ujian_skripsi terkait -> jangan hapus
+            $has_ujian = $this->db->where('id_skripsi IN (SELECT id FROM skripsi WHERE id_mahasiswa = ' . $id . ')', null, false)->get('ujian_skripsi')->num_rows() > 0;
+
+            if ($has_skripsi || $has_progres || $has_ujian) {
+                // Block deletion to preserve historical records
+                // Return a distinct value so controllers can show a specific message
+                return 'blocked';
+            }
+        }
+
+        // Jika lulus pengecekan, lakukan penghapusan (transaksional)
         $this->db->trans_start();
+
+        // STEP 1: Get mahasiswa npm jika ada (lagi)
+        $mahasiswa = $this->db->get_where('data_mahasiswa', ['id' => $id])->row_array();
+        $npm = $mahasiswa ? $mahasiswa['npm'] : null;
 
         // Delete related records first to avoid foreign key errors
         // Delete ujian_skripsi related to user's skripsi
         $this->db->where('id_skripsi IN (SELECT id FROM skripsi WHERE id_mahasiswa = ' . $id . ')')->delete('ujian_skripsi');
+        
         // Delete skripsi
         $this->db->where('id_mahasiswa', $id)->delete('skripsi');
-        // Delete progres_skripsi
-        $this->db->where('npm', '(SELECT npm FROM data_mahasiswa WHERE id = ' . $id . ')')->delete('progres_skripsi');
+        
+        // Delete progres_skripsi by NPM (if npm exists)
+        if (!empty($npm)) {
+            $this->db->where('npm', $npm)->delete('progres_skripsi');
+        }
+        
         // Delete messages
         $this->db->where('id_pengirim', $id)->or_where('id_penerima', $id)->delete('tbl_pesan');
+        
         // Delete log_aktivitas
         $this->db->where('id_user', $id)->delete('log_aktivitas');
 
