@@ -201,7 +201,7 @@ class M_Data extends CI_Model
 
     public function get_laporan_progres_semua_mhs()
     {
-        $this->db->select('A.nama, M.npm, M.prodi, S.judul, P1.nama AS p1, P2.nama AS p2');
+        $this->db->select('A.nama, M.npm, M.prodi, S.judul, S.id AS id_skripsi, S.status_acc_kaprodi, S.status_sempro, P1.nama AS p1, P2.nama AS p2');
         $this->db->from('mstr_akun A');
         $this->db->join('data_mahasiswa M', 'A.id = M.id', 'inner');
         $this->db->join('skripsi S', 'A.id = S.id_mahasiswa', 'left');
@@ -215,14 +215,73 @@ class M_Data extends CI_Model
         foreach ($result as $key => $mhs) {
             $progres = $this->db->order_by('bab', 'DESC')->limit(1)->get_where('progres_skripsi', ['npm' => $mhs['npm']])->row_array();
 
+            // Determine unified status_bimbingan (and badge class)
+            $status_label = 'BIMBINGAN';
+            $status_class = 'badge-primary';
+
+            $status_acc = isset($mhs['status_acc_kaprodi']) ? $mhs['status_acc_kaprodi'] : '';
+            $status_sempro = isset($mhs['status_sempro']) ? $mhs['status_sempro'] : '';
+
+            // Check last ujian status for this skripsi (if any)
+            $last_ujian = [];
+            if (!empty($mhs['id_skripsi'])) {
+                $last_ujian = $this->db->select('status')->from('ujian_skripsi')->where('id_skripsi', $mhs['id_skripsi'])->order_by('id', 'DESC')->limit(1)->get()->row_array();
+            }
+
+            // If judul ditolak or last ujian says Mengulang => MENGULANG
+            if (strtolower($status_acc) == 'ditolak' || (!empty($last_ujian) && strtolower($last_ujian['status']) == 'mengulang')) {
+                $status_label = 'MENGULANG';
+                $status_class = 'badge-danger';
+            }
+            // Menunggu cek plagiarisme
+            elseif ($status_sempro == 'Menunggu Plagiarisme') {
+                $status_label = 'MENUNGGU CEK PLAGIARISME';
+                $status_class = 'badge-secondary';
+            }
+            // If we have progres info, use it to refine status
+            elseif ($progres) {
+                $p1 = isset($progres['progres_dosen1']) ? intval($progres['progres_dosen1']) : 0;
+                $p2 = isset($progres['progres_dosen2']) ? intval($progres['progres_dosen2']) : 0;
+                $bab = isset($progres['bab']) ? intval($progres['bab']) : 0;
+
+                $max_bab = 6;
+                if (stripos($mhs['prodi'] ?? '', 'D3') !== false) $max_bab = 5;
+
+                if ($p1 === 100 && $p2 === 100) {
+                    if ($bab >= $max_bab) {
+                        $status_label = 'SIAP PENDADARAN';
+                        $status_class = 'badge-success';
+                    } elseif ($bab == 3) {
+                        $status_label = 'SIAP SEMPRO';
+                        $status_class = 'badge-info';
+                    } elseif ($bab >= 4) {
+                        $status_label = 'BIMBINGAN';
+                        $status_class = 'badge-primary';
+                    } else {
+                        $status_label = 'BIMBINGAN';
+                        $status_class = 'badge-primary';
+                    }
+                } else {
+                    $status_label = 'BIMBINGAN';
+                    $status_class = 'badge-primary';
+                }
+            }
+            // Fallbacks based on skripsi flags
+            elseif ($status_sempro == 'Siap Pendadaran') {
+                $status_label = 'SIAP PENDADARAN';
+                $status_class = 'badge-success';
+            } elseif ($status_sempro == 'Siap Sempro') {
+                $status_label = 'SIAP SEMPRO';
+                $status_class = 'badge-info';
+            }
+
+            $result[$key]['status_bimbingan'] = $status_label;
+            $result[$key]['status_class'] = $status_class;
+
             if ($progres) {
                 $result[$key]['last_bab'] = 'BAB ' . $progres['bab'];
-                $result[$key]['status_p1'] = $progres['nilai_dosen1'];
-                $result[$key]['status_p2'] = $progres['nilai_dosen2'];
             } else {
                 $result[$key]['last_bab'] = 'Belum Mulai';
-                $result[$key]['status_p1'] = '-';
-                $result[$key]['status_p2'] = '-';
             }
         }
         return $result;
@@ -397,31 +456,92 @@ class M_Data extends CI_Model
         return $this->db->get()->result_array();
     }
 
+    // Helper: Tentukan id_jenis_ujian_skripsi untuk SEMPRO berdasarkan prodi
+    private function get_sempro_jenis_by_prodi($prodi) {
+        if (stripos($prodi, 'Teknik Informatika S1') !== false) {
+            return 5; // Seminar Proposal Teknik Informatika 2025
+        } elseif (stripos($prodi, 'Teknologi Informasi D3') !== false) {
+            return 7; // Seminar Proposal Teknologi Informasi D3
+        } elseif (stripos($prodi, 'Teknik Industri') !== false) {
+            return 3; // Seminar Proposal Teknik Industri
+        } elseif (stripos($prodi, 'Teknik Mesin') !== false) {
+            return 3; // Seminar Proposal (sama dengan Teknik Industri)
+        } elseif (stripos($prodi, 'Mesin Otomotif') !== false) {
+            return 3; // Seminar Proposal (sama dengan Teknik Industri)
+        }
+        return 5; // Default ke Teknik Informatika
+    }
+
+    // Helper: Tentukan id_jenis_ujian_skripsi untuk PENDADARAN berdasarkan prodi
+    private function get_pendadaran_jenis_by_prodi($prodi) {
+        if (stripos($prodi, 'Teknik Informatika S1') !== false) {
+            return 6; // Seminar Pendadaran Teknik Informatika 2025
+        } elseif (stripos($prodi, 'Teknologi Informasi D3') !== false) {
+            return 8; // Seminar Pendadaran Teknologi Informasi D3
+        } elseif (stripos($prodi, 'Teknik Industri') !== false) {
+            return 4; // Seminar Pendadaran Teknik Industri
+        } elseif (stripos($prodi, 'Teknik Mesin') !== false) {
+            return 4; // Seminar Pendadaran (sama dengan Teknik Industri)
+        } elseif (stripos($prodi, 'Mesin Otomotif') !== false) {
+            return 4; // Seminar Pendadaran (sama dengan Teknik Industri)
+        }
+        return 6; // Default ke Teknik Informatika
+    }
+
     // Ambil data mahasiswa yang Bab 3-nya sudah ACC Penuh oleh kedua dosen
-public function get_mahasiswa_siap_sempro()
+    public function get_mahasiswa_siap_sempro()
     {
-        // UPDATE: Ambil dari ujian_skripsi berdasarkan status dan id_jenis_ujian_skripsi
+        // Pertama: temukan mahasiswa yang memenuhi syarat (BAB 3 ACC penuh)
+        $sql = "SELECT DISTINCT m.id AS id_mahasiswa, s.id AS id_skripsi, m.prodi
+                FROM progres_skripsi p
+                JOIN data_mahasiswa m ON p.npm = m.npm
+                JOIN skripsi s ON s.id_mahasiswa = m.id
+                WHERE p.bab = 3 AND p.progres_dosen1 = 100 AND p.progres_dosen2 = 100";
+
+        $rows = $this->db->query($sql)->result_array();
+
+        // Pastikan ada entri ujian_skripsi untuk sempro dengan jenis yang sesuai prodi
+        foreach ($rows as $r) {
+            $id_skripsi = $r['id_skripsi'];
+            $prodi = $r['prodi'];
+            $id_jenis_sempro = $this->get_sempro_jenis_by_prodi($prodi);
+
+            $this->db->from('ujian_skripsi');
+            $this->db->where('id_skripsi', $id_skripsi);
+            $this->db->where_in('id_jenis_ujian_skripsi', [3, 5, 7]); // Check all possible sempro jenis
+            $exists = $this->db->get()->num_rows();
+
+            if (!$exists) {
+                $insert = [
+                    'id_skripsi' => $id_skripsi,
+                    'tanggal_daftar' => date('Y-m-d'),
+                    'id_jenis_ujian_skripsi' => $id_jenis_sempro,
+                    'status' => 'Berlangsung'
+                ];
+                $this->db->insert('ujian_skripsi', $insert);
+            }
+        }
+
+        // Sekarang ambil data dari tabel ujian_skripsi untuk ditampilkan
         $this->db->select('
             a.nama, a.foto,
             m.npm, m.prodi, m.angkatan,
             s.judul,
             d1.nama as nama_p1,
             d2.nama as nama_p2,
-            u.tanggal_daftar as tgl_daftar_sempro
+            u.tanggal_daftar as tgl_daftar_sempro,
+            u.status as status_sempro
         ');
 
         $this->db->from('ujian_skripsi u');
-
         $this->db->join('skripsi s', 'u.id_skripsi = s.id');
         $this->db->join('data_mahasiswa m', 's.id_mahasiswa = m.id');
         $this->db->join('mstr_akun a', 'm.id = a.id');
         $this->db->join('mstr_akun d1', 's.pembimbing1 = d1.id', 'left');
         $this->db->join('mstr_akun d2', 's.pembimbing2 = d2.id', 'left');
 
-        // KONDISI: id_jenis_ujian_skripsi untuk sempro (misal 1 atau 5), status Berlangsung atau Diterima
-        $this->db->where_in('u.id_jenis_ujian_skripsi', [1, 5]); // Sesuaikan dengan jenis sempro
+        $this->db->where_in('u.id_jenis_ujian_skripsi', [1, 5]);
         $this->db->where_in('u.status', ['Berlangsung', 'Diterima']);
-
         $this->db->order_by('u.tanggal_daftar', 'DESC');
 
         return $this->db->get()->result_array();
@@ -514,28 +634,81 @@ public function get_mahasiswa_siap_sempro()
     // --- FITUR BARU: Mahasiswa Siap Pendadaran (Bab 4 ACC) ---
     public function get_mahasiswa_siap_pendadaran()
     {
+        // Cari mahasiswa yang sudah ACC di bab terakhirnya tergantung prodi (max_bab)
+        $sql_last = "SELECT m.id AS id_mahasiswa, s.id AS id_skripsi, m.prodi, p.bab, p.tgl_upload
+                     FROM (
+                        SELECT npm, MAX(CONCAT(LPAD(bab,3,'0'), '::', tgl_upload)) as last_key
+                        FROM progres_skripsi
+                        GROUP BY npm
+                     ) as last
+                     JOIN progres_skripsi p ON CONCAT(LPAD(p.bab,3,'0'), '::', p.tgl_upload) = last.last_key
+                     JOIN data_mahasiswa m ON p.npm = m.npm
+                     JOIN skripsi s ON s.id_mahasiswa = m.id";
+
+        $rows = $this->db->query($sql_last)->result_array();
+
+        foreach ($rows as $r) {
+            $prodi = $r['prodi'] ?? '';
+            $max_bab = 6;
+            if (stripos($prodi, 'D3') !== false || stripos($prodi, 'Diploma 3') !== false) {
+                $max_bab = 5;
+            }
+
+            // Ambil data progres terakhir untuk npm tersebut
+            $npm_row = $this->db->select('npm')->from('data_mahasiswa')->where('id', $r['id_mahasiswa'])->get()->row_array();
+            if (!$npm_row) continue;
+            $npm = $npm_row['npm'];
+
+            $this->db->order_by('bab', 'DESC');
+            $this->db->order_by('tgl_upload', 'DESC');
+            $last_progres = $this->db->get_where('progres_skripsi', ['npm' => $npm])->row_array();
+
+            if (!$last_progres) continue;
+
+            if ((int)$last_progres['progres_dosen1'] === 100 && (int)$last_progres['progres_dosen2'] === 100 && (int)$last_progres['bab'] >= $max_bab) {
+                // pastikan ada ujian_skripsi untuk pendadaran dengan jenis yang sesuai prodi
+                $id_skripsi = $r['id_skripsi'];
+                $prodi = $r['prodi'];
+                $id_jenis_pendadaran = $this->get_pendadaran_jenis_by_prodi($prodi);
+                
+                $this->db->from('ujian_skripsi');
+                $this->db->where('id_skripsi', $id_skripsi);
+                $this->db->where_in('id_jenis_ujian_skripsi', [2, 4, 6, 8]); // Check all possible pendadaran jenis
+                $exists = $this->db->get()->num_rows();
+
+                if (!$exists) {
+                    $insert = [
+                        'id_skripsi' => $id_skripsi,
+                        'tanggal_daftar' => date('Y-m-d'),
+                        'id_jenis_ujian_skripsi' => $id_jenis_pendadaran,
+                        'status' => 'Berlangsung'
+                    ];
+                    $this->db->insert('ujian_skripsi', $insert);
+                }
+            }
+        }
+
+        // Ambil dari ujian_skripsi untuk pendadaran
         $this->db->select('
             a.nama, a.foto,
             m.npm, m.prodi, m.angkatan,
             s.judul,
             d1.nama as nama_p1,
             d2.nama as nama_p2,
-            p.tgl_upload as tgl_acc
+            u.tanggal_daftar as tgl_daftar,
+            u.status as status_ujian
         ');
 
-        $this->db->from('progres_skripsi p');
-
-        $this->db->join('data_mahasiswa m', 'p.npm = m.npm');
-        $this->db->join('skripsi s', 's.id_mahasiswa = m.id');
+        $this->db->from('ujian_skripsi u');
+        $this->db->join('skripsi s', 'u.id_skripsi = s.id');
+        $this->db->join('data_mahasiswa m', 's.id_mahasiswa = m.id');
         $this->db->join('mstr_akun a', 'm.id = a.id');
         $this->db->join('mstr_akun d1', 's.pembimbing1 = d1.id', 'left');
         $this->db->join('mstr_akun d2', 's.pembimbing2 = d2.id', 'left');
 
-        $this->db->where('p.bab', 6);
-        $this->db->where('p.progres_dosen1', 100);
-        $this->db->where('p.progres_dosen2', 100);
-
-        $this->db->order_by('p.tgl_upload', 'DESC');
+        $this->db->where_in('u.id_jenis_ujian_skripsi', [2,4,6,8]);
+        $this->db->where_in('u.status', ['Berlangsung', 'Diterima']);
+        $this->db->order_by('u.tanggal_daftar', 'DESC');
 
         return $this->db->get()->result_array();
     }

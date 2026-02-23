@@ -41,33 +41,14 @@
                                     <?php endforeach; ?>
                                 </select>
                             </div>
-                            <div class="col-md-3">
-                                <select name="angkatan" class="form-control">
-                                    <option value="all">Semua Angkatan</option>
-                                    <?php foreach ($list_angkatan as $angkatan_option): ?>
-                                        <option value="<?php echo $angkatan_option['angkatan']; ?>" <?php echo ($angkatan == $angkatan_option['angkatan']) ? 'selected' : ''; ?>><?php echo $angkatan_option['angkatan']; ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
+                            <!-- Angkatan filter removed as per request -->
                             <div class="col-md-2">
                                 <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-search"></i> Filter</button>
                             </div>
                         </div>
+                        <!-- Top sort controls removed; sorting via header click -->
                         <div class="row mt-2">
-                            <div class="col-md-3">
-                                <select name="sort_by" class="form-control">
-                                    <option value="nama" <?php echo ($sort_by == 'nama') ? 'selected' : ''; ?>>Urut: Nama</option>
-                                    <option value="npm" <?php echo ($sort_by == 'npm') ? 'selected' : ''; ?>>Urut: NPM</option>
-                                    <option value="angkatan" <?php echo ($sort_by == 'angkatan') ? 'selected' : ''; ?>>Urut: Angkatan</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <select name="sort_order" class="form-control">
-                                    <option value="asc" <?php echo ($sort_order == 'asc') ? 'selected' : ''; ?>>Ascending</option>
-                                    <option value="desc" <?php echo ($sort_order == 'desc') ? 'selected' : ''; ?>>Descending</option>
-                                </select>
-                            </div>
-                            <?php if($keyword || ($prodi && $prodi != 'all') || ($angkatan && $angkatan != 'all')): ?>
+                            <?php if($keyword || ($prodi && $prodi != 'all')): ?>
                             <div class="col-md-2">
                                 <a href="<?php echo base_url('operator/mahasiswa_siap_sempro'); ?>" class="btn btn-secondary btn-block"><i class="fas fa-undo"></i> Reset</a>
                             </div>
@@ -89,27 +70,25 @@
                             <thead>
                                 <tr class="text-center">
                                     <th width="5%">No</th>
-                                    <th>Mahasiswa</th>
-                                    <th>Prodi</th>
-                                    <th width="30%">Judul Skripsi</th>
-                                    <th>Pembimbing</th>
-                                    <th>Tanggal ACC</th>
+                                    <th class="sortable" data-sort="nama">Mahasiswa</th>
+                                    <th class="sortable" data-sort="prodi">Prodi</th>
+                                    <th class="sortable" data-sort="judul" width="30%">Judul Skripsi</th>
+                                    <th class="sortable" data-sort="nama_p1">Pembimbing</th>
+                                    <th class="sortable" data-sort="tgl_daftar_sempro">Tanggal Daftar</th>
+                                    <th class="sortable" data-sort="status_sempro">Status</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php if (!empty($mahasiswa)): ?>
                                     <?php $no = 1; foreach ($mahasiswa as $m): ?>
                                     <tr>
-                                        <td class="text-center"><?php echo $no++; ?></td>
+                                        <td class="text-center">
+                                            <?php echo $no++; ?>
+                                            <br>
+                                            <small class="text-muted">ID: <?php echo isset($m['id_skripsi']) ? $m['id_skripsi'] : '-'; ?></small>
+                                        </td>
                                         <td>
                                             <div class="user-block">
-                                                <?php 
-                                                $foto_path = FCPATH . 'uploads/profile/' . $m['foto'];
-                                                $src_foto = (file_exists($foto_path) && $m['foto']) 
-                                                    ? base_url('uploads/profile/'.$m['foto']) 
-                                                    : base_url('assets/image/default.png');
-                                                ?>
-                                                <img class="img-circle img-bordered-sm" src="<?php echo $src_foto; ?>" alt="user image">
                                                 <span class="username">
                                                     <a href="#"><?php echo $m['nama']; ?></a>
                                                 </span>
@@ -125,16 +104,33 @@
                                             <b>P2:</b> <?php echo $m['nama_p2']; ?>
                                         </td>
                                         <td class="text-center">
-                                            <span class="badge badge-success">
-                                                <i class="far fa-calendar-check mr-1"></i>
-                                                <?php echo date('d M Y', strtotime($m['tgl_daftar_sempro'])); ?>
-                                            </span>
+                                            <?php if (!empty($m['tgl_daftar_sempro'])): ?>
+                                                <span class="badge badge-success">
+                                                    <i class="far fa-calendar-check mr-1"></i>
+                                                    <?php echo date('d M Y', strtotime($m['tgl_daftar_sempro'])); ?>
+                                                </span>
+                                            <?php else: ?>
+                                                -
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="text-center">
+                                            <?php 
+                                                // Jika judul ditolak atau status ujian Mengulang -> tampilkan Mengulang
+                                                if ((isset($m['status_acc_kaprodi']) && strtolower($m['status_acc_kaprodi']) == 'ditolak') || (isset($m['status_ujian']) && strtolower($m['status_ujian']) == 'mengulang')) {
+                                                    echo '<span class="badge badge-danger">MENGULANG</span>';
+                                                } else {
+                                                    $st = $m['status_sempro'] ?? '-';
+                                                    if ($st == 'Berlangsung') echo '<span class="badge badge-primary">'.$st.'</span>';
+                                                    elseif ($st == 'Diterima') echo '<span class="badge badge-success">'.$st.'</span>';
+                                                    else echo '<span class="badge badge-secondary">'.$st.'</span>';
+                                                }
+                                            ?>
                                         </td>
                                     </tr>
                                     <?php endforeach; ?>
                                 <?php else: ?>
                                     <tr>
-                                        <td colspan="6" class="text-center">Tidak ada mahasiswa yang siap sempro.</td>
+                                        <td colspan="7" class="text-center">Tidak ada mahasiswa yang siap sempro.</td>
                                     </tr>
                                 <?php endif; ?>
                             </tbody>

@@ -195,7 +195,10 @@ class Akun extends CI_Controller {
 
     public function delete($id)
     {
-        if ($this->M_akun_opt->delete_user($id)) {
+        $res = $this->M_akun_opt->delete_user($id);
+        if ($res === 'blocked') {
+            $this->session->set_flashdata('pesan_error', 'Penghapusan diblokir: mahasiswa ini memiliki riwayat skripsi/progres/ujian.');
+        } elseif ($res) {
             $this->session->set_flashdata('pesan_sukses', 'Akun berhasil dihapus!');
         } else {
             $this->session->set_flashdata('pesan_error', 'Gagal menghapus akun.');

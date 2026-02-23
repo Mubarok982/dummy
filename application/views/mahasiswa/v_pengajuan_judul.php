@@ -122,8 +122,7 @@
                                     <option value="Software Engineering" <?php echo set_select('tema', 'Software Engineering', ($is_exist && $skripsi['tema'] == 'Software Engineering')); ?>>Software Engineering</option>
                                     <option value="Networking" <?php echo set_select('tema', 'Networking', ($is_exist && $skripsi['tema'] == 'Networking')); ?>>Networking</option>
                                     <option value="Artificial Intelligence" <?php echo set_select('tema', 'Artificial Intelligence', ($is_exist && $skripsi['tema'] == 'Artificial Intelligence')); ?>>Artificial Intelligence</option>
-                                    <option value="Data Science" <?php echo set_select('tema', 'Data Science', ($is_exist && $skripsi['tema'] == 'Data Science')); ?>>Data Science</option>
-                                    <option value="IoT" <?php echo set_select('tema', 'IoT', ($is_exist && $skripsi['tema'] == 'IoT')); ?>>Internet of Things (IoT)</option>
+                                    <!-- Opsi disesuaikan dengan ENUM di DB: hanya tiga tema yang valid -->
                                 </select>
                             </div>
 

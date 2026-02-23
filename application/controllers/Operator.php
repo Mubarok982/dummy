@@ -22,6 +22,8 @@ class Operator extends CI_Controller {
         $this->load->model('operator/M_skripsi_opt');
         $this->load->model('operator/M_akun_opt');
         $this->load->model('operator/M_laporan_opt'); // Penting untuk fitur Kinerja
+        // Load shared pagination helper so controllers reuse a single config
+        $this->load->helper('pagination_custom');
     }
 
     // --- MANAJEMEN AKUN ---
@@ -41,8 +43,8 @@ class Operator extends CI_Controller {
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
 
-        // Styling Pagination
-        $this->_config_pagination($config); // Panggil fungsi private config
+        // Styling Pagination (use shared helper)
+        config_pagination($config);
         $this->pagination->initialize($config);
 
         $page = $this->input->get('page') ? $this->input->get('page') : 0;
@@ -180,10 +182,13 @@ class Operator extends CI_Controller {
 
     public function delete_akun($id)
     {
-        if ($this->M_akun_opt->delete_user($id)) {
+        $res = $this->M_akun_opt->delete_user($id);
+        if ($res === 'blocked') {
+            $this->session->set_flashdata('pesan_error', 'Penghapusan diblokir: mahasiswa ini memiliki riwayat skripsi/progres/ujian.');
+        } elseif ($res) {
             $this->session->set_flashdata('pesan_sukses', 'Akun berhasil dihapus!');
         } else {
-            $this->session->set_flashdata('pesan_error', 'Gagal menghapus akun.');
+            $this->session->set_flashdata('pesan_error', 'Gagal menghapus akun. Cek log untuk detail.');
         }
         redirect('operator/manajemen_akun');
     }
@@ -204,7 +209,7 @@ class Operator extends CI_Controller {
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
 
-        $this->_config_pagination($config);
+        config_pagination($config);
         $this->pagination->initialize($config);
 
         $page = $this->input->get('page') ? $this->input->get('page') : 0;
@@ -283,6 +288,13 @@ class Operator extends CI_Controller {
 
         // Apply sorting
         usort($filtered_data, function($a, $b) use ($sort_by, $sort_order) {
+            // Special numeric compare for 'bab'
+            if ($sort_by === 'bab') {
+                $va = isset($a['bab']) ? (int)$a['bab'] : 0;
+                $vb = isset($b['bab']) ? (int)$b['bab'] : 0;
+                return ($sort_order == 'desc') ? ($vb <=> $va) : ($va <=> $vb);
+            }
+
             $val_a = strtolower($a[$sort_by] ?? '');
             $val_b = strtolower($b[$sort_by] ?? '');
             if ($sort_order == 'desc') {
@@ -688,7 +700,7 @@ class Operator extends CI_Controller {
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
 
-        $this->_config_pagination($config);
+        config_pagination($config);
         $this->pagination->initialize($config);
 
         $page = $this->input->get('page') ? $this->input->get('page') : 0;
@@ -732,7 +744,7 @@ class Operator extends CI_Controller {
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
 
-        $this->_config_pagination($config);
+        config_pagination($config);
         $this->pagination->initialize($config);
 
         $page = $this->input->get('page') ? $this->input->get('page') : 0;

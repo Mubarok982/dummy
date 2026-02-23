@@ -6,9 +6,10 @@ class M_Mahasiswa extends CI_Model {
   // GANTI fungsi get_skripsi_by_mhs yang lama dengan ini:
     public function get_skripsi_by_mhs($id_mahasiswa)
     {
-        $this->db->select('S.*, M.npm, A1.nama AS nama_p1, A2.nama AS nama_p2');
+        $this->db->select('S.*, M.npm, A_mhs.nama AS nama_mahasiswa, A_mhs.foto AS foto_mahasiswa, A1.nama AS nama_p1, A2.nama AS nama_p2');
         $this->db->from('skripsi S');
         $this->db->join('data_mahasiswa M', 'S.id_mahasiswa = M.id'); 
+        $this->db->join('mstr_akun A_mhs', 'S.id_mahasiswa = A_mhs.id', 'left');
         $this->db->join('mstr_akun A1', 'S.pembimbing1 = A1.id', 'left');
         $this->db->join('mstr_akun A2', 'S.pembimbing2 = A2.id', 'left');
         $this->db->where('S.id_mahasiswa', $id_mahasiswa);

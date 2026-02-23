@@ -30,6 +30,36 @@
                     return '<span class="badge badge-secondary px-2">-</span>';
                 }
             }
+
+            if (!function_exists('get_status_bimbingan')) {
+                function get_status_bimbingan($m) {
+                    $status_sempro = isset($m['status_sempro']) ? $m['status_sempro'] : '';
+                    $status_ujian = isset($m['status_ujian']) ? $m['status_ujian'] : '';
+                    $status_acc = isset($m['status_acc_kaprodi']) ? $m['status_acc_kaprodi'] : '';
+                    $p1 = isset($m['progres_dosen1']) ? intval($m['progres_dosen1']) : null;
+                    $p2 = isset($m['progres_dosen2']) ? intval($m['progres_dosen2']) : null;
+                    $last_bab = isset($m['last_bab']) ? intval($m['last_bab']) : 0;
+                    $max_bab = isset($m['max_bab']) ? intval($m['max_bab']) : 6;
+
+                    // Jika dinyatakan mengulang dari sempro atau judul ditolak -> Mengulang
+                    if (strtolower($status_ujian) == 'mengulang' || strtolower($status_acc) == 'ditolak') {
+                        return ['label' => 'MENGULANG', 'class' => 'badge-danger'];
+                    }
+
+                    if ($status_sempro == 'Menunggu Plagiarisme') return ['label' => 'MENUNGGU CEK PLAGIARISME', 'class' => 'badge-secondary'];
+
+                    if ($p1 === 100 && $p2 === 100) {
+                        if ($last_bab >= $max_bab) return ['label' => 'SIAP PENDADARAN', 'class' => 'badge-success'];
+                        if ($last_bab == 3) return ['label' => 'SIAP SEMPRO', 'class' => 'badge-info'];
+                        if ($last_bab >= 4) return ['label' => 'BIMBINGAN', 'class' => 'badge-primary'];
+                    }
+
+                    if ($status_sempro == 'Siap Pendadaran') return ['label' => 'SIAP PENDADARAN', 'class' => 'badge-success'];
+                    if ($status_sempro == 'Siap Sempro') return ['label' => 'SIAP SEMPRO', 'class' => 'badge-info'];
+
+                    return ['label' => 'BIMBINGAN', 'class' => 'badge-primary'];
+                }
+            }
             ?>
 
             <div class="card shadow-sm mb-3">
@@ -52,16 +82,7 @@
                                 </select>
                             </div>
 
-                            <div class="col-md-3 col-sm-6 my-1">
-                                <select name="angkatan" class="form-control form-control-sm">
-                                    <option value="all">- Semua Angkatan -</option>
-                                    <?php if(!empty($list_angkatan)): ?>
-                                        <?php foreach ($list_angkatan as $angkatan_option): ?>
-                                            <option value="<?php echo $angkatan_option['angkatan']; ?>" <?php echo ($angkatan == $angkatan_option['angkatan']) ? 'selected' : ''; ?>><?php echo $angkatan_option['angkatan']; ?></option>
-                                        <?php endforeach; ?>
-                                    <?php endif; ?>
-                                </select>
-                            </div>
+                            <!-- Angkatan filter removed as requested -->
 
                             <div class="col-md-4 col-sm-12 my-1">
                                 <div class="input-group input-group-sm">
@@ -77,21 +98,7 @@
                         </div>
                         <div class="form-row align-items-center mt-1">
                             
-                            <div class="col-md-3 col-sm-6 my-1">
-                                <select name="sort_by" class="form-control form-control-sm">
-                                    <option value="nama" <?php echo ($sort_by == 'nama') ? 'selected' : ''; ?>>Urut: Nama</option>
-                                    <option value="npm" <?php echo ($sort_by == 'npm') ? 'selected' : ''; ?>>Urut: NPM</option>
-                                    <option value="prodi" <?php echo ($sort_by == 'prodi') ? 'selected' : ''; ?>>Urut: Prodi</option>
-                                    <option value="angkatan" <?php echo ($sort_by == 'angkatan') ? 'selected' : ''; ?>>Urut: Angkatan</option>
-                                </select>
-                            </div>
-                            
-                            <div class="col-md-3 col-sm-6 my-1">
-                                <select name="sort_order" class="form-control form-control-sm">
-                                    <option value="asc" <?php echo ($sort_order == 'asc') ? 'selected' : ''; ?>>Ascending</option>
-                                    <option value="desc" <?php echo ($sort_order == 'desc') ? 'selected' : ''; ?>>Descending</option>
-                                </select>
-                            </div>
+                            <!-- Top sort controls removed; header sorting enabled -->
 
                             <?php if($prodi || $keyword || $angkatan || ($sort_by != 'nama') || ($sort_order != 'asc')): ?>
                             <div class="col-auto my-1">
@@ -120,20 +127,19 @@
                             <table class="table table-hover table-striped text-nowrap table-sm align-middle">
                                 <thead>
                                     <tr class="text-center bg-light">
-                                        <th style="width: 5%">No</th>
-                                        <th style="width: 10%">NPM</th>
-                                        <th style="width: 20%" class="text-left">Nama Mahasiswa</th>
-                                        <th style="width: 15%">Prodi</th>
-                                        <th style="width: 20%" class="text-left">Judul Skripsi</th>
-                                        <th style="width: 10%">Posisi Bab</th>
-                                        <th style="width: 10%">Status P1</th>
-                                        <th style="width: 10%">Status P2</th>
-                                    </tr>
+                                            <th style="width: 7%">No</th>
+                                            <th style="width: 10%" class="sortable" data-sort="npm">NPM</th>
+                                            <th style="width: 20%" class="text-left sortable" data-sort="nama">Nama Mahasiswa</th>
+                                            <th style="width: 15%" class="sortable" data-sort="prodi">Prodi</th>
+                                            <th style="width: 20%" class="text-left sortable" data-sort="judul">Judul Skripsi</th>
+                                            <th style="width: 10%">Posisi Bab</th>
+                                            <th style="width: 11%">Status Bimbingan</th>
+                                        </tr>
                                 </thead>
                                 <tbody>
                                     <?php if (empty($laporan)): ?>
                                         <tr>
-                                            <td colspan="8" class="text-center py-5 text-muted">
+                                            <td colspan="7" class="text-center py-5 text-muted">
                                                 <i class="fas fa-clipboard-list fa-3x mb-3 opacity-50"></i><br>
                                                 Data tidak ditemukan dengan filter tersebut.
                                             </td>
@@ -144,7 +150,11 @@
                                         foreach ($laporan as $mhs): 
                                         ?>
                                         <tr>
-                                            <td class="align-middle text-center text-muted"><?php echo $no++; ?></td>
+                                            <td class="align-middle text-center text-muted">
+                                                <?php echo $no++; ?>
+                                                <br>
+                                                <small class="text-muted">ID: <?php echo isset($mhs['id_skripsi']) ? $mhs['id_skripsi'] : '-'; ?></small>
+                                            </td>
                                             <td class="align-middle text-center"><span class="badge badge-light border"><?php echo $mhs['npm']; ?></span></td>
                                             
                                             <td class="align-middle">
@@ -178,10 +188,17 @@
                                             </td>
 
                                             <td class="align-middle text-center">
-                                                <?php echo get_status_badge($mhs['status_p1']); ?>
-                                            </td>
-                                            <td class="align-middle text-center">
-                                                <?php echo get_status_badge($mhs['status_p2']); ?>
+                                                <?php 
+                                                    // Prefer model-provided unified status if available
+                                                    if (isset($mhs['status_bimbingan'])) {
+                                                        $label = $mhs['status_bimbingan'];
+                                                        $cls = isset($mhs['status_class']) ? $mhs['status_class'] : 'badge-primary';
+                                                        echo '<span class="badge '. $cls . ' px-2 py-1 font-weight-bold">' . $label . '</span>';
+                                                    } else {
+                                                        $sb = get_status_bimbingan($mhs);
+                                                        echo '<span class="badge '. $sb['class'] . ' px-2 py-1 font-weight-bold">' . $sb['label'] . '</span>';
+                                                    }
+                                                ?>
                                             </td>
                                         </tr>
                                         <?php endforeach; ?>

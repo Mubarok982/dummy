@@ -50,25 +50,12 @@
                                     <option value="Tolak" <?php echo ($status == 'Tolak') ? 'selected' : ''; ?>>Tolak</option>
                                 </select>
                             </div>
-                            <div class="col-md-3">
-                                <select name="sort_by" class="form-control">
-                                    <option value="nama" <?php echo ($sort_by == 'nama') ? 'selected' : ''; ?>>Urut: Nama</option>
-                                    <option value="npm" <?php echo ($sort_by == 'npm') ? 'selected' : ''; ?>>Urut: NPM</option>
-                                    <option value="persentase_kemiripan" <?php echo ($sort_by == 'persentase_kemiripan') ? 'selected' : ''; ?>>Urut: Persentase</option>
-                                </select>
-                            </div>
+                            <!-- Top sort_by removed; use header-click sorting -->
                             <div class="col-md-2">
                                 <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-search"></i> Filter</button>
                             </div>
                         </div>
-                        <div class="row mt-2">
-                            <div class="col-md-3">
-                                <select name="sort_order" class="form-control">
-                                    <option value="asc" <?php echo ($sort_order == 'asc') ? 'selected' : ''; ?>>Ascending</option>
-                                    <option value="desc" <?php echo ($sort_order == 'desc') ? 'selected' : ''; ?>>Descending</option>
-                                </select>
-                            </div>
-                        </div>
+                        <!-- Top sort_order removed; use header-click sorting -->
                     </form>
 
                     <div class="table-responsive">
@@ -76,10 +63,12 @@
                         <thead class="bg-light">
                             <tr class="text-center">
                                 <th width="5%">No</th>
-                                <th>Mahasiswa</th>
+                                <th class="sortable" data-sort="nama">Mahasiswa</th>
+                                <th class="sortable" data-sort="judul">Judul Skripsi</th>
+                                <th class="sortable" data-sort="tgl_upload">Tanggal Upload</th>
                                 <th>File</th>
                                 <th>Status</th>
-                                <th>Nilai (%)</th>
+                                <th class="sortable" data-sort="persentase_kemiripan">Nilai (%)</th>
                                 <th>Aksi / Info</th>
                             </tr>
                         </thead>
@@ -95,11 +84,16 @@
                                             <span class="username ml-0"><a href="#" class="text-dark font-weight-bold"><?php echo $row['nama']; ?></a></span>
                                             <span class="description ml-0">
                                                 <?php echo $row['npm']; ?> 
-                                                <small class="text-muted d-block mt-1">
-                                                    Upload: <?php echo date('d M Y', strtotime($row['tgl_upload'])); ?>
-                                                </small>
                                             </span>
                                         </div>
+                                    </td>
+
+                                    <td>
+                                        <strong><?php echo !empty($row['judul']) ? $row['judul'] : '-'; ?></strong>
+                                    </td>
+
+                                    <td class="text-center text-muted">
+                                        <?php echo !empty($row['tgl_upload']) ? date('d M Y H:i', strtotime($row['tgl_upload'])) : '-'; ?>
                                     </td>
 
                                     <td class="text-center">

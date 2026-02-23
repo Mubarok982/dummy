@@ -24,6 +24,15 @@ class M_Dosen extends CI_Model {
         return $this->db->get()->result_array();
     }
 
+
+    // Count how many progres records exist for given npm and bab
+    public function count_progres_versions($npm, $bab)
+    {
+        $this->db->from('progres_skripsi');
+        $this->db->where('npm', $npm);
+        $this->db->where('bab', $bab);
+        return (int) $this->db->count_all_results();
+    }
     // --- Detail Skripsi dan Progres ---
 
     public function get_skripsi_details($id_skripsi)

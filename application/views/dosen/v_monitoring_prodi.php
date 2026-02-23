@@ -59,16 +59,7 @@
                             <h3 class="card-title mt-2"><i class="fas fa-list-alt mr-1"></i> Data Mahasiswa</h3>
                             
                             <div class="card-tools d-flex align-items-center">
-                                <form method="get" action="<?= base_url('dosen/monitoring_prodi'); ?>" class="mr-2">
-                                    <select name="angkatan" class="form-control form-control-sm" onchange="this.form.submit()" style="width: 150px;">
-                                        <option value="all">-- Semua Angkatan --</option>
-                                        <?php if(isset($list_angkatan)): foreach($list_angkatan as $a): ?>
-                                            <option value="<?= $a['angkatan']; ?>" <?= ($selected_angkatan == $a['angkatan']) ? 'selected' : ''; ?>>
-                                                Angkatan <?= $a['angkatan']; ?>
-                                            </option>
-                                        <?php endforeach; endif; ?>
-                                    </select>
-                                </form>
+                                <!-- Angkatan filter removed as requested -->
 
                                 <div class="input-group input-group-sm" style="width: 200px;">
                                     <input type="text" id="searchMhs" class="form-control float-right" placeholder="Cari Nama / NPM...">
@@ -84,10 +75,10 @@
                                 <thead>
                                     <tr class="text-center">
                                         <th style="width: 5%;">No</th>
-                                        <th style="width: 10%;">NPM</th>
-                                        <th class="text-left" style="width: 20%;">Nama Mahasiswa</th>
-                                        <th style="width: 10%;">Angkatan</th>
-                                        <th class="text-left" style="width: 25%;">Judul Skripsi</th>
+                                        <th style="width: 10%;" class="sortable" data-sort="npm">NPM</th>
+                                        <th class="text-left sortable" style="width: 20%;" data-sort="nama">Nama Mahasiswa</th>
+                                        <th style="width: 10%;" class="sortable" data-sort="angkatan">Angkatan</th>
+                                        <th class="text-left sortable" style="width: 25%;" data-sort="judul">Judul Skripsi</th>
                                         <th class="text-left" style="width: 20%;">Pembimbing</th>
                                         <th style="width: 10%;">Aksi / Status</th>
                                     </tr>

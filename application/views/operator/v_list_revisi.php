@@ -57,7 +57,7 @@
                                 <th>Nama Mahasiswa</th>
                                 <th>Prodi</th>
                                 <th>Judul Skripsi</th>
-                                <th>BAB</th>
+                                <th class="sortable" data-sort="bab">BAB</th>
                                 <th>File</th>
                                 <th>Komentar Dosen 1</th>
                                 <th>Komentar Dosen 2</th>

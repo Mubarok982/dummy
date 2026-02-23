@@ -6,20 +6,32 @@ class M_Akun extends CI_Model {
     // Fungsi untuk memverifikasi login (mencocokkan username)
     public function cek_login($username)
     {
-        // Ambil data akun berdasarkan username
-        $this->db->select('*');
-        $this->db->from('mstr_akun');
-        $this->db->where('username', $username);
-        // Gabungkan dengan data dosen/mahasiswa jika ditemukan
-        $this->db->or_where('id', $username); // Jika user input ID/NIDN/NPM
-        
+        // Ambil data akun dan gabungkan dengan tabel detail dosen/mahasiswa
+        $this->db->select('A.*');
+        $this->db->from('mstr_akun A');
+        $this->db->join('data_dosen D', 'A.id = D.id', 'left');
+        $this->db->join('data_mahasiswa M', 'A.id = M.id', 'left');
+
+        // Mencari berdasarkan beberapa kemungkinan input:
+        // - username (A.username)
+        // - id akun (A.id)
+        // - nidk di tabel data_dosen (D.nidk)
+        // - npm di tabel data_mahasiswa (M.npm)
+        $this->db->group_start();
+            // Make username check case-sensitive using BINARY comparison
+            $this->db->where("BINARY A.username = " . $this->db->escape($username), NULL, FALSE);
+            $this->db->or_where('A.id', $username);
+            $this->db->or_where('D.nidk', $username);
+            $this->db->or_where('M.npm', $username);
+        $this->db->group_end();
+
         $query = $this->db->get();
 
         if ($query->num_rows() > 0) {
             return $query->row_array();
-        } else {
-            return FALSE;
         }
+
+        return FALSE;
     }
 
     // Fungsi untuk mendapatkan detail user berdasarkan ID
