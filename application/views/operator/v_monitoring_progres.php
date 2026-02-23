@@ -182,7 +182,7 @@
                                                     <span class="badge badge-secondary">Belum Mulai</span>
                                                 <?php else: ?>
                                                     <span class="badge badge-info px-2 py-1">
-                                                        BAB <?php echo $mhs['last_bab']; ?>
+                                                        BAB <?php echo intval($mhs['last_bab']); ?>
                                                     </span>
                                                 <?php endif; ?>
                                             </td>

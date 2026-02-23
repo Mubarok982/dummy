@@ -155,7 +155,7 @@ class Dosen extends CI_Controller
     {
         if ($this->session->userdata('is_kaprodi') != 1) {
             $this->session->set_flashdata('pesan_error', 'Akses ditolak. Fitur ini hanya untuk Kaprodi.');
-            redirect('dosen/bimbing_an_list');
+            redirect('dosen/bimbingan_list');
         }
         // Use operator's laporan model + view to avoid duplication
         $this->load->model('operator/M_laporan_opt');
@@ -200,6 +200,8 @@ class Dosen extends CI_Controller
         $data['start_index'] = $page;
 
         $data['keyword'] = $keyword;
+        $data['prodi'] = $prodi_kaprodi;
+        $data['angkatan'] = $angkatan;
         $data['sort_by'] = $sort_by;
         $data['sort_order'] = $sort_order;
 
@@ -359,63 +361,52 @@ class Dosen extends CI_Controller
             redirect('dosen/bimbingan_list');
         }
 
-        $data['title'] = 'Kinerja Dosen';
+        $data['title'] = 'Laporan Kinerja Dosen';
         $this->load->library('pagination');
-        $this->load->model('M_Data'); 
+        $this->load->model('operator/M_laporan_opt');
 
         $prodi_kaprodi = $this->session->userdata('prodi');
         $keyword = $this->input->get('keyword');
 
+        // Config Pagination
         $config['base_url'] = base_url('dosen/kinerja_dosen');
-        $config['total_rows'] = $this->M_Dosen->count_dosen_by_prodi($prodi_kaprodi, $keyword);
+        $config['total_rows'] = $this->M_laporan_opt->count_dosen_pembimbing($keyword, $prodi_kaprodi);
         $config['per_page'] = 10;
-        
         $config['reuse_query_string'] = TRUE;
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
 
-        $config['full_tag_open']    = '<ul class="pagination pagination-sm m-0 float-right">';
-        $config['full_tag_close']   = '</ul>';
-        $config['first_link']       = '&laquo;';
-        $config['last_link']        = '&raquo;';
-        $config['first_tag_open']   = '<li class="page-item">';
-        $config['first_tag_close']  = '</li>';
-        $config['prev_link']        = '&lsaquo;';
-        $config['prev_tag_open']    = '<li class="page-item">';
-        $config['prev_tag_close']   = '</li>';
-        $config['next_link']        = '&rsaquo;';
-        $config['next_tag_open']    = '<li class="page-item">';
-        $config['next_tag_close']   = '</li>';
-        $config['last_tag_open']    = '<li class="page-item">';
-        $config['last_tag_close']   = '</li>';
-        $config['cur_tag_open']     = '<li class="page-item active"><span class="page-link">';
-        $config['cur_tag_close']    = '</span></li>';
-        $config['num_tag_open']     = '<li class="page-item">';
-        $config['num_tag_close']    = '</li>';
-        $config['attributes']       = array('class' => 'page-link');
-
+        $this->load->helper('pagination_custom');
+        config_pagination($config);
         $this->pagination->initialize($config);
 
         $page = $this->input->get('page') ? $this->input->get('page') : 0;
-        $data['dosen_list'] = $this->M_Dosen->get_dosen_by_prodi($prodi_kaprodi, $keyword, $config['per_page'], $page);
-        
+        $data['dosen_list'] = $this->M_laporan_opt->get_dosen_pembimbing_list($keyword, $config['per_page'], $page, $prodi_kaprodi);
+
+        // Hitung total aktivitas
         foreach ($data['dosen_list'] as $key => $dosen) {
             $aktivitas = $this->M_Log->get_dosen_activity_summary($dosen['id']);
             $data['dosen_list'][$key]['aktivitas'] = $aktivitas;
-            
             $total = 0;
             foreach($aktivitas as $act) { $total += $act['total_aksi']; }
             $data['dosen_list'][$key]['total_aksi'] = $total;
         }
 
+        // --- KIRIM DATA UNTUK FILTER ---
+        $data['list_prodi'] = $this->M_laporan_opt->get_all_prodi();
+        $data['list_semester'] = $this->M_laporan_opt->get_all_semesters();
+        // Filter otomatis berdasarkan prodi kaprodi
+        $data['prodi_kaprodi'] = $prodi_kaprodi;
+
         $data['pagination'] = $this->pagination->create_links();
         $data['total_rows'] = $config['total_rows'];
         $data['start_index'] = $page;
         $data['per_page'] = $config['per_page'];
+        $data['keyword'] = $keyword;
 
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
-        $this->load->view('dosen/v_kinerja_dosen_prodi', $data); 
+        $this->load->view('operator/v_kinerja_dosen', $data);
         $this->load->view('template/footer');
     }
 

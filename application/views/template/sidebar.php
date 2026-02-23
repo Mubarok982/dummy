@@ -104,14 +104,6 @@
         <li class="nav-header text-warning">AREA KAPRODI</li>
 
         <li class="nav-item">
-          <a href="<?php echo base_url('dosen/manajemen_akun'); ?>"
-            class="nav-link <?php echo ($this->uri->segment(2) == 'manajemen_akun') ? 'active' : ''; ?>">
-            <i class="nav-icon fas fa-users text-warning"></i>
-            <p>Manajemen Akun</p>
-          </a>
-        </li>
-
-        <li class="nav-item">
           <a href="<?php echo base_url('dosen/monitoring_prodi'); ?>"
             class="nav-link <?php echo ($this->uri->segment(2) == 'monitoring_prodi') ? 'active' : ''; ?>">
             <i class="nav-icon fas fa-eye text-warning"></i>
