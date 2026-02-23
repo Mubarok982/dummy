@@ -200,8 +200,7 @@ class Dosen extends CI_Controller
         $data['start_index'] = $page;
 
         $data['keyword'] = $keyword;
-        $data['prodi'] = $prodi_kaprodi;
-        $data['angkatan'] = $angkatan;
+        $data['prodi'] = $prodi;
         $data['sort_by'] = $sort_by;
         $data['sort_order'] = $sort_order;
 

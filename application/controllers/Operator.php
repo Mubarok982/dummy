@@ -286,10 +286,12 @@ class Operator extends CI_Controller {
     public function mahasiswa_siap_sempro()
     {
         $data['title'] = 'Mahasiswa Siap Sempro';
+        $is_kaprodi = $this->session->userdata('is_kaprodi');
+        $kaprodi_prodi = $is_kaprodi ? $this->session->userdata('prodi') : null;
 
         // Get filter parameters
         $keyword = $this->input->get('keyword');
-        $prodi = $this->input->get('prodi');
+        $prodi = $is_kaprodi ? $kaprodi_prodi : $this->input->get('prodi');
         $angkatan = $this->input->get('angkatan');
         $sort_by = $this->input->get('sort_by') ?: 'nama';
         $sort_order = $this->input->get('sort_order') ?: 'asc';
@@ -353,9 +355,11 @@ class Operator extends CI_Controller {
         $data['angkatan'] = $angkatan;
         $data['sort_by'] = $sort_by;
         $data['sort_order'] = $sort_order;
+        $data['is_kaprodi'] = $is_kaprodi;
+        $data['kaprodi_prodi'] = $kaprodi_prodi;
 
         // Load dynamic filter options
-        $data['list_prodi'] = $this->M_Data->get_all_prodi();
+        $data['list_prodi'] = $is_kaprodi ? [] : $this->M_Data->get_all_prodi();
         $data['list_angkatan'] = $this->M_Data->get_unique_angkatan();
 
         $this->load->view('template/header', $data);
@@ -367,10 +371,12 @@ class Operator extends CI_Controller {
     public function mahasiswa_siap_pendadaran()
     {
         $data['title'] = 'Mahasiswa Siap Pendadaran';
+        $is_kaprodi = $this->session->userdata('is_kaprodi');
+        $kaprodi_prodi = $is_kaprodi ? $this->session->userdata('prodi') : null;
 
         // Get filter parameters
         $keyword = $this->input->get('keyword');
-        $prodi = $this->input->get('prodi');
+        $prodi = $is_kaprodi ? $kaprodi_prodi : $this->input->get('prodi');
         $angkatan = $this->input->get('angkatan');
         $sort_by = $this->input->get('sort_by') ?: 'nama';
         $sort_order = $this->input->get('sort_order') ?: 'asc';
@@ -427,6 +433,12 @@ class Operator extends CI_Controller {
         $data['angkatan'] = $angkatan;
         $data['sort_by'] = $sort_by;
         $data['sort_order'] = $sort_order;
+        $data['is_kaprodi'] = $is_kaprodi;
+        $data['kaprodi_prodi'] = $kaprodi_prodi;
+
+        // Load dynamic filter options
+        $data['list_prodi'] = $is_kaprodi ? [] : $this->M_Data->get_all_prodi();
+        $data['list_angkatan'] = $this->M_Data->get_unique_angkatan();
 
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
@@ -437,10 +449,12 @@ class Operator extends CI_Controller {
     public function list_revisi()
     {
         $data['title'] = 'Progres Mahasiswa';
+        $is_kaprodi = $this->session->userdata('is_kaprodi');
+        $kaprodi_prodi = $is_kaprodi ? $this->session->userdata('prodi') : null;
 
         // Get filter parameters
         $keyword = $this->input->get('keyword');
-        $prodi = $this->input->get('prodi');
+        $prodi = $is_kaprodi ? $kaprodi_prodi : $this->input->get('prodi');
         $angkatan = $this->input->get('angkatan');
         $sort_by = $this->input->get('sort_by') ?: 'nama_mhs';
         $sort_order = $this->input->get('sort_order') ?: 'asc';
@@ -497,9 +511,11 @@ class Operator extends CI_Controller {
         $data['angkatan'] = $angkatan;
         $data['sort_by'] = $sort_by;
         $data['sort_order'] = $sort_order;
+        $data['is_kaprodi'] = $is_kaprodi;
+        $data['kaprodi_prodi'] = $kaprodi_prodi;
 
         // Load dynamic filter options
-        $data['list_prodi'] = $this->M_Data->get_all_prodi();
+        $data['list_prodi'] = $is_kaprodi ? [] : $this->M_Data->get_all_prodi();
         $data['list_angkatan'] = $this->M_Data->get_unique_angkatan();
 
         $this->load->view('template/header', $data);
@@ -541,11 +557,14 @@ class Operator extends CI_Controller {
    public function acc_judul()
     {
         $data['title'] = 'Persetujuan Judul Skripsi';
+        $role = $this->session->userdata('role');
+        $is_kaprodi = $this->session->userdata('is_kaprodi');
+        $kaprodi_prodi = $is_kaprodi ? $this->session->userdata('prodi') : null;
 
         // Get filter parameters
         $keyword = $this->input->get('keyword');
         $status = $this->input->get('status');
-        $prodi = $this->input->get('prodi');
+        $prodi = $is_kaprodi ? $kaprodi_prodi : $this->input->get('prodi');
         $sort_by = $this->input->get('sort_by') ?: 'nama';
         $sort_order = $this->input->get('sort_order') ?: 'asc';
 
@@ -596,15 +615,17 @@ class Operator extends CI_Controller {
         });
 
         $data['mahasiswa'] = $filtered_data;
-        $data['dosen_list'] = $this->M_Data->get_dosen_pembimbing_list();
+        $data['dosen_list'] = $is_kaprodi ? $this->M_laporan_opt->get_dosen_pembimbing_list(null, null, null, $kaprodi_prodi) : $this->M_Data->get_dosen_pembimbing_list();
         $data['keyword'] = $keyword;
         $data['status'] = $status;
         $data['prodi'] = $prodi;
         $data['sort_by'] = $sort_by;
         $data['sort_order'] = $sort_order;
+        $data['is_kaprodi'] = $is_kaprodi;
+        $data['kaprodi_prodi'] = $kaprodi_prodi;
 
         // Load dynamic filter options
-        $data['list_prodi'] = $this->M_Data->get_all_prodi();
+        $data['list_prodi'] = $is_kaprodi ? [] : $this->M_Data->get_all_prodi();
         $data['list_status_acc'] = $this->M_Data->get_unique_status_acc_kaprodi();
 
         $this->load->view('template/header', $data);
@@ -678,9 +699,11 @@ class Operator extends CI_Controller {
     {
         $data['title'] = 'Monitoring Progres Bimbingan';
         $this->load->library('pagination');
+        $is_kaprodi = $this->session->userdata('is_kaprodi');
+        $kaprodi_prodi = $is_kaprodi ? $this->session->userdata('prodi') : null;
 
         // Get filter parameters
-        $prodi = $this->input->get('prodi');
+        $prodi = $is_kaprodi ? $kaprodi_prodi : $this->input->get('prodi');
         $keyword = $this->input->get('keyword');
         $angkatan = $this->input->get('angkatan');
         $sort_by = $this->input->get('sort_by') ?: 'nama';
@@ -761,9 +784,11 @@ class Operator extends CI_Controller {
         $data['angkatan'] = $angkatan;
         $data['sort_by'] = $sort_by;
         $data['sort_order'] = $sort_order;
+        $data['is_kaprodi'] = $is_kaprodi;
+        $data['kaprodi_prodi'] = $kaprodi_prodi;
 
         // Load dynamic filter options
-        $data['list_prodi'] = $this->M_laporan_opt->get_all_prodi();
+        $data['list_prodi'] = $is_kaprodi ? [] : $this->M_laporan_opt->get_all_prodi();
         $data['list_angkatan'] = $this->M_Data->get_unique_angkatan();
 
         $this->load->view('template/header', $data);
@@ -776,12 +801,14 @@ class Operator extends CI_Controller {
     {
         $data['title'] = 'Laporan Kinerja Dosen';
         $this->load->library('pagination');
+        $is_kaprodi = $this->session->userdata('is_kaprodi');
+        $kaprodi_prodi = $is_kaprodi ? $this->session->userdata('prodi') : null;
 
         $keyword = $this->input->get('keyword');
 
         // Config Pagination
         $config['base_url'] = base_url('operator/kinerja_dosen');
-        $config['total_rows'] = $this->M_laporan_opt->count_dosen_pembimbing($keyword);
+        $config['total_rows'] = $this->M_laporan_opt->count_dosen_pembimbing($keyword, $kaprodi_prodi);
         $config['per_page'] = 10;
         $config['reuse_query_string'] = TRUE;
         $config['page_query_string'] = TRUE;
@@ -791,7 +818,7 @@ class Operator extends CI_Controller {
         $this->pagination->initialize($config);
 
         $page = $this->input->get('page') ? $this->input->get('page') : 0;
-        $data['dosen_list'] = $this->M_laporan_opt->get_dosen_pembimbing_list($keyword, $config['per_page'], $page);
+        $data['dosen_list'] = $this->M_laporan_opt->get_dosen_pembimbing_list($keyword, $config['per_page'], $page, $kaprodi_prodi);
 
         // Hitung total aktivitas
         foreach ($data['dosen_list'] as $key => $dosen) {
@@ -803,8 +830,10 @@ class Operator extends CI_Controller {
         }
 
         // --- KIRIM DATA UNTUK FILTER ---
-        $data['list_prodi'] = $this->M_laporan_opt->get_all_prodi();
-        $data['list_semester'] = $this->M_laporan_opt->get_all_semesters(); // <--- BARU
+        $data['list_prodi'] = $is_kaprodi ? [] : $this->M_laporan_opt->get_all_prodi();
+        $data['list_semester'] = $this->M_laporan_opt->get_all_semesters();
+        $data['is_kaprodi'] = $is_kaprodi;
+        $data['kaprodi_prodi'] = $kaprodi_prodi;
         // -------------------------------
 
         $data['pagination'] = $this->pagination->create_links();
@@ -820,8 +849,11 @@ class Operator extends CI_Controller {
 
     public function kinerja_dosen_csv()
     {
+        $is_kaprodi = $this->session->userdata('is_kaprodi');
+        $kaprodi_prodi = $is_kaprodi ? $this->session->userdata('prodi') : null;
+        
         $keyword = $this->input->get('keyword');
-        $dosen_list = $this->M_laporan_opt->get_dosen_pembimbing_list($keyword, NULL, NULL);
+        $dosen_list = $this->M_laporan_opt->get_dosen_pembimbing_list($keyword, NULL, NULL, $kaprodi_prodi);
 
         header('Content-Type: text/csv');
         header('Content-Disposition: attachment; filename="Laporan_Kinerja_Dosen_'.date('Y-m-d').'.csv"');
