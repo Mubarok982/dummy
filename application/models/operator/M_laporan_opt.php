@@ -26,7 +26,20 @@ class M_laporan_opt extends CI_Model {
     }
 
     public function get_laporan_progres($prodi, $keyword, $limit, $offset) {
-        $this->db->select('A.nama, M.npm, M.prodi, S.judul, P1.nama AS p1, P2.nama AS p2');
+        // Tambahkan field yang diperlukan untuk status_bimbingan di helper
+        $this->db->select('
+            A.id,
+            A.nama, 
+            M.npm, 
+            M.prodi, 
+            M.angkatan,
+            S.id as id_skripsi,
+            S.judul, 
+            S.status_acc_kaprodi,
+            S.status_sempro,
+            P1.nama AS p1, 
+            P2.nama AS p2
+        ');
         $this->_filter_laporan($prodi, $keyword);
         $this->db->order_by('M.prodi', 'ASC');
         $this->db->order_by('A.nama', 'ASC');
@@ -35,35 +48,59 @@ class M_laporan_opt extends CI_Model {
         $result = $this->db->get()->result_array();
         
         foreach ($result as $key => $mhs) {
-            // Revisi: Menggunakan get_where array agar lebih aman
+            // Ambil status ujian terakhir
+            $ujian = $this->db->select('status')
+                             ->from('ujian_skripsi')
+                             ->where('id_skripsi', $mhs['id_skripsi'])
+                             ->order_by('id', 'DESC')
+                             ->limit(1)
+                             ->get()
+                             ->row_array();
+            
+            $result[$key]['status_ujian'] = isset($ujian['status']) ? $ujian['status'] : null;
+            
+            // Ambil progres terakhir
             $progres = $this->db->order_by('bab', 'DESC')
                                 ->limit(1)
                                 ->get_where('progres_skripsi', ['npm' => $mhs['npm']])
                                 ->row_array();
             
             if ($progres) {
-                $result[$key]['last_bab'] = 'BAB ' . $progres['bab'];
+                $result[$key]['last_bab'] = intval($progres['bab']);
                 
-                // Revisi: Cek ketersediaan kolom (Anti Error)
-                $val_p1 = isset($progres['progres_dosen1']) ? $progres['progres_dosen1'] : (isset($progres['status_p1']) ? $progres['status_p1'] : 0);
-                $val_p2 = isset($progres['progres_dosen2']) ? $progres['progres_dosen2'] : (isset($progres['status_p2']) ? $progres['status_p2'] : 0);
+                // Cek ketersediaan kolom (Anti Error)
+                $val_p1 = isset($progres['progres_dosen1']) ? intval($progres['progres_dosen1']) : (isset($progres['status_p1']) ? intval($progres['status_p1']) : 0);
+                $val_p2 = isset($progres['progres_dosen2']) ? intval($progres['progres_dosen2']) : (isset($progres['status_p2']) ? intval($progres['status_p2']) : 0);
                 
+                $result[$key]['progres_dosen1'] = $val_p1;
+                $result[$key]['progres_dosen2'] = $val_p2;
                 $result[$key]['status_p1'] = $val_p1 . '%';
                 $result[$key]['status_p2'] = $val_p2 . '%';
             } else {
-                $result[$key]['last_bab'] = 'Belum Mulai';
+                $result[$key]['last_bab'] = 0;
+                $result[$key]['progres_dosen1'] = 0;
+                $result[$key]['progres_dosen2'] = 0;
                 $result[$key]['status_p1'] = '-';
                 $result[$key]['status_p2'] = '-';
+            }
+            
+            // Tentukan max_bab berdasarkan prodi
+            $result[$key]['max_bab'] = 6; // Default S1
+            if (stripos($mhs['prodi'], 'D3') !== false || stripos($mhs['prodi'], 'Diploma 3') !== false) {
+                $result[$key]['max_bab'] = 5; // D3
             }
         }
         return $result;
     }
 
     // Helper Filter Dosen
-    private function _filter_dosen($keyword) {
+    private function _filter_dosen($keyword, $prodi = null) {
         $this->db->from('mstr_akun A');
         $this->db->join('data_dosen D', 'A.id = D.id');
         $this->db->where('A.role', 'dosen');
+        if ($prodi) {
+            $this->db->where('D.prodi', $prodi);
+        }
         if ($keyword) {
             $this->db->group_start();
             $this->db->like('A.nama', $keyword);
@@ -72,14 +109,14 @@ class M_laporan_opt extends CI_Model {
         }
     }
 
-    public function count_dosen_pembimbing($keyword) {
-        $this->_filter_dosen($keyword);
+    public function count_dosen_pembimbing($keyword, $prodi = null) {
+        $this->_filter_dosen($keyword, $prodi);
         return $this->db->count_all_results();
     }
 
-    public function get_dosen_pembimbing_list($keyword, $limit, $offset) {
+    public function get_dosen_pembimbing_list($keyword, $limit, $offset, $prodi = null) {
         $this->db->select('A.id, A.nama, D.nidk');
-        $this->_filter_dosen($keyword);
+        $this->_filter_dosen($keyword, $prodi);
         $this->db->order_by('A.nama', 'ASC');
         if ($limit) $this->db->limit($limit, $offset);
         return $this->db->get()->result_array();
