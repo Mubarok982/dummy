@@ -116,7 +116,7 @@
                                 </tr>
                             <?php else: ?>
                                 <?php 
-                                $no = isset($start) ? $start + 1 : 1; 
+                                $no = 1;
                                 foreach($mahasiswa as $m): 
                                 ?>
                                 <tr>

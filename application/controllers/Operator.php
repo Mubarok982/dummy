@@ -227,7 +227,50 @@ class Operator extends CI_Controller {
     public function data_mahasiswa()
     {
         $data['title'] = 'Data Mahasiswa & Status Skripsi';
-        $data['mahasiswa'] = $this->M_Data->get_all_mahasiswa_lengkap();
+        $mahasiswa = $this->M_Data->get_all_mahasiswa_lengkap();
+        
+        // Apply filters if provided
+        $f_prodi = $this->input->get('prodi');
+        $f_status = $this->input->get('status');
+        $f_keyword = $this->input->get('keyword');
+        
+        if ($f_prodi || $f_status || $f_keyword) {
+            $filtered_data = [];
+            foreach ($mahasiswa as $item) {
+                $match = true;
+                
+                // Filter by prodi
+                if ($f_prodi && $item['prodi'] != $f_prodi) {
+                    $match = false;
+                }
+                
+                // Filter by skripsi status
+                if ($f_status !== '' && isset($f_status)) {
+                    if ((int)$item['is_skripsi'] != (int)$f_status) {
+                        $match = false;
+                    }
+                }
+                
+                // Filter by keyword (nama/npm)
+                if ($f_keyword) {
+                    $search_text = strtolower($item['nama'] . ' ' . $item['npm']);
+                    if (strpos($search_text, strtolower($f_keyword)) === false) {
+                        $match = false;
+                    }
+                }
+                
+                if ($match) {
+                    $filtered_data[] = $item;
+                }
+            }
+            $mahasiswa = $filtered_data;
+        }
+        
+        $data['mahasiswa'] = $mahasiswa;
+        $data['total_rows'] = count($mahasiswa);
+        $data['f_prodi'] = $f_prodi;
+        $data['f_status'] = $f_status;
+        $data['f_keyword'] = $f_keyword;
 
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
