@@ -69,11 +69,6 @@
                         Daftar Dosen & Kaprodi 
                         <span class="badge badge-info ml-2"><?= isset($total_rows) ? $total_rows : 0 ?> Data</span>
                     </h3>
-                    <div class="card-tools">
-                        <a href="<?= base_url('operator/tambah_akun') ?>" class="btn btn-primary btn-sm">
-                            <i class="fas fa-plus"></i> Tambah Dosen
-                        </a>
-                    </div>
                 </div>
                 
                 <div class="card-body table-responsive p-0">
@@ -141,11 +136,8 @@
                                     </td>
                                   
                                     <td class="text-center">
-                                        <a href="<?= base_url('operator/edit_akun/'.$d['id'].'?source=data_dosen') ?>" class="btn btn-sm btn-warning" title="Edit">
+                                        <a href="<?= base_url('operator/edit_profil_dosen/'.$d['id']) ?>" class="btn btn-sm btn-warning" title="Edit Profil">
                                             <i class="fas fa-edit"></i>
-                                        </a>
-                                        <a href="<?= base_url('operator/hapus_akun/'.$d['id']) ?>" class="btn btn-sm btn-danger" onclick="return confirm('Yakin hapus data dosen ini? Data terkait skripsi mungkin akan error.')" title="Hapus">
-                                            <i class="fas fa-trash"></i>
                                         </a>
                                     </td>
                                 </tr>

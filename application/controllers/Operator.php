@@ -231,15 +231,15 @@ class Operator extends CI_Controller {
 
     public function data_mahasiswa()
     {
-        $data['title'] = 'Data Mahasiswa & Status Skripsi';
+        $data['title'] = 'Data Mahasiswa & Kelengkapan Data';
         $mahasiswa = $this->M_Data->get_all_mahasiswa_lengkap();
         
         // Apply filters if provided
         $f_prodi = $this->input->get('prodi');
-        $f_status = $this->input->get('status');
+        $f_kelengkapan = $this->input->get('kelengkapan');
         $f_keyword = $this->input->get('keyword');
         
-        if ($f_prodi || $f_status || $f_keyword) {
+        if ($f_prodi || $f_kelengkapan || $f_keyword) {
             $filtered_data = [];
             foreach ($mahasiswa as $item) {
                 $match = true;
@@ -249,9 +249,30 @@ class Operator extends CI_Controller {
                     $match = false;
                 }
                 
-                // Filter by skripsi status
-                if ($f_status !== '' && isset($f_status)) {
-                    if ((int)$item['is_skripsi'] != (int)$f_status) {
+                // Filter by data completeness
+                if ($f_kelengkapan !== '' && isset($f_kelengkapan)) {
+                    $lengkap = 0;
+                    $total_checks = 4;
+                    
+                    // Check: Foto
+                    if ($item['foto']) $lengkap++;
+                    
+                    // Check: Telepon
+                    if ($item['telepon']) $lengkap++;
+                    
+                    // Check: Judul
+                    if ($item['judul']) $lengkap++;
+                    
+                    // Check: Pembimbing
+                    if ($item['p1'] && $item['p2']) $lengkap++;
+                    
+                    $persentase = ($lengkap / $total_checks) * 100;
+                    
+                    if ($f_kelengkapan == 'lengkap' && $persentase != 100) {
+                        $match = false;
+                    } elseif ($f_kelengkapan == 'sebagian' && ($persentase < 50 || $persentase == 100)) {
+                        $match = false;
+                    } elseif ($f_kelengkapan == 'belum' && $persentase >= 50) {
                         $match = false;
                     }
                 }
@@ -274,7 +295,7 @@ class Operator extends CI_Controller {
         $data['mahasiswa'] = $mahasiswa;
         $data['total_rows'] = count($mahasiswa);
         $data['f_prodi'] = $f_prodi;
-        $data['f_status'] = $f_status;
+        $data['f_kelengkapan'] = $f_kelengkapan;
         $data['f_keyword'] = $f_keyword;
 
         $this->load->view('template/header', $data);
@@ -1261,5 +1282,190 @@ public function get_detail_kinerja_ajax()
         }
 
         redirect('operator/acc_judul');
+    }
+
+    // --- EDIT PROFIL MAHASISWA (dari data mahasiswa) ---
+    public function edit_profil_mahasiswa($id_mahasiswa = null)
+    {
+        if (!$id_mahasiswa) {
+            $this->session->set_flashdata('pesan_error', 'ID Mahasiswa tidak valid.');
+            redirect('operator/data_mahasiswa');
+        }
+
+        $data['title'] = 'Edit Profil Mahasiswa';
+        $data['user'] = $this->M_Data->get_user_by_id($id_mahasiswa);
+
+        if (!$data['user'] || $data['user']['role'] != 'mahasiswa') {
+            $this->session->set_flashdata('pesan_error', 'Data mahasiswa tidak ditemukan.');
+            redirect('operator/data_mahasiswa');
+        }
+
+        $this->load->view('template/header', $data);
+        $this->load->view('template/sidebar', $data);
+        $this->load->view('operator/v_edit_profil_mahasiswa', $data);
+        $this->load->view('template/footer');
+    }
+
+    public function save_profil_mahasiswa($id_mahasiswa = null)
+    {
+        if (!$id_mahasiswa) {
+            $this->session->set_flashdata('pesan_error', 'ID Mahasiswa tidak valid.');
+            redirect('operator/data_mahasiswa');
+        }
+
+        $this->load->library('upload');
+
+        $this->form_validation->set_rules('nama', 'Nama Lengkap', 'required|trim');
+        $this->form_validation->set_rules('telepon', 'No. Telepon', 'numeric|trim');
+        $this->form_validation->set_rules('email', 'Email', 'valid_email|trim');
+
+        if ($this->form_validation->run() == FALSE) {
+            $this->session->set_flashdata('pesan_error', 'Validasi gagal. Cek kembali isian form Anda.');
+            redirect('operator/edit_profil_mahasiswa/' . $id_mahasiswa);
+        }
+
+        $akun_data = [
+            'nama' => $this->input->post('nama', true),
+        ];
+
+        $detail_data = [
+            'jenis_kelamin'    => $this->input->post('jenis_kelamin', true),
+            'telepon'          => $this->input->post('telepon', true),
+            'email'            => $this->input->post('email', true),
+            'alamat'           => $this->input->post('alamat', true),
+        ];
+
+        // Handle Foto Upload
+        if (!empty($_FILES['foto']['name'])) {
+            $this->upload->initialize(array(), TRUE);
+
+            $config_foto['upload_path']   = './uploads/profile/';
+            $config_foto['allowed_types'] = 'jpg|jpeg|png|webp';
+            $config_foto['max_size']      = 5120;
+            $config_foto['file_name']     = 'profile_' . $id_mahasiswa . '_' . time();
+            $config_foto['overwrite']     = true;
+
+            $this->upload->initialize($config_foto);
+
+            if ($this->upload->do_upload('foto')) {
+                $old_akun = $this->db->get_where('mstr_akun', ['id' => $id_mahasiswa])->row_array();
+                if ($old_akun && !empty($old_akun['foto']) && file_exists(FCPATH . 'uploads/profile/' . $old_akun['foto'])) {
+                    unlink(FCPATH . 'uploads/profile/' . $old_akun['foto']);
+                }
+
+                $new_foto = $this->upload->data('file_name');
+                $akun_data['foto'] = $new_foto;
+            } else {
+                $this->session->set_flashdata('pesan_error', 'Upload Foto Gagal: ' . $this->upload->display_errors('', ''));
+                redirect('operator/edit_profil_mahasiswa/' . $id_mahasiswa);
+                return;
+            }
+        }
+
+        // Update Database
+        $this->db->trans_start();
+
+        $this->db->where('id', $id_mahasiswa);
+        $this->db->update('mstr_akun', $akun_data);
+
+        $this->db->where('id', $id_mahasiswa);
+        $this->db->update('data_mahasiswa', $detail_data);
+
+        $this->db->trans_complete();
+
+        if ($this->db->trans_status() === FALSE) {
+            $this->session->set_flashdata('pesan_error', 'Gagal menyimpan data ke database.');
+        } else {
+            $this->M_Log->record('Edit Profil', 'Operator mengubah profil mahasiswa ID: ' . $id_mahasiswa);
+            $this->session->set_flashdata('pesan_sukses', 'Profil mahasiswa berhasil diperbarui!');
+        }
+
+        redirect('operator/data_mahasiswa');
+    }
+
+    // --- EDIT PROFIL DOSEN (dari data dosen) ---
+    public function edit_profil_dosen($id_dosen = null)
+    {
+        if (!$id_dosen) {
+            $this->session->set_flashdata('pesan_error', 'ID Dosen tidak valid.');
+            redirect('operator/data_dosen');
+        }
+
+        $data['title'] = 'Edit Profil Dosen';
+        $data['user'] = $this->M_Data->get_user_by_id($id_dosen);
+
+        if (!$data['user'] || $data['user']['role'] != 'dosen') {
+            $this->session->set_flashdata('pesan_error', 'Data dosen tidak ditemukan.');
+            redirect('operator/data_dosen');
+        }
+
+        $this->load->view('template/header', $data);
+        $this->load->view('template/sidebar', $data);
+        $this->load->view('operator/v_edit_profil_dosen', $data);
+        $this->load->view('template/footer');
+    }
+
+    public function save_profil_dosen($id_dosen = null)
+    {
+        if (!$id_dosen) {
+            $this->session->set_flashdata('pesan_error', 'ID Dosen tidak valid.');
+            redirect('operator/data_dosen');
+        }
+
+        $this->load->library('upload');
+
+        $this->form_validation->set_rules('nama', 'Nama Lengkap', 'required|trim');
+        $this->form_validation->set_rules('telepon', 'Nomor Telepon', 'numeric|trim');
+
+        if ($this->form_validation->run() == FALSE) {
+            $this->session->set_flashdata('pesan_error', 'Validasi gagal. Cek kembali isian form Anda.');
+            redirect('operator/edit_profil_dosen/' . $id_dosen);
+        }
+
+        $akun_data = [
+            'nama' => $this->input->post('nama', true)
+        ];
+
+        $detail_data = [
+            'telepon' => $this->input->post('telepon', true)
+        ];
+
+        // Handle Foto Upload
+        if (!empty($_FILES['foto']['name'])) {
+            $this->upload->initialize(array(), TRUE);
+
+            $config_foto['upload_path']   = './uploads/profile/';
+            $config_foto['allowed_types'] = 'jpg|jpeg|png|webp';
+            $config_foto['max_size']      = 5120;
+            $config_foto['file_name']     = 'dosen_profile_' . $id_dosen . '_' . time();
+            $config_foto['overwrite']     = true;
+
+            if (!is_dir($config_foto['upload_path'])) mkdir($config_foto['upload_path'], 0777, true);
+
+            $this->upload->initialize($config_foto);
+
+            if ($this->upload->do_upload('foto')) {
+                $old_data = $this->db->get_where('mstr_akun', ['id' => $id_dosen])->row_array();
+                if ($old_data && !empty($old_data['foto']) && file_exists(FCPATH . 'uploads/profile/' . $old_data['foto'])) {
+                    unlink(FCPATH . 'uploads/profile/' . $old_data['foto']);
+                }
+
+                $akun_data['foto'] = $this->upload->data('file_name');
+            } else {
+                $this->session->set_flashdata('pesan_error', 'Upload Foto Gagal: ' . $this->upload->display_errors('', ''));
+                redirect('operator/edit_profil_dosen/' . $id_dosen);
+                return;
+            }
+        }
+
+        // Update Database
+        if ($this->M_Data->update_user($id_dosen, $akun_data, 'dosen', $detail_data)) {
+            $this->M_Log->record('Edit Profil', 'Operator mengubah profil dosen ID: ' . $id_dosen);
+            $this->session->set_flashdata('pesan_sukses', 'Profil dosen berhasil diperbarui!');
+        } else {
+            $this->session->set_flashdata('pesan_error', 'Gagal menyimpan data ke database.');
+        }
+
+        redirect('operator/data_dosen');
     }
 }
