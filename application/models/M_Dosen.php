@@ -402,7 +402,94 @@ public function get_bimbingan_list($id_dosen, $keyword = null, $prodi = null, $a
         return $semesters;
     }
 
-  
+    // --- PAGINATION FOR BIMBINGAN LIST ---
+    
+    public function count_bimbingan_list($id_dosen, $keyword = null, $prodi = null, $angkatan = null)
+    {
+        $this->db->select('s.id as id_skripsi');
+        $this->db->from('skripsi s');
+        $this->db->join('data_mahasiswa m', 's.id_mahasiswa = m.id');
+        $this->db->join('mstr_akun ma', 'm.id = ma.id');
+        
+        // Filter Dosen
+        $this->db->group_start();
+        $this->db->where('s.pembimbing1', $id_dosen);
+        $this->db->or_where('s.pembimbing2', $id_dosen);
+        $this->db->group_end();
+
+        if ($keyword && $keyword != '') {
+            $this->db->group_start();
+            $this->db->like('ma.nama', $keyword);
+            $this->db->or_like('m.npm', $keyword);
+            $this->db->or_like('s.judul', $keyword);
+            $this->db->group_end();
+        }
+        if ($prodi && $prodi != 'all') {
+            $this->db->where('m.prodi', $prodi);
+        }
+        if ($angkatan && $angkatan != 'all') {
+            $this->db->where('m.angkatan', $angkatan);
+        }
+
+        return $this->db->count_all_results();
+    }
+
+    public function get_bimbingan_list_paginated($id_dosen, $keyword = null, $prodi = null, $angkatan = null, $sort_by = 'nama_mhs', $sort_order = 'asc', $limit = null, $offset = null)
+    {
+        $this->db->select('
+            s.id as id_skripsi, 
+            s.judul, 
+            m.npm, 
+            ma.nama as nama_mhs, 
+            m.prodi,      
+            m.angkatan,   
+            p1.nama as nama_p1,
+            p2.nama as nama_p2
+        ');
+        
+        $this->db->from('skripsi s');
+        $this->db->join('data_mahasiswa m', 's.id_mahasiswa = m.id');
+        $this->db->join('mstr_akun ma', 'm.id = ma.id');
+        $this->db->join('mstr_akun p1', 's.pembimbing1 = p1.id', 'left');
+        $this->db->join('mstr_akun p2', 's.pembimbing2 = p2.id', 'left');
+        
+        // Filter Dosen
+        $this->db->group_start();
+        $this->db->where('s.pembimbing1', $id_dosen);
+        $this->db->or_where('s.pembimbing2', $id_dosen);
+        $this->db->group_end();
+
+        if ($keyword && $keyword != '') {
+            $this->db->group_start();
+            $this->db->like('ma.nama', $keyword);
+            $this->db->or_like('m.npm', $keyword);
+            $this->db->or_like('s.judul', $keyword);
+            $this->db->group_end();
+        }
+        if ($prodi && $prodi != 'all') {
+            $this->db->where('m.prodi', $prodi);
+        }
+        if ($angkatan && $angkatan != 'all') {
+            $this->db->where('m.angkatan', $angkatan);
+        }
+
+        // Sorting
+        if ($sort_by == 'nama_mhs') {
+            $this->db->order_by('ma.nama', $sort_order);
+        } elseif ($sort_by == 'npm') {
+            $this->db->order_by('m.npm', $sort_order);
+        } elseif ($sort_by == 'angkatan') {
+            $this->db->order_by('m.angkatan', $sort_order);
+        } else {
+            $this->db->order_by('ma.nama', 'ASC');
+        }
+
+        if ($limit) {
+            $this->db->limit($limit, $offset);
+        }
+
+        return $this->db->get()->result_array();
+    }
 
 }
 

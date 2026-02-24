@@ -73,7 +73,7 @@
                             </thead>
                             <tbody>
                                 <?php if (!empty($mahasiswa)): ?>
-                                    <?php $no = 1; foreach ($mahasiswa as $mhs): ?>
+                                    <?php $no = isset($start_index) ? $start_index + 1 : 1; foreach ($mahasiswa as $mhs): ?>
                                         <tr>
                                             <td class="text-center align-middle">
                                                 <?php echo $no++; ?>
@@ -126,6 +126,19 @@
                                 <?php endif; ?>
                             </tbody>
                         </table>
+                    </div>
+                    
+                    <div class="card-footer py-2 bg-white">
+                        <div class="row align-items-center">
+                            <div class="col-sm-6 text-muted small">
+                                Total Data: <b><?php echo isset($total_rows) ? $total_rows : 0; ?></b>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="float-right">
+                                    <?php echo isset($pagination) ? $pagination : ''; ?>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

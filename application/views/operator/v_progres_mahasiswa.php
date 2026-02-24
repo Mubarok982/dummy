@@ -88,7 +88,7 @@
                         </thead>
                         <tbody>
                             <?php if (!empty($list_revisi)): ?>
-                                <?php $no = 1; foreach ($list_revisi as $revisi): ?>
+                                <?php $no = $start_index + 1; foreach ($list_revisi as $revisi): ?>
                                     <tr>
                                         <td><?php echo $no++; ?></td>
                                         <td><?php echo $revisi['npm']; ?></td>
@@ -127,6 +127,18 @@
                             <?php endif; ?>
                         </tbody>
                     </table>
+                </div>
+                <div class="card-footer py-2 bg-white">
+                    <div class="row align-items-center">
+                        <div class="col-sm-6 text-muted small">
+                            Total Data: <b><?php echo $total_rows; ?></b>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="float-right">
+                                <?php echo $pagination; ?>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

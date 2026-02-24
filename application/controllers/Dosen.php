@@ -29,6 +29,8 @@ class Dosen extends CI_Controller
     {
         $id_dosen = $this->session->userdata('id');
         $data['title'] = 'Daftar Mahasiswa Bimbingan';
+        $this->load->library('pagination');
+        $this->load->helper('pagination_custom');
 
         $keyword = $this->input->get('keyword');
         $prodi = $this->input->get('prodi');
@@ -42,7 +44,7 @@ class Dosen extends CI_Controller
         $data['sort_by'] = $sort_by;
         $data['sort_order'] = $sort_order;
 
-        $data['bimbingan'] = $this->M_Dosen->get_bimbingan_list(
+        $all_data = $this->M_Dosen->get_bimbingan_list(
             $id_dosen, 
             $keyword, 
             $prodi, 
@@ -50,6 +52,26 @@ class Dosen extends CI_Controller
             $sort_by, 
             $sort_order
         );
+
+        $total_rows = count($all_data);
+
+        $config['base_url'] = base_url('dosen/bimbingan_list');
+        $config['total_rows'] = $total_rows;
+        $config['per_page'] = 15;
+        $config['reuse_query_string'] = TRUE;
+        $config['page_query_string'] = TRUE;
+        $config['query_string_segment'] = 'page';
+
+        config_pagination($config);
+        $this->pagination->initialize($config);
+
+        $page = $this->input->get('page') ? $this->input->get('page') : 0;
+        
+        $data['bimbingan'] = array_slice($all_data, $page, $config['per_page']);
+
+        $data['pagination'] = $this->pagination->create_links();
+        $data['total_rows'] = $total_rows;
+        $data['start_index'] = $page;
 
         $data['list_prodi'] = $this->M_Dosen->get_list_prodi();
         $data['list_angkatan'] = $this->M_Dosen->get_list_angkatan();

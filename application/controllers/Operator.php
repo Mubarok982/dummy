@@ -232,68 +232,33 @@ class Operator extends CI_Controller {
     public function data_mahasiswa()
     {
         $data['title'] = 'Data Mahasiswa & Kelengkapan Data';
-        $mahasiswa = $this->M_Data->get_all_mahasiswa_lengkap();
         
-        // Apply filters if provided
+        // Get filter parameters
         $f_prodi = $this->input->get('prodi');
         $f_kelengkapan = $this->input->get('kelengkapan');
         $f_keyword = $this->input->get('keyword');
         
-        if ($f_prodi || $f_kelengkapan || $f_keyword) {
-            $filtered_data = [];
-            foreach ($mahasiswa as $item) {
-                $match = true;
-                
-                // Filter by prodi
-                if ($f_prodi && $item['prodi'] != $f_prodi) {
-                    $match = false;
-                }
-                
-                // Filter by data completeness
-                if ($f_kelengkapan !== '' && isset($f_kelengkapan)) {
-                    $lengkap = 0;
-                    $total_checks = 4;
-                    
-                    // Check: Foto
-                    if ($item['foto']) $lengkap++;
-                    
-                    // Check: Telepon
-                    if ($item['telepon']) $lengkap++;
-                    
-                    // Check: Judul
-                    if ($item['judul']) $lengkap++;
-                    
-                    // Check: Pembimbing
-                    if ($item['p1'] && $item['p2']) $lengkap++;
-                    
-                    $persentase = ($lengkap / $total_checks) * 100;
-                    
-                    if ($f_kelengkapan == 'lengkap' && $persentase != 100) {
-                        $match = false;
-                    } elseif ($f_kelengkapan == 'sebagian' && ($persentase < 50 || $persentase == 100)) {
-                        $match = false;
-                    } elseif ($f_kelengkapan == 'belum' && $persentase >= 50) {
-                        $match = false;
-                    }
-                }
-                
-                // Filter by keyword (nama/npm)
-                if ($f_keyword) {
-                    $search_text = strtolower($item['nama'] . ' ' . $item['npm']);
-                    if (strpos($search_text, strtolower($f_keyword)) === false) {
-                        $match = false;
-                    }
-                }
-                
-                if ($match) {
-                    $filtered_data[] = $item;
-                }
-            }
-            $mahasiswa = $filtered_data;
-        }
+        // Pagination
+        $this->load->library('pagination');
+        $config['base_url'] = base_url('operator/data_mahasiswa');
+        $config['total_rows'] = $this->M_Data->count_mahasiswa_lengkap($f_prodi, $f_kelengkapan, $f_keyword);
+        $config['per_page'] = 15;
+        $config['reuse_query_string'] = TRUE;
+        $config['page_query_string'] = TRUE;
+        $config['query_string_segment'] = 'page';
+
+        config_pagination($config);
+        $this->pagination->initialize($config);
+
+        $page = $this->input->get('page') ? $this->input->get('page') : 0;
         
-        $data['mahasiswa'] = $mahasiswa;
-        $data['total_rows'] = count($mahasiswa);
+        // Get paginated data
+        $data['mahasiswa'] = $this->M_Data->get_mahasiswa_lengkap_paginated($f_prodi, $f_kelengkapan, $f_keyword, $config['per_page'], $page);
+        
+        $data['pagination'] = $this->pagination->create_links();
+        $data['total_rows'] = $config['total_rows'];
+        $data['start_index'] = $page;
+        
         $data['f_prodi'] = $f_prodi;
         $data['f_kelengkapan'] = $f_kelengkapan;
         $data['f_keyword'] = $f_keyword;
@@ -307,6 +272,7 @@ class Operator extends CI_Controller {
     public function mahasiswa_siap_sempro()
     {
         $data['title'] = 'Mahasiswa Siap Sempro';
+        $this->load->library('pagination');
         $is_kaprodi = $this->session->userdata('is_kaprodi');
         $kaprodi_prodi = $is_kaprodi ? $this->session->userdata('prodi') : null;
 
@@ -370,7 +336,29 @@ class Operator extends CI_Controller {
             }
         });
 
-        $data['mahasiswa'] = $filtered_data;
+        // Calculate total rows after filtering
+        $total_rows = count($filtered_data);
+
+        // Pagination
+        $config['base_url'] = base_url('operator/mahasiswa_siap_sempro');
+        $config['total_rows'] = $total_rows;
+        $config['per_page'] = 15;
+        $config['reuse_query_string'] = TRUE;
+        $config['page_query_string'] = TRUE;
+        $config['query_string_segment'] = 'page';
+
+        config_pagination($config);
+        $this->pagination->initialize($config);
+
+        $page = $this->input->get('page') ? $this->input->get('page') : 0;
+        
+        // Slice data for pagination
+        $data['mahasiswa'] = array_slice($filtered_data, $page, $config['per_page']);
+
+        $data['pagination'] = $this->pagination->create_links();
+        $data['total_rows'] = $total_rows;
+        $data['start_index'] = $page;
+
         $data['keyword'] = $keyword;
         $data['prodi'] = $prodi;
         $data['angkatan'] = $angkatan;
@@ -392,6 +380,7 @@ class Operator extends CI_Controller {
     public function mahasiswa_siap_pendadaran()
     {
         $data['title'] = 'Mahasiswa Siap Pendadaran';
+        $this->load->library('pagination');
         $is_kaprodi = $this->session->userdata('is_kaprodi');
         $kaprodi_prodi = $is_kaprodi ? $this->session->userdata('prodi') : null;
 
@@ -448,7 +437,29 @@ class Operator extends CI_Controller {
             }
         });
 
-        $data['mahasiswa'] = $filtered_data;
+        // Calculate total rows after filtering
+        $total_rows = count($filtered_data);
+
+        // Pagination
+        $config['base_url'] = base_url('operator/mahasiswa_siap_pendadaran');
+        $config['total_rows'] = $total_rows;
+        $config['per_page'] = 15;
+        $config['reuse_query_string'] = TRUE;
+        $config['page_query_string'] = TRUE;
+        $config['query_string_segment'] = 'page';
+
+        config_pagination($config);
+        $this->pagination->initialize($config);
+
+        $page = $this->input->get('page') ? $this->input->get('page') : 0;
+        
+        // Slice data for pagination
+        $data['mahasiswa'] = array_slice($filtered_data, $page, $config['per_page']);
+
+        $data['pagination'] = $this->pagination->create_links();
+        $data['total_rows'] = $total_rows;
+        $data['start_index'] = $page;
+
         $data['keyword'] = $keyword;
         $data['prodi'] = $prodi;
         $data['angkatan'] = $angkatan;
@@ -470,6 +481,8 @@ class Operator extends CI_Controller {
     public function list_revisi()
     {
         $data['title'] = 'Progres Mahasiswa';
+        $this->load->library('pagination');
+        
         $is_kaprodi = $this->session->userdata('is_kaprodi');
         $kaprodi_prodi = $is_kaprodi ? $this->session->userdata('prodi') : null;
 
@@ -526,7 +539,29 @@ class Operator extends CI_Controller {
             }
         });
 
-        $data['list_revisi'] = $filtered_data;
+        // Calculate total rows after filtering
+        $total_rows = count($filtered_data);
+
+        // Pagination
+        $config['base_url'] = base_url('operator/list_revisi');
+        $config['total_rows'] = $total_rows;
+        $config['per_page'] = 15;
+        $config['reuse_query_string'] = TRUE;
+        $config['page_query_string'] = TRUE;
+        $config['query_string_segment'] = 'page';
+
+        config_pagination($config);
+        $this->pagination->initialize($config);
+
+        $page = $this->input->get('page') ? $this->input->get('page') : 0;
+        
+        // Slice data for pagination
+        $data['list_revisi'] = array_slice($filtered_data, $page, $config['per_page']);
+
+        $data['pagination'] = $this->pagination->create_links();
+        $data['total_rows'] = $total_rows;
+        $data['start_index'] = $page;
+
         $data['keyword'] = $keyword;
         $data['prodi'] = $prodi;
         $data['angkatan'] = $angkatan;
@@ -586,62 +621,32 @@ class Operator extends CI_Controller {
         $keyword = $this->input->get('keyword');
         $status = $this->input->get('status');
         $prodi = $is_kaprodi ? $kaprodi_prodi : $this->input->get('prodi');
-        $sort_by = $this->input->get('sort_by') ?: 'nama';
-        $sort_order = $this->input->get('sort_order') ?: 'asc';
 
-        // Get all data first
-        $all_data = $this->M_Data->get_all_mahasiswa_lengkap();
+        // Pagination
+        $this->load->library('pagination');
+        $config['base_url'] = base_url('operator/acc_judul');
+        $config['total_rows'] = $this->M_Data->count_acc_judul($keyword, $status, $prodi);
+        $config['per_page'] = 15;
+        $config['reuse_query_string'] = TRUE;
+        $config['page_query_string'] = TRUE;
+        $config['query_string_segment'] = 'page';
 
-        // Apply filters
-        $filtered_data = [];
-        foreach ($all_data as $item) {
-            $match = true;
+        config_pagination($config);
+        $this->pagination->initialize($config);
 
-            // Keyword search (nama, npm, judul)
-            if ($keyword) {
-                $search_text = strtolower($item['nama'] . ' ' . $item['npm'] . ' ' . ($item['judul'] ?? ''));
-                if (strpos($search_text, strtolower($keyword)) === false) {
-                    $match = false;
-                }
-            }
+        $page = $this->input->get('page') ? $this->input->get('page') : 0;
+        
+        // Get paginated data
+        $data['mahasiswa'] = $this->M_Data->get_acc_judul_paginated($keyword, $status, $prodi, $config['per_page'], $page);
+        
+        $data['pagination'] = $this->pagination->create_links();
+        $data['total_rows'] = $config['total_rows'];
+        $data['start_index'] = $page;
 
-            // Status filter
-            if ($status && $status != 'all') {
-                if (($item['status_acc_kaprodi'] ?? 'menunggu') != $status) {
-                    $match = false;
-                }
-            }
-
-            // Prodi filter
-            if ($prodi && $prodi != 'all') {
-                if (($item['prodi'] ?? '') != $prodi) {
-                    $match = false;
-                }
-            }
-
-            if ($match) {
-                $filtered_data[] = $item;
-            }
-        }
-
-        // Apply sorting
-        usort($filtered_data, function($a, $b) use ($sort_by, $sort_order) {
-            $val_a = strtolower($a[$sort_by] ?? '');
-            $val_b = strtolower($b[$sort_by] ?? '');
-            if ($sort_order == 'desc') {
-                return $val_b <=> $val_a;
-            } else {
-                return $val_a <=> $val_b;
-            }
-        });
-
-        $data['mahasiswa'] = $filtered_data;
         $data['dosen_list'] = $is_kaprodi ? $this->M_laporan_opt->get_dosen_pembimbing_list(null, null, null, $kaprodi_prodi) : $this->M_Data->get_dosen_pembimbing_list();
         $data['keyword'] = $keyword;
         $data['status'] = $status;
         $data['prodi'] = $prodi;
-        $data['sort_by'] = $sort_by;
-        $data['sort_order'] = $sort_order;
         $data['is_kaprodi'] = $is_kaprodi;
         $data['kaprodi_prodi'] = $kaprodi_prodi;
 
@@ -1055,6 +1060,7 @@ public function get_detail_kinerja_ajax()
     public function cek_plagiarisme_list()
     {
         $data['title'] = 'Cek Plagiarisme';
+        $this->load->library('pagination');
 
         // Get filter parameters
         $keyword = $this->input->get('keyword');
@@ -1105,7 +1111,29 @@ public function get_detail_kinerja_ajax()
             }
         });
 
-        $data['list_plagiasi'] = $filtered_data;
+        // Calculate total rows after filtering
+        $total_rows = count($filtered_data);
+
+        // Pagination
+        $config['base_url'] = base_url('operator/cek_plagiarisme_list');
+        $config['total_rows'] = $total_rows;
+        $config['per_page'] = 15;
+        $config['reuse_query_string'] = TRUE;
+        $config['page_query_string'] = TRUE;
+        $config['query_string_segment'] = 'page';
+
+        config_pagination($config);
+        $this->pagination->initialize($config);
+
+        $page = $this->input->get('page') ? $this->input->get('page') : 0;
+        
+        // Slice data for pagination
+        $data['list_plagiasi'] = array_slice($filtered_data, $page, $config['per_page']);
+
+        $data['pagination'] = $this->pagination->create_links();
+        $data['total_rows'] = $total_rows;
+        $data['start_index'] = $page;
+
         $data['keyword'] = $keyword;
         $data['status'] = $status;
         $data['prodi'] = $prodi;

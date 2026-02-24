@@ -784,5 +784,645 @@ class M_Data extends CI_Model
         return $this->db->get()->result_array();
     }
 
+    // --- COUNT FUNCTIONS FOR PAGINATION ---
+
+    // Count untuk Data Mahasiswa Lengkap
+    public function count_mahasiswa_lengkap($f_prodi = null, $f_kelengkapan = null, $f_keyword = null)
+    {
+        $this->db->select('
+            a.id AS id_user, 
+            a.nama, 
+            a.foto, 
+            a.username, 
+            m.npm, 
+            m.prodi, 
+            m.angkatan, 
+            m.is_skripsi, 
+            m.telepon,
+            s.id AS id_skripsi,
+            s.judul,
+            s.status_acc_kaprodi,
+            p1.nama AS p1,
+            p2.nama AS p2
+        ');
+        
+        $this->db->from('mstr_akun a');
+        $this->db->join('data_mahasiswa m', 'a.id = m.id');
+        $this->db->join('skripsi s', 'm.id = s.id_mahasiswa', 'left');
+        $this->db->join('mstr_akun p1', 's.pembimbing1 = p1.id', 'left');
+        $this->db->join('mstr_akun p2', 's.pembimbing2 = p2.id', 'left');
+        $this->db->where('a.role', 'mahasiswa');
+
+        // Apply filters if provided
+        if ($f_prodi && $f_prodi != '') {
+            $this->db->where('m.prodi', $f_prodi);
+        }
+
+        if ($f_keyword && $f_keyword != '') {
+            $this->db->group_start();
+            $this->db->like('a.nama', $f_keyword);
+            $this->db->or_like('m.npm', $f_keyword);
+            $this->db->group_end();
+        }
+
+        return $this->db->count_all_results();
+    }
+
+    // Get Data Mahasiswa Lengkap dengan Limit & Offset
+    public function get_mahasiswa_lengkap_paginated($f_prodi = null, $f_kelengkapan = null, $f_keyword = null, $limit = null, $offset = null)
+    {
+        $this->db->select('
+            a.id AS id_user, 
+            a.nama, 
+            a.foto, 
+            a.username, 
+            m.npm, 
+            m.prodi, 
+            m.angkatan, 
+            m.is_skripsi, 
+            m.telepon,
+            s.id AS id_skripsi,
+            s.judul,
+            s.status_acc_kaprodi,
+            p1.nama AS p1,
+            p2.nama AS p2
+        ');
+        
+        $this->db->from('mstr_akun a');
+        $this->db->join('data_mahasiswa m', 'a.id = m.id');
+        $this->db->join('skripsi s', 'm.id = s.id_mahasiswa', 'left');
+        $this->db->join('mstr_akun p1', 's.pembimbing1 = p1.id', 'left');
+        $this->db->join('mstr_akun p2', 's.pembimbing2 = p2.id', 'left');
+        $this->db->where('a.role', 'mahasiswa');
+
+        // Apply filters if provided
+        if ($f_prodi && $f_prodi != '') {
+            $this->db->where('m.prodi', $f_prodi);
+        }
+
+        if ($f_keyword && $f_keyword != '') {
+            $this->db->group_start();
+            $this->db->like('a.nama', $f_keyword);
+            $this->db->or_like('m.npm', $f_keyword);
+            $this->db->group_end();
+        }
+
+        $this->db->order_by('m.angkatan', 'DESC');
+        $this->db->order_by('a.nama', 'ASC');
+
+        if ($limit) {
+            $this->db->limit($limit, $offset);
+        }
+        
+        return $this->db->get()->result_array();
+    }
+
+    // Count untuk ACC Judul
+    public function count_acc_judul($keyword = null, $status = null, $prodi = null)
+    {
+        $this->db->select('
+            a.id AS id_user, 
+            a.nama, 
+            m.npm, 
+            m.prodi, 
+            m.angkatan,
+            s.id AS id_skripsi,
+            s.judul,
+            s.status_acc_kaprodi,
+            p1.nama AS p1,
+            p2.nama AS p2
+        ');
+        
+        $this->db->from('mstr_akun a');
+        $this->db->join('data_mahasiswa m', 'a.id = m.id');
+        $this->db->join('skripsi s', 'm.id = s.id_mahasiswa', 'left');
+        $this->db->join('mstr_akun p1', 's.pembimbing1 = p1.id', 'left');
+        $this->db->join('mstr_akun p2', 's.pembimbing2 = p2.id', 'left');
+        $this->db->where('a.role', 'mahasiswa');
+
+        if ($keyword && $keyword != '') {
+            $this->db->group_start();
+            $this->db->like('a.nama', $keyword);
+            $this->db->or_like('m.npm', $keyword);
+            $this->db->or_like('s.judul', $keyword);
+            $this->db->group_end();
+        }
+
+        if ($status && $status != 'all') {
+            $this->db->where('s.status_acc_kaprodi', $status);
+        }
+
+        if ($prodi && $prodi != 'all') {
+            $this->db->where('m.prodi', $prodi);
+        }
+
+        return $this->db->count_all_results();
+    }
+
+    // Get ACC Judul dengan Limit & Offset
+    public function get_acc_judul_paginated($keyword = null, $status = null, $prodi = null, $limit = null, $offset = null)
+    {
+        $this->db->select('
+            a.id AS id_user, 
+            a.nama, 
+            m.npm, 
+            m.prodi, 
+            m.angkatan,
+            s.id AS id_skripsi,
+            s.judul,
+            s.status_acc_kaprodi,
+            p1.nama AS p1,
+            p2.nama AS p2
+        ');
+        
+        $this->db->from('mstr_akun a');
+        $this->db->join('data_mahasiswa m', 'a.id = m.id');
+        $this->db->join('skripsi s', 'm.id = s.id_mahasiswa', 'left');
+        $this->db->join('mstr_akun p1', 's.pembimbing1 = p1.id', 'left');
+        $this->db->join('mstr_akun p2', 's.pembimbing2 = p2.id', 'left');
+        $this->db->where('a.role', 'mahasiswa');
+
+        if ($keyword && $keyword != '') {
+            $this->db->group_start();
+            $this->db->like('a.nama', $keyword);
+            $this->db->or_like('m.npm', $keyword);
+            $this->db->or_like('s.judul', $keyword);
+            $this->db->group_end();
+        }
+
+        if ($status && $status != 'all') {
+            $this->db->where('s.status_acc_kaprodi', $status);
+        }
+
+        if ($prodi && $prodi != 'all') {
+            $this->db->where('m.prodi', $prodi);
+        }
+
+        $this->db->order_by('a.nama', 'ASC');
+
+        if ($limit) {
+            $this->db->limit($limit, $offset);
+        }
+        
+        return $this->db->get()->result_array();
+    }
+
+    // Count untuk Plagiarisme
+    public function count_plagiarisme($keyword = null, $status = null)
+    {
+        $this->db->select('
+            p.id, 
+            p.bab, 
+            p.file as progres_file, 
+            p.tgl_upload, 
+            p.tgl_verifikasi,
+            p.status_plagiasi, 
+            p.persentase_kemiripan,
+            a.nama, 
+            m.npm, 
+            s.judul
+        ');
+        
+        $this->db->from('progres_skripsi p');
+        $this->db->join('data_mahasiswa m', 'p.npm = m.npm');
+        $this->db->join('mstr_akun a', 'm.id = a.id');
+        $this->db->join('skripsi s', 's.id_mahasiswa = m.id', 'left');
+        
+        // HANYA BAB 1 
+        $this->db->where('p.bab', 1);
+
+        if ($keyword && $keyword != '') {
+            $this->db->group_start();
+            $this->db->like('a.nama', $keyword);
+            $this->db->or_like('m.npm', $keyword);
+            $this->db->group_end();
+        }
+
+        if ($status && $status != 'all') {
+            $this->db->where('p.status_plagiasi', $status);
+        }
+
+        return $this->db->count_all_results();
+    }
+
+    // Get Plagiarisme dengan Limit & Offset
+    public function get_plagiarisme_paginated($keyword = null, $status = null, $limit = null, $offset = null)
+    {
+        $this->db->select('
+            p.id, 
+            p.bab, 
+            p.file as progres_file, 
+            p.tgl_upload, 
+            p.tgl_verifikasi,
+            p.status_plagiasi, 
+            p.persentase_kemiripan,
+            a.nama, 
+            m.npm, 
+            s.judul
+        ');
+        
+        $this->db->from('progres_skripsi p');
+        $this->db->join('data_mahasiswa m', 'p.npm = m.npm');
+        $this->db->join('mstr_akun a', 'm.id = a.id');
+        $this->db->join('skripsi s', 's.id_mahasiswa = m.id', 'left');
+        
+        // HANYA BAB 1 
+        $this->db->where('p.bab', 1);
+
+        if ($keyword && $keyword != '') {
+            $this->db->group_start();
+            $this->db->like('a.nama', $keyword);
+            $this->db->or_like('m.npm', $keyword);
+            $this->db->group_end();
+        }
+
+        if ($status && $status != 'all') {
+            $this->db->where('p.status_plagiasi', $status);
+        }
+
+        $this->db->order_by("CASE WHEN p.status_plagiasi = 'Menunggu' THEN 0 ELSE 1 END", "ASC");
+        $this->db->order_by('p.tgl_upload', 'DESC');
+
+        if ($limit) {
+            $this->db->limit($limit, $offset);
+        }
+        
+        return $this->db->get()->result_array();
+    }
+
+    // Count untuk Mahasiswa Siap Sempro
+    public function count_siap_sempro($keyword = null, $prodi = null, $angkatan = null)
+    {
+        // Pertama dapatkan ID yang memenuhi syarat
+        $sql = "SELECT DISTINCT m.id AS id_mahasiswa, s.id AS id_skripsi, m.prodi
+                FROM progres_skripsi p
+                JOIN data_mahasiswa m ON p.npm = m.npm
+                JOIN skripsi s ON s.id_mahasiswa = m.id
+                WHERE p.bab = 3 AND p.progres_dosen1 = 100 AND p.progres_dosen2 = 100";
+        
+        $rows = $this->db->query($sql)->result_array();
+
+        if (empty($rows)) {
+            return 0;
+        }
+
+        // Build IDs
+        $ids = array_column($rows, 'id_skripsi');
+        
+        // Sekarang ambil dari tabel ujian_skripsi
+        $this->db->select('
+            a.nama, a.foto,
+            m.npm, m.prodi, m.angkatan,
+            s.judul,
+            d1.nama as nama_p1,
+            d2.nama as nama_p2,
+            u.tanggal_daftar as tgl_daftar_sempro,
+            u.status as status_sempro
+        ');
+
+        $this->db->from('ujian_skripsi u');
+        $this->db->join('skripsi s', 'u.id_skripsi = s.id');
+        $this->db->join('data_mahasiswa m', 's.id_mahasiswa = m.id');
+        $this->db->join('mstr_akun a', 'm.id = a.id');
+        $this->db->join('mstr_akun d1', 's.pembimbing1 = d1.id', 'left');
+        $this->db->join('mstr_akun d2', 's.pembimbing2 = d2.id', 'left');
+
+        $this->db->where_in('u.id_jenis_ujian_skripsi', [1, 5]);
+        $this->db->where_in('u.status', ['Berlangsung', 'Diterima']);
+        
+        // Filter by IDs from first query
+        if (!empty($ids)) {
+            $this->db->where_in('s.id', $ids);
+        }
+
+        if ($keyword && $keyword != '') {
+            $this->db->group_start();
+            $this->db->like('a.nama', $keyword);
+            $this->db->or_like('m.npm', $keyword);
+            $this->db->or_like('s.judul', $keyword);
+            $this->db->group_end();
+        }
+
+        if ($prodi && $prodi != 'all') {
+            $this->db->where('m.prodi', $prodi);
+        }
+
+        if ($angkatan && $angkatan != 'all') {
+            $this->db->where('m.angkatan', $angkatan);
+        }
+
+        return $this->db->count_all_results();
+    }
+
+    // Get Mahasiswa Siap Sempro dengan Limit & Offset
+    public function get_siap_sempro_paginated($keyword = null, $prodi = null, $angkatan = null, $limit = null, $offset = null)
+    {
+        // Pertama dapatkan ID yang memenuhi syarat
+        $sql = "SELECT DISTINCT m.id AS id_mahasiswa, s.id AS id_skripsi, m.prodi
+                FROM progres_skripsi p
+                JOIN data_mahasiswa m ON p.npm = m.npm
+                JOIN skripsi s ON s.id_mahasiswa = m.id
+                WHERE p.bab = 3 AND p.progres_dosen1 = 100 AND p.progres_dosen2 = 100";
+        
+        $rows = $this->db->query($sql)->result_array();
+
+        if (empty($rows)) {
+            return array();
+        }
+
+        $ids = array_column($rows, 'id_skripsi');
+
+        $this->db->select('
+            a.nama, a.foto,
+            m.npm, m.prodi, m.angkatan,
+            s.judul,
+            d1.nama as nama_p1,
+            d2.nama as nama_p2,
+            u.tanggal_daftar as tgl_daftar_sempro,
+            u.status as status_sempro
+        ');
+
+        $this->db->from('ujian_skripsi u');
+        $this->db->join('skripsi s', 'u.id_skripsi = s.id');
+        $this->db->join('data_mahasiswa m', 's.id_mahasiswa = m.id');
+        $this->db->join('mstr_akun a', 'm.id = a.id');
+        $this->db->join('mstr_akun d1', 's.pembimbing1 = d1.id', 'left');
+        $this->db->join('mstr_akun d2', 's.pembimbing2 = d2.id', 'left');
+
+        $this->db->where_in('u.id_jenis_ujian_skripsi', [1, 5]);
+        $this->db->where_in('u.status', ['Berlangsung', 'Diterima']);
+        
+        if (!empty($ids)) {
+            $this->db->where_in('s.id', $ids);
+        }
+
+        if ($keyword && $keyword != '') {
+            $this->db->group_start();
+            $this->db->like('a.nama', $keyword);
+            $this->db->or_like('m.npm', $keyword);
+            $this->db->or_like('s.judul', $keyword);
+            $this->db->group_end();
+        }
+
+        if ($prodi && $prodi != 'all') {
+            $this->db->where('m.prodi', $prodi);
+        }
+
+        if ($angkatan && $angkatan != 'all') {
+            $this->db->where('m.angkatan', $angkatan);
+        }
+
+        $this->db->order_by('u.tanggal_daftar', 'DESC');
+
+        if ($limit) {
+            $this->db->limit($limit, $offset);
+        }
+        
+        return $this->db->get()->result_array();
+    }
+
+    // Count untuk Mahasiswa Siap Pendadaran
+    public function count_siap_pendadaran($keyword = null, $prodi = null, $angkatan = null)
+    {
+        // Get max bab per prodi
+        $sql_last = "SELECT m.id AS id_mahasiswa, s.id AS id_skripsi, m.prodi, p.bab, p.tgl_upload
+                     FROM (
+                        SELECT npm, MAX(CONCAT(LPAD(bab,3,'0'), '::', tgl_upload)) as last_key
+                        FROM progres_skripsi
+                        GROUP BY npm
+                     ) as last
+                     JOIN progres_skripsi p ON CONCAT(LPAD(p.bab,3,'0'), '::', p.tgl_upload) = last.last_key
+                     JOIN data_mahasiswa m ON p.npm = m.npm
+                     JOIN skripsi s ON s.id_mahasiswa = m.id";
+
+        $rows = $this->db->query($sql_last)->result_array();
+
+        if (empty($rows)) {
+            return 0;
+        }
+
+        // Filter rows
+        $valid_ids = array();
+        foreach ($rows as $r) {
+            $prodi_row = $r['prodi'] ?? '';
+            $max_bab = 6;
+            if (stripos($prodi_row, 'D3') !== false || stripos($prodi_row, 'Diploma 3') !== false) {
+                $max_bab = 5;
+            }
+
+            $npm_row = $this->db->select('npm')->from('data_mahasiswa')->where('id', $r['id_mahasiswa'])->get()->row_array();
+            if (!$npm_row) continue;
+            $npm = $npm_row['npm'];
+
+            $this->db->order_by('bab', 'DESC');
+            $this->db->order_by('tgl_upload', 'DESC');
+            $last_progres = $this->db->get_where('progres_skripsi', ['npm' => $npm])->row_array();
+
+            if (!$last_progres) continue;
+
+            if ((int)$last_progres['progres_dosen1'] === 100 && (int)$last_progres['progres_dosen2'] === 100 && (int)$last_progres['bab'] >= $max_bab) {
+                $valid_ids[] = $r['id_skripsi'];
+            }
+        }
+
+        if (empty($valid_ids)) {
+            return 0;
+        }
+
+        $this->db->select('
+            a.nama, a.foto,
+            m.npm, m.prodi, m.angkatan,
+            s.judul,
+            d1.nama as nama_p1,
+            d2.nama as nama_p2,
+            u.tanggal_daftar as tgl_daftar,
+            u.status as status_ujian
+        ');
+
+        $this->db->from('ujian_skripsi u');
+        $this->db->join('skripsi s', 'u.id_skripsi = s.id');
+        $this->db->join('data_mahasiswa m', 's.id_mahasiswa = m.id');
+        $this->db->join('mstr_akun a', 'm.id = a.id');
+        $this->db->join('mstr_akun d1', 's.pembimbing1 = d1.id', 'left');
+        $this->db->join('mstr_akun d2', 's.pembimbing2 = d2.id', 'left');
+
+        $this->db->where_in('u.id_jenis_ujian_skripsi', [2,4,6,8]);
+        $this->db->where_in('u.status', ['Berlangsung', 'Diterima']);
+        $this->db->where_in('s.id', $valid_ids);
+
+        if ($keyword && $keyword != '') {
+            $this->db->group_start();
+            $this->db->like('a.nama', $keyword);
+            $this->db->or_like('m.npm', $keyword);
+            $this->db->or_like('s.judul', $keyword);
+            $this->db->group_end();
+        }
+
+        if ($prodi && $prodi != 'all') {
+            $this->db->where('m.prodi', $prodi);
+        }
+
+        if ($angkatan && $angkatan != 'all') {
+            $this->db->where('m.angkatan', $angkatan);
+        }
+
+        return $this->db->count_all_results();
+    }
+
+    // Get Mahasiswa Siap Pendadaran dengan Limit & Offset
+    public function get_siap_pendadaran_paginated($keyword = null, $prodi = null, $angkatan = null, $limit = null, $offset = null)
+    {
+        $sql_last = "SELECT m.id AS id_mahasiswa, s.id AS id_skripsi, m.prodi, p.bab, p.tgl_upload
+                     FROM (
+                        SELECT npm, MAX(CONCAT(LPAD(bab,3,'0'), '::', tgl_upload)) as last_key
+                        FROM progres_skripsi
+                        GROUP BY npm
+                     ) as last
+                     JOIN progres_skripsi p ON CONCAT(LPAD(p.bab,3,'0'), '::', p.tgl_upload) = last.last_key
+                     JOIN data_mahasiswa m ON p.npm = m.npm
+                     JOIN skripsi s ON s.id_mahasiswa = m.id";
+
+        $rows = $this->db->query($sql_last)->result_array();
+
+        if (empty($rows)) {
+            return array();
+        }
+
+        $valid_ids = array();
+        foreach ($rows as $r) {
+            $prodi_row = $r['prodi'] ?? '';
+            $max_bab = 6;
+            if (stripos($prodi_row, 'D3') !== false || stripos($prodi_row, 'Diploma 3') !== false) {
+                $max_bab = 5;
+            }
+
+            $npm_row = $this->db->select('npm')->from('data_mahasiswa')->where('id', $r['id_mahasiswa'])->get()->row_array();
+            if (!$npm_row) continue;
+            $npm = $npm_row['npm'];
+
+            $this->db->order_by('bab', 'DESC');
+            $this->db->order_by('tgl_upload', 'DESC');
+            $last_progres = $this->db->get_where('progres_skripsi', ['npm' => $npm])->row_array();
+
+            if (!$last_progres) continue;
+
+            if ((int)$last_progres['progres_dosen1'] === 100 && (int)$last_progres['progres_dosen2'] === 100 && (int)$last_progres['bab'] >= $max_bab) {
+                $valid_ids[] = $r['id_skripsi'];
+            }
+        }
+
+        if (empty($valid_ids)) {
+            return array();
+        }
+
+        $this->db->select('
+            a.nama, a.foto,
+            m.npm, m.prodi, m.angkatan,
+            s.judul,
+            d1.nama as nama_p1,
+            d2.nama as nama_p2,
+            u.tanggal_daftar as tgl_daftar,
+            u.status as status_ujian
+        ');
+
+        $this->db->from('ujian_skripsi u');
+        $this->db->join('skripsi s', 'u.id_skripsi = s.id');
+        $this->db->join('data_mahasiswa m', 's.id_mahasiswa = m.id');
+        $this->db->join('mstr_akun a', 'm.id = a.id');
+        $this->db->join('mstr_akun d1', 's.pembimbing1 = d1.id', 'left');
+        $this->db->join('mstr_akun d2', 's.pembimbing2 = d2.id', 'left');
+
+        $this->db->where_in('u.id_jenis_ujian_skripsi', [2,4,6,8]);
+        $this->db->where_in('u.status', ['Berlangsung', 'Diterima']);
+        $this->db->where_in('s.id', $valid_ids);
+
+        if ($keyword && $keyword != '') {
+            $this->db->group_start();
+            $this->db->like('a.nama', $keyword);
+            $this->db->or_like('m.npm', $keyword);
+            $this->db->or_like('s.judul', $keyword);
+            $this->db->group_end();
+        }
+
+        if ($prodi && $prodi != 'all') {
+            $this->db->where('m.prodi', $prodi);
+        }
+
+        if ($angkatan && $angkatan != 'all') {
+            $this->db->where('m.angkatan', $angkatan);
+        }
+
+        $this->db->order_by('u.tanggal_daftar', 'DESC');
+
+        if ($limit) {
+            $this->db->limit($limit, $offset);
+        }
+        
+        return $this->db->get()->result_array();
+    }
+
+    // Count untuk Riwayat Progress
+    public function count_riwayat_progress($keyword = null)
+    {
+        $this->db->select('
+            p.id, p.npm, p.bab, p.file, p.komentar_dosen1, p.komentar_dosen2, p.nilai_dosen1, p.nilai_dosen2, p.progres_dosen1, p.progres_dosen2, p.tgl_upload, p.tgl_verifikasi,
+            a.nama as nama_mhs, m.prodi,
+            s.id as id_skripsi, s.judul,
+            d1.nama as nama_p1,
+            d2.nama as nama_p2
+        ');
+
+        $this->db->from('progres_skripsi p');
+        $this->db->join('data_mahasiswa m', 'p.npm = m.npm');
+        $this->db->join('mstr_akun a', 'm.id = a.id');
+        $this->db->join('skripsi s', 's.id_mahasiswa = m.id', 'left');
+        $this->db->join('mstr_akun d1', 's.pembimbing1 = d1.id', 'left');
+        $this->db->join('mstr_akun d2', 's.pembimbing2 = d2.id', 'left');
+
+        if ($keyword && $keyword != '') {
+            $this->db->group_start();
+            $this->db->like('a.nama', $keyword);
+            $this->db->or_like('p.npm', $keyword);
+            $this->db->or_like('s.judul', $keyword);
+            $this->db->group_end();
+        }
+
+        return $this->db->count_all_results();
+    }
+
+    // Get Riwayat Progress dengan Limit & Offset
+    public function get_riwayat_progress_paginated($keyword = null, $limit = null, $offset = null)
+    {
+        $this->db->select('
+            p.id, p.npm, p.bab, p.file, p.komentar_dosen1, p.komentar_dosen2, p.nilai_dosen1, p.nilai_dosen2, p.progres_dosen1, p.progres_dosen2, p.tgl_upload, p.tgl_verifikasi,
+            a.nama as nama_mhs, m.prodi,
+            s.id as id_skripsi, s.judul,
+            d1.nama as nama_p1,
+            d2.nama as nama_p2
+        ');
+
+        $this->db->from('progres_skripsi p');
+        $this->db->join('data_mahasiswa m', 'p.npm = m.npm');
+        $this->db->join('mstr_akun a', 'm.id = a.id');
+        $this->db->join('skripsi s', 's.id_mahasiswa = m.id', 'left');
+        $this->db->join('mstr_akun d1', 's.pembimbing1 = d1.id', 'left');
+        $this->db->join('mstr_akun d2', 's.pembimbing2 = d2.id', 'left');
+
+        if ($keyword && $keyword != '') {
+            $this->db->group_start();
+            $this->db->like('a.nama', $keyword);
+            $this->db->or_like('p.npm', $keyword);
+            $this->db->or_like('s.judul', $keyword);
+            $this->db->group_end();
+        }
+
+        $this->db->order_by('p.tgl_upload', 'DESC');
+
+        if ($limit) {
+            $this->db->limit($limit, $offset);
+        }
+        
+        return $this->db->get()->result_array();
+    }
 
 }

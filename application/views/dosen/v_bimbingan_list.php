@@ -61,7 +61,7 @@
                             </thead>
                             <tbody>
                                 <?php if (!empty($bimbingan)): ?>
-                                    <?php $no = 1; foreach ($bimbingan as $mhs): ?>
+                                    <?php $no = $start_index + 1; foreach ($bimbingan as $mhs): ?>
                                         <tr>
                                             <td><?php echo $no++; ?></td>
                                             <td><?php echo $mhs['npm']; ?></td>
@@ -83,6 +83,19 @@
                                 <?php endif; ?>
                             </tbody>
                         </table>
+                    </div>
+                    
+                    <div class="card-footer py-2 bg-white">
+                        <div class="row align-items-center">
+                            <div class="col-sm-6 text-muted small">
+                                Total Data: <b><?php echo $total_rows; ?></b>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="float-right">
+                                    <?php echo $pagination; ?>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

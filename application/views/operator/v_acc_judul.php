@@ -44,7 +44,7 @@
                                 <p class="text-muted text-sm mb-0">Halaman ini khusus untuk memvalidasi (ACC), menolak, atau <b>mengganti dosen pembimbing</b> mahasiswa.</p>
                             </div>
                             <div class="text-right d-none d-md-block">
-                                 <h3 class="mb-0 text-dark font-weight-bold"><?php echo count($mahasiswa); ?></h3>
+                                 <h3 class="mb-0 text-dark font-weight-bold"><?php echo isset($total_rows) ? $total_rows : count($mahasiswa); ?></h3>
                                  <small class="text-muted">Total Data</small>
                             </div>
                         </div>
@@ -235,6 +235,18 @@
                                     <?php endif; ?>
                                 </tbody>
                             </table>
+                        </div>
+                        <div class="card-footer py-2 bg-white">
+                            <div class="row align-items-center">
+                                <div class="col-sm-6 text-muted small">
+                                    Total Data: <b><?php echo isset($total_rows) ? $total_rows : 0; ?></b>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="float-right">
+                                        <?php echo isset($pagination) ? $pagination : ''; ?>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="card-footer bg-white text-muted text-sm">
                             <i class="fas fa-info-circle mr-1"></i> Anda dapat mengganti pembimbing sebelum atau sesudah menyetujui (ACC) judul.
