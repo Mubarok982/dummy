@@ -464,6 +464,21 @@ INSERT INTO `skripsi` (`id`, `id_mahasiswa`, `tema`, `judul`, `pembimbing1`, `pe
 -- --------------------------------------------------------
 
 --
+-- Struktur dari tabel `histori_judul_skripsi`
+--
+
+CREATE TABLE `histori_judul_skripsi` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `id_skripsi` bigint(20) UNSIGNED NOT NULL,
+  `judul` text NOT NULL,
+  `tema` enum('Software Engineering','Networking','Artificial Intelligence') NOT NULL,
+  `tgl_pengajuan_judul` date NOT NULL,
+  `dibuat_pada` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Struktur dari tabel `syarat_pendadaran`
 --
 
@@ -830,6 +845,12 @@ ALTER TABLE `skripsi`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
+-- AUTO_INCREMENT untuk tabel `histori_judul_skripsi`
+--
+ALTER TABLE `histori_judul_skripsi`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT untuk tabel `syarat_pendadaran`
 --
 ALTER TABLE `syarat_pendadaran`
@@ -879,8 +900,16 @@ ALTER TABLE `validasi_syarat_sempro`
 -- Ketidakleluasaan untuk tabel `apresiasi_ujian_skripsi`
 --
 ALTER TABLE `apresiasi_ujian_skripsi`
+  ADD PRIMARY KEY (`id`),
   ADD CONSTRAINT `fk_apresisasi_penguji` FOREIGN KEY (`id_penguji`) REFERENCES `data_dosen` (`id`) ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_apresisasi_ujian_skripsi` FOREIGN KEY (`id_ujian_skripsi`) REFERENCES `ujian_skripsi` (`id`) ON UPDATE CASCADE;
+
+--
+-- Ketidakleluasaan untuk tabel `histori_judul_skripsi`
+--
+ALTER TABLE `histori_judul_skripsi`
+  ADD PRIMARY KEY (`id`),
+  ADD CONSTRAINT `histori_judul_skripsi_ibfk_1` FOREIGN KEY (`id_skripsi`) REFERENCES `skripsi` (`id`) ON DELETE CASCADE;
 
 --
 -- Ketidakleluasaan untuk tabel `data_dosen`

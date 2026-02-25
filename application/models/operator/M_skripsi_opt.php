@@ -72,5 +72,53 @@ class M_skripsi_opt extends CI_Model {
         return $this->db->update('skripsi', $data);
     }
 
+    // Pagination methods for ACC DOSPEM
+    public function count_pengajuan_dospem($keyword = null, $prodi = null)
+    {
+        $this->db->from('skripsi S');
+        $this->db->join('mstr_akun A_MHS', 'S.id_mahasiswa = A_MHS.id');
+        $this->db->join('data_mahasiswa DM', 'S.id_mahasiswa = DM.id');
+        $this->db->where('S.status_acc_kaprodi', 'menunggu');
+        
+        if ($keyword) {
+            $this->db->like('A_MHS.nama', $keyword);
+            $this->db->or_like('DM.npm', $keyword);
+            $this->db->or_like('S.judul', $keyword);
+        }
+        
+        if ($prodi) {
+            $this->db->where('DM.prodi', $prodi);
+        }
+        
+        return $this->db->count_all_results();
+    }
+
+    public function get_pengajuan_dospem_paginated($keyword = null, $prodi = null, $limit = 15, $offset = 0)
+    {
+        $this->db->select('S.*, A_MHS.nama AS nama_mahasiswa, DM.npm, A1.nama AS nama_p1, A2.nama AS nama_p2, DM.prodi');
+        $this->db->from('skripsi S');
+        $this->db->join('mstr_akun A_MHS', 'S.id_mahasiswa = A_MHS.id');
+        $this->db->join('data_mahasiswa DM', 'S.id_mahasiswa = DM.id');
+        $this->db->join('mstr_akun A1', 'S.pembimbing1 = A1.id', 'left');
+        $this->db->join('mstr_akun A2', 'S.pembimbing2 = A2.id', 'left');
+        $this->db->where('S.status_acc_kaprodi', 'menunggu');
+        
+        if ($keyword) {
+            $this->db->group_start();
+            $this->db->like('A_MHS.nama', $keyword);
+            $this->db->or_like('DM.npm', $keyword);
+            $this->db->or_like('S.judul', $keyword);
+            $this->db->group_end();
+        }
+        
+        if ($prodi) {
+            $this->db->where('DM.prodi', $prodi);
+        }
+        
+        $this->db->order_by('S.tgl_pengajuan_judul', 'ASC');
+        $this->db->limit($limit, $offset);
+        return $this->db->get()->result_array();
+    }
+
     
 }

@@ -48,6 +48,15 @@ class Mahasiswa extends CI_Controller {
         $data['status_ujian'] = $status_ujian;
         // ---------------------------------
 
+        // --- TAMBAHAN FITUR HISTORI ---
+        // Ambil histori perubahan judul jika skripsi sudah ada
+        if ($data['skripsi']) {
+            $data['histori_judul'] = $this->M_Dosen->get_histori_judul($data['skripsi']['id']);
+        } else {
+            $data['histori_judul'] = [];
+        }
+        // -------------------------------
+
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
         $this->load->view('mahasiswa/v_pengajuan_judul', $data);
@@ -177,6 +186,28 @@ class Mahasiswa extends CI_Controller {
             $this->session->set_flashdata('pesan_error', 'Gagal: Judul belum disetujui Kaprodi.');
             redirect('mahasiswa/bimbingan');
         }
+
+        // ========== FITUR BARU: HANDLE UPDATE JUDUL ==========
+        $gunakan_judul_lama = $this->input->post('gunakan_judul_lama');
+        
+        if (!$gunakan_judul_lama) {
+            // User ingin mengubah judul
+            $judul_baru = $this->input->post('judul');
+            
+            if ($judul_baru) {
+                $data_update_judul = [
+                    'judul' => $judul_baru,
+                    'status_acc_kaprodi' => 'menunggu' // Reset ke menunggu approval kaprodi
+                ];
+                
+                // Update dengan sistem histori
+                $this->M_Dosen->update_skripsi_with_histori($skripsi['id'], $data_update_judul);
+                
+                // Update data skripsi lokal
+                $skripsi['judul'] = $judul_baru;
+            }
+        }
+        // =================================================
         
         $npm  = $this->session->userdata('npm');
         $nama = $this->session->userdata('nama'); 
@@ -415,6 +446,41 @@ class Mahasiswa extends CI_Controller {
             
             redirect('mahasiswa/biodata');
         }
+    }
+
+    public function update_judul($id_skripsi)
+    {
+        $id_mahasiswa = $this->session->userdata('id');
+        
+        // Validasi form
+        $this->form_validation->set_rules('judul', 'Judul Skripsi', 'required|trim');
+        $this->form_validation->set_rules('tema', 'Tema', 'required');
+        $this->form_validation->set_rules('pembimbing1', 'Pembimbing 1', 'required');
+        $this->form_validation->set_rules('pembimbing2', 'Pembimbing 2', 'required');
+
+        if ($this->form_validation->run() == FALSE) {
+            $this->session->set_flashdata('pesan_error', validation_errors());
+        } else {
+            $data_update = [
+                'judul' => $this->input->post('judul'),
+                'tema' => $this->input->post('tema'),
+                'pembimbing1' => $this->input->post('pembimbing1'),
+                'pembimbing2' => $this->input->post('pembimbing2'),
+                'tgl_pengajuan_judul' => $this->input->post('tgl_pengajuan_judul') ? $this->input->post('tgl_pengajuan_judul') : date('Y-m-d'),
+                'status_acc_kaprodi' => 'menunggu'
+            ];
+
+            // Update dengan sistem histori
+            $result = $this->M_Dosen->update_skripsi_with_histori($id_skripsi, $data_update);
+
+            if ($result) {
+                $this->session->set_flashdata('pesan_sukses', 'Judul skripsi berhasil diperbarui dan menunggu persetujuan kaprodi.');
+                $this->M_Log->record('Judul', 'Mengubah judul skripsi menjadi: ' . $data_update['judul']);
+            } else {
+                $this->session->set_flashdata('pesan_error', 'Gagal memperbarui judul skripsi.');
+            }
+        }
+        redirect('mahasiswa/pengajuan_judul');
     }
 
     public function riwayat_progres()

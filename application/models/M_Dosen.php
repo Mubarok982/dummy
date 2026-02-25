@@ -491,8 +491,6 @@ public function get_bimbingan_list($id_dosen, $keyword = null, $prodi = null, $a
         return $this->db->get()->result_array();
     }
 
-}
-
 // public function insert_plagiarisme_mockup($id_progres)
 // {
 //     // === MOCKUP LOGIC ===
@@ -511,3 +509,52 @@ public function get_bimbingan_list($id_dosen, $keyword = null, $prodi = null, $a
 //     $this->db->insert('hasil_plagiarisme', $data);
 //     return $data; // Kembalikan data yang diinsert
 // }
+
+    // ========== FITUR HISTORI JUDUL SKRIPSI ==========
+    
+    /**
+     * Fungsi untuk update data skripsi dengan sistem histori otomatis
+     * Jika judul berubah, judul lama akan tersimpan ke tabel histori_judul_skripsi
+     */
+    public function update_skripsi_with_histori($id_skripsi, $data_update)
+    {
+        $this->db->trans_start();
+
+        // Ambil data skripsi lama
+        $skripsi_lama = $this->db->get_where('skripsi', ['id' => $id_skripsi])->row_array();
+
+        if (!$skripsi_lama) {
+            $this->db->trans_complete();
+            return false;
+        }
+
+        // Cek apakah judul berubah
+        if (isset($data_update['judul']) && $skripsi_lama['judul'] !== $data_update['judul']) {
+            $data_histori = [
+                'id_skripsi' => $id_skripsi,
+                'judul' => $skripsi_lama['judul'],
+                'tema' => $skripsi_lama['tema'],
+                'tgl_pengajuan_judul' => $skripsi_lama['tgl_pengajuan_judul']
+            ];
+            $this->db->insert('histori_judul_skripsi', $data_histori);
+        }
+
+        // Update tabel skripsi
+        $this->db->where('id', $id_skripsi);
+        $this->db->update('skripsi', $data_update);
+
+        $this->db->trans_complete();
+        return $this->db->trans_status();
+    }
+
+    /**
+     * Fungsi untuk mendapatkan histori perubahan judul skripsi
+     */
+    public function get_histori_judul($id_skripsi)
+    {
+        $this->db->where('id_skripsi', $id_skripsi);
+        $this->db->order_by('dibuat_pada', 'DESC');
+        return $this->db->get('histori_judul_skripsi')->result_array();
+    }
+}
+

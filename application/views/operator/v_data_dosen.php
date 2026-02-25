@@ -79,14 +79,15 @@
                                 <th>Nama Dosen</th> <th>NIDK</th>
                                 <th>Program Studi</th>
                                 <th>Telepon</th>
-                                <th>Jabatan</th>
+                                <th class="text-center">Jabatan</th>
+                                <th class="text-center">Kelengkapan Data</th>
                                 <th class="text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php if(empty($dosen)): ?>
                                 <tr>
-                                    <td colspan="7" class="text-center text-muted py-5">
+                                    <td colspan="8" class="text-center text-muted py-5">
                                         <i class="fas fa-search fa-3x mb-3 text-gray-300"></i><br>
                                         Data tidak ditemukan.
                                     </td>
@@ -125,16 +126,58 @@
                                             <span class="text-muted text-xs">Belum diisi</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td>
+                                    <td class="text-center">
+                                        <span class="badge badge-primary p-1">
+                                            <i class="fas fa-chalkboard-user mr-1"></i> Dosen
+                                        </span>
                                         <?php if($d['is_kaprodi'] == 1): ?>
-                                            <span class="badge badge-warning border border-warning text-dark p-1">
-                                                <i class="fas fa-crown mr-1"></i> KAPRODI
+                                            <span class="badge badge-warning text-dark p-1 ml-1">
+                                                <i class="fas fa-chalkboard-user mr-1"></i> Kaprodi
                                             </span>
-                                        <?php else: ?>
-                                            <span class="badge badge-info p-1">Dosen Pembimbing</span>
                                         <?php endif; ?>
                                     </td>
-                                  
+                                    <td class="text-center">
+                                        <?php
+                                            $lengkap = 0;
+                                            $total_checks = 2;
+                                            
+                                            // Check: Telepon
+                                            if ($d['telepon']) $lengkap++;
+                                            
+                                            // Check: TTD
+                                            if ($d['ttd']) $lengkap++;
+                                            
+                                            $persentase = ($lengkap / $total_checks) * 100;
+                                            $badge_class = $persentase == 100 ? 'badge-success' : ($persentase >= 50 ? 'badge-warning' : 'badge-danger');
+                                        ?>
+                                        <div class="d-flex align-items-center justify-content-center gap-2">
+                                            <span class="badge <?= $badge_class ?> px-2 py-1"><?= round($persentase) ?>%</span>
+                                            <div class="dropdown">
+                                                <button class="btn btn-xs btn-outline-secondary" type="button" data-toggle="dropdown" title="Detail">
+                                                    <i class="fas fa-list"></i>
+                                                </button>
+                                                <div class="dropdown-menu dropdown-menu-right text-left" style="min-width: 200px;">
+                                                    <h6 class="dropdown-header">Status Kelengkapan:</h6>
+                                                    <a class="dropdown-item" href="#">
+                                                        <?php if($d['telepon']): ?>
+                                                            <i class="fas fa-check text-success mr-2"></i>
+                                                        <?php else: ?>
+                                                            <i class="fas fa-times text-danger mr-2"></i>
+                                                        <?php endif; ?>
+                                                        Nomor Telepon
+                                                    </a>
+                                                    <a class="dropdown-item" href="#">
+                                                        <?php if($d['ttd']): ?>
+                                                            <i class="fas fa-check text-success mr-2"></i>
+                                                        <?php else: ?>
+                                                            <i class="fas fa-times text-danger mr-2"></i>
+                                                        <?php endif; ?>
+                                                        TTD Digital
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
                                     <td class="text-center">
                                         <a href="<?= base_url('operator/edit_profil_dosen/'.$d['id']) ?>" class="btn btn-sm btn-warning" title="Edit Profil">
                                             <i class="fas fa-edit"></i>

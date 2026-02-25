@@ -324,7 +324,34 @@
                                     </div>
 
                                     <input type="hidden" name="bab" value="<?= $target_bab ?>">
-                                    <input type="hidden" name="is_revisi" value="<?= $is_revisi ? '1' : '0' ?>"> 
+                                    <input type="hidden" name="is_revisi" value="<?= $is_revisi ? '1' : '0' ?>">
+
+                                    <!-- BAGIAN EDIT JUDUL (OPSIONAL) -->
+                                    <div class="card card-outline card-info mb-3">
+                                        <div class="card-header">
+                                            <h5 class="card-title">
+                                                <div class="custom-control custom-checkbox d-inline-block">
+                                                    <input type="checkbox" class="custom-control-input" id="gunakan_judul_lama" name="gunakan_judul_lama" checked>
+                                                    <label class="custom-control-label" for="gunakan_judul_lama">
+                                                        Gunakan Judul Sebelumnya
+                                                    </label>
+                                                </div>
+                                            </h5>
+                                        </div>
+                                        <div class="card-body" id="judul_section" style="display: none;">
+                                            <div class="alert alert-info">
+                                                <small><i class="fas fa-info-circle mr-1"></i>
+                                                    Anda dapat mengubah judul skripsi. Judul lama akan disimpan di riwayat perubahan.
+                                                </small>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label for="edit_judul">Judul Skripsi Baru</label>
+                                                <textarea name="judul" id="edit_judul" class="form-control" rows="3"><?php echo $skripsi['judul']; ?></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- END EDIT JUDUL -->
                                     
                                     <div class="form-group">
                                         <label>File Laporan (PDF)</label>
@@ -478,6 +505,20 @@
             fileInput.addEventListener('change', function (e) {
                 if(e.target.files.length > 0){
                     e.target.nextElementSibling.innerText = e.target.files[0].name;
+                }
+            });
+        }
+
+        // Toggle form edit judul berdasarkan checkbox
+        var checkboxJudul = document.getElementById('gunakan_judul_lama');
+        var judulSection = document.getElementById('judul_section');
+
+        if(checkboxJudul) {
+            checkboxJudul.addEventListener('change', function() {
+                if(this.checked) {
+                    judulSection.style.display = 'none';
+                } else {
+                    judulSection.style.display = 'block';
                 }
             });
         }

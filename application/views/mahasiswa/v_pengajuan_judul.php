@@ -178,6 +178,11 @@
                                 <button type="button" class="btn btn-secondary px-4" disabled>
                                     <i class="fas fa-lock mr-1"></i> Form Terkunci
                                 </button>
+                                <?php if ($is_exist && $status_acc !== 'diterima'): ?>
+                                    <button type="button" class="btn btn-warning px-4" data-toggle="modal" data-target="#modalEditJudul">
+                                        <i class="fas fa-edit mr-1"></i> Edit Judul
+                                    </button>
+                                <?php endif; ?>
                             <?php else: ?>
                                 <a href="<?php echo base_url('dashboard'); ?>" class="btn btn-default mr-2">Batal</a>
                                 <button type="submit" class="btn btn-primary px-4 shadow-sm">
@@ -189,7 +194,142 @@
                         <?php echo form_close(); ?>
                     </div>
 
+                    <!-- BAGIAN HISTORI PERUBAHAN JUDUL -->
+                    <?php if ($is_exist && !empty($histori_judul)): ?>
+                    <div class="card card-outline mt-4 shadow-sm">
+                        <div class="card-header bg-info">
+                            <h3 class="card-title font-weight-bold">
+                                <i class="fas fa-history mr-1"></i> Riwayat Perubahan Judul
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover table-sm">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th>No</th>
+                                            <th>Judul Lama</th>
+                                            <th>Tema</th>
+                                            <th>Tanggal Pengajuan</th>
+                                            <th>Diubah Pada</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php $no = 1; foreach ($histori_judul as $h): ?>
+                                        <tr>
+                                            <td><?php echo $no++; ?></td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    <?php echo substr($h['judul'], 0, 60) . (strlen($h['judul']) > 60 ? '...' : ''); ?>
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-success"><?php echo $h['tema']; ?></span>
+                                            </td>
+                                            <td><?php echo date('d-m-Y', strtotime($h['tgl_pengajuan_judul'])); ?></td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    <?php echo date('d-m-Y H:i', strtotime($h['dibuat_pada'])); ?>
+                                                </small>
+                                            </td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
                 </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- MODAL EDIT JUDUL -->
+<?php if ($is_exist): ?>
+<div class="modal fade" id="modalEditJudul" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title font-weight-bold">
+                    <i class="fas fa-edit mr-2"></i> Edit Judul Skripsi
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            
+            <?php echo form_open('mahasiswa/update_judul/'.$skripsi['id']); ?>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    <small>Judul lama akan dipindahkan ke riwayat perubahan setelah Anda mengubahnya.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit_judul">Judul Skripsi Baru <span class="text-danger">*</span></label>
+                    <textarea name="judul" id="edit_judul" class="form-control" rows="3" required><?php echo $skripsi['judul']; ?></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit_tema">Tema Penelitian <span class="text-danger">*</span></label>
+                    <select name="tema" id="edit_tema" class="form-control" required>
+                        <option value="">-- Pilih Tema --</option>
+                        <option value="Software Engineering" <?php echo ($skripsi['tema'] == 'Software Engineering') ? 'selected' : ''; ?>>Software Engineering</option>
+                        <option value="Networking" <?php echo ($skripsi['tema'] == 'Networking') ? 'selected' : ''; ?>>Networking</option>
+                        <option value="Artificial Intelligence" <?php echo ($skripsi['tema'] == 'Artificial Intelligence') ? 'selected' : ''; ?>>Artificial Intelligence</option>
+                    </select>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Pembimbing 1 <span class="text-danger">*</span></label>
+                            <select name="pembimbing1" class="form-control" required>
+                                <option value="">-- Pilih Dosen --</option>
+                                <?php foreach ($dosen_list as $dsn): ?>
+                                    <option value="<?php echo $dsn['id']; ?>" <?php echo ($skripsi['pembimbing1'] == $dsn['id']) ? 'selected' : ''; ?>>
+                                        <?php echo $dsn['nama']; ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Pembimbing 2 <span class="text-danger">*</span></label>
+                            <select name="pembimbing2" class="form-control" required>
+                                <option value="">-- Pilih Dosen --</option>
+                                <?php foreach ($dosen_list as $dsn): ?>
+                                    <option value="<?php echo $dsn['id']; ?>" <?php echo ($skripsi['pembimbing2'] == $dsn['id']) ? 'selected' : ''; ?>>
+                                        <?php echo $dsn['nama']; ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit_tgl">Tanggal Pengajuan <span class="text-danger">*</span></label>
+                    <input type="date" name="tgl_pengajuan_judul" id="edit_tgl" class="form-control" value="<?php echo $skripsi['tgl_pengajuan_judul']; ?>" required>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                <button type="submit" class="btn btn-warning">
+                    <i class="fas fa-save mr-1"></i> Simpan Perubahan Judul
+                </button>
+            </div>
+            <?php echo form_close(); ?>
+        </div>
+    </div>
+</div>
+<?php endif; ?>                </div>
             </div>
         </div>
     </section>

@@ -49,7 +49,7 @@
                                     <b>Program Studi</b> <a class="float-right"><?= $user['prodi_dsn'] ?></a>
                                 </li>
                                 <li class="list-group-item">
-                                    <b>Jabatan</b> <a class="float-right"><?= ($user['is_kaprodi'] == 1) ? 'Kaprodi' : 'Dosen Pembimbing' ?></a>
+                                    <b>Jabatan</b> <a class="float-right">Dosen Pembimbing</a>
                                 </li>
                             </ul>
                         </div>

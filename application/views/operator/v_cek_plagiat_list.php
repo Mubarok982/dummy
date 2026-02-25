@@ -150,8 +150,18 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="card-footer bg-white">
-                    <small class="text-muted">* Data dengan status <b>PENDING</b> akan selalu muncul di urutan teratas.</small>
+                <div class="card-footer py-2 bg-white">
+                    <div class="row align-items-center">
+                        <div class="col-sm-6 text-muted small">
+                            Total Data: <b><?php echo isset($total_rows) ? $total_rows : 0; ?></b>
+                            <br><small>* Data dengan status <b>PENDING</b> selalu di urutan teratas.</small>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="float-right">
+                                <?php echo isset($pagination) ? $pagination : ''; ?>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

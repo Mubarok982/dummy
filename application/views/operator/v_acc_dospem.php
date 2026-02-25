@@ -39,8 +39,36 @@
                 <div class="card-header py-3">
                     <h6 class="m-0 font-weight-bold text-primary">
                         <i class="fas fa-file-signature mr-1"></i> Daftar Pengajuan Dosen Pembimbing
+                        <span class="badge badge-info ml-2"><?php echo isset($total_rows) ? $total_rows : 0; ?> Data</span>
                     </h6>
                 </div>
+                
+                <!-- Filter Form -->
+                <div class="card-body pb-2">
+                    <form method="GET" action="<?php echo base_url('operator/acc_dospem'); ?>" class="mb-3">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <input type="text" name="keyword" class="form-control" placeholder="Cari nama/NPM/judul..." value="<?php echo isset($keyword) ? $keyword : ''; ?>">
+                            </div>
+                            <?php if (!isset($is_kaprodi) || !$is_kaprodi): ?>
+                            <div class="col-md-4">
+                                <select name="prodi" class="form-control">
+                                    <option value="">Semua Prodi</option>
+                                    <?php if(isset($list_prodi) && !empty($list_prodi)): ?>
+                                        <?php foreach ($list_prodi as $prodi_option): ?>
+                                            <option value="<?php echo $prodi_option['prodi']; ?>" <?php echo (isset($prodi) && $prodi == $prodi_option['prodi']) ? 'selected' : ''; ?>><?php echo $prodi_option['prodi']; ?></option>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </select>
+                            </div>
+                            <?php endif; ?>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-search"></i> Filter</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
@@ -64,7 +92,7 @@
                                         </td>
                                     </tr>
                                 <?php else: ?>
-                                    <?php $no = 1; foreach ($pengajuan as $p): ?>
+                                    <?php $no = (isset($start_index) ? $start_index : 0) + 1; foreach ($pengajuan as $p): ?>
                                         <tr>
                                             <td class="align-middle text-center"><?php echo $no++; ?></td>
                                             
@@ -117,6 +145,19 @@
                                 <?php endif; ?>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+
+                <div class="card-footer py-2 bg-white">
+                    <div class="row align-items-center">
+                        <div class="col-sm-6 text-muted small">
+                            Total Data: <b><?php echo isset($total_rows) ? $total_rows : 0; ?></b>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="float-right">
+                                <?php echo isset($pagination) ? $pagination : ''; ?>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

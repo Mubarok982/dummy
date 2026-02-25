@@ -246,7 +246,7 @@ class M_akun_opt extends CI_Model {
     public function get_dosen_paginated($limit, $start, $prodi = null, $jabatan = null, $keyword = null)
     {
         $this->_query_dosen_filter($prodi, $jabatan, $keyword);
-        $this->db->select('ma.id, ma.nama, ma.foto, dd.nidk, dd.prodi, dd.telepon, dd.is_kaprodi');
+        $this->db->select('ma.id, ma.nama, ma.foto, dd.nidk, dd.prodi, dd.telepon, dd.is_kaprodi, dd.ttd');
         $this->db->order_by('ma.nama', 'ASC');
         $this->db->limit($limit, $start);
         return $this->db->get()->result_array();

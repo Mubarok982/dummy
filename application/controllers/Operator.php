@@ -684,6 +684,73 @@ class Operator extends CI_Controller {
         redirect('operator/acc_judul');
     }
 
+    // --- ACC DOSPEM (Approval Dosen Pembimbing) ---
+    public function acc_dospem()
+    {
+        $data['title'] = 'Validasi Pengajuan Dosen Pembimbing';
+        $is_kaprodi = $this->session->userdata('is_kaprodi');
+        $kaprodi_prodi = $is_kaprodi ? $this->session->userdata('prodi') : null;
+
+        // Get filter parameters
+        $keyword = $this->input->get('keyword');
+        $prodi = $is_kaprodi ? $kaprodi_prodi : $this->input->get('prodi');
+
+        // Pagination
+        $this->load->library('pagination');
+        $config['base_url'] = base_url('operator/acc_dospem');
+        $config['total_rows'] = $this->M_skripsi_opt->count_pengajuan_dospem($keyword, $prodi);
+        $config['per_page'] = 15;
+        $config['reuse_query_string'] = TRUE;
+        $config['page_query_string'] = TRUE;
+        $config['query_string_segment'] = 'page';
+
+        config_pagination($config);
+        $this->pagination->initialize($config);
+
+        $page = $this->input->get('page') ? $this->input->get('page') : 0;
+        
+        // Get paginated data
+        $data['pengajuan'] = $this->M_skripsi_opt->get_pengajuan_dospem_paginated($keyword, $prodi, $config['per_page'], $page);
+        
+        $data['pagination'] = $this->pagination->create_links();
+        $data['total_rows'] = $config['total_rows'];
+        $data['start_index'] = $page;
+
+        $data['keyword'] = $keyword;
+        $data['prodi'] = $prodi;
+        $data['is_kaprodi'] = $is_kaprodi;
+        $data['kaprodi_prodi'] = $kaprodi_prodi;
+
+        // Load dynamic filter options
+        $data['list_prodi'] = $is_kaprodi ? [] : $this->M_Data->get_all_prodi();
+
+        $this->load->view('template/header', $data);
+        $this->load->view('template/sidebar', $data);
+        $this->load->view('operator/v_acc_dospem', $data);
+        $this->load->view('template/footer');
+    }
+
+    public function proses_acc_dospem($id_skripsi, $aksi)
+    {
+        if ($aksi == 'setujui') {
+            $data_update = ['status_acc_kaprodi' => 'diterima'];
+            if ($this->M_skripsi_opt->update_skripsi($id_skripsi, $data_update)) {
+                $this->session->set_flashdata('pesan_sukses', 'Pengajuan Dosen Pembimbing berhasil di-ACC!');
+                $this->M_Log->record('ACC Dospem', 'Operator menyetujui pengajuan dosen pembimbing skripsi ID: ' . $id_skripsi);
+            } else {
+                $this->session->set_flashdata('pesan_error', 'Gagal menyetujui pengajuan.');
+            }
+        } elseif ($aksi == 'tolak') {
+            $data_update = ['status_acc_kaprodi' => 'ditolak'];
+            if ($this->M_skripsi_opt->update_skripsi($id_skripsi, $data_update)) {
+                $this->session->set_flashdata('pesan_sukses', 'Pengajuan Dosen Pembimbing ditolak.');
+                $this->M_Log->record('Tolak Dospem', 'Operator menolak pengajuan dosen pembimbing skripsi ID: ' . $id_skripsi);
+            } else {
+                $this->session->set_flashdata('pesan_error', 'Gagal menolak pengajuan.');
+            }
+        }
+        redirect('operator/acc_dospem');
+    }
 
 
     public function edit_dospem($id_skripsi)

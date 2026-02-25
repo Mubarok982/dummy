@@ -184,12 +184,14 @@
                         </div>
 
                         <div class="card-footer py-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="text-muted small">
-                                    Halaman <b><?php echo $this->input->get('page') ? ($this->input->get('page') / $per_page) + 1 : 1; ?></b>
+                            <div class="row align-items-center">
+                                <div class="col-sm-6 text-muted small">
+                                    Total Data: <b><?php echo isset($total_rows) ? $total_rows : 0; ?></b> Dosen
                                 </div>
-                                <div>
-                                    <?php echo $pagination; ?>
+                                <div class="col-sm-6">
+                                    <div class="float-right">
+                                        <?php echo isset($pagination) ? $pagination : ''; ?>
+                                    </div>
                                 </div>
                             </div>
                         </div>
