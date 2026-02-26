@@ -50,25 +50,24 @@
                                     <?php endforeach; ?>
                                 </select>
                             </div>
-                            <!-- Angkatan filter removed as per request -->
                             <div class="col-md-2">
                                 <label>&nbsp;</label>
                                 <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-search mr-1"></i> Filter</button>
                             </div>
                         </div>
-                        <!-- Top sort controls removed; sorting via header click -->
-                    </form>
+                        </form>
 
                     <div class="table-responsive">
                         <table class="table table-bordered table-striped table-hover">
                             <thead class="bg-light">
                                 <tr class="text-center">
                                     <th style="width: 5%">No</th>
-                                    <th class="sortable" data-sort="nama">Mahasiswa</th>
-                                    <th class="sortable" data-sort="judul">Judul Skripsi</th>
-                                    <th class="sortable" data-sort="nama_p1">Pembimbing</th>
-                                    <th class="sortable" data-sort="tgl_daftar">Tanggal Daftar</th>
-                                    <th class="sortable" data-sort="status_ujian">Status</th>
+                                    <th class="sortable" data-sort="nama" style="width: 20%">Mahasiswa</th>
+                                    <th class="sortable" data-sort="prodi" style="width: 15%">Program Studi</th>
+                                    <th class="sortable" data-sort="judul" style="width: 25%">Judul Skripsi</th>
+                                    <th class="sortable" data-sort="nama_p1" style="width: 15%">Pembimbing</th>
+                                    <th class="sortable" data-sort="tgl_daftar" style="width: 10%">Tanggal Daftar</th>
+                                    <th class="sortable" data-sort="status_ujian" style="width: 10%">Status</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -80,18 +79,24 @@
                                                 <br>
                                                 <small class="text-muted">ID: <?php echo isset($mhs['id_skripsi']) ? $mhs['id_skripsi'] : '-'; ?></small>
                                             </td>
-                                            <!-- Foto column removed as per request -->
+                                            
                                             <td class="align-middle">
-                                                <strong><?php echo $mhs['nama']; ?></strong><br>
-                                                <small class="text-muted"><?php echo $mhs['npm']; ?></small><br>
-                                                <span class="badge badge-info"><?php echo $mhs['prodi']; ?></span>
-                                                <span class="badge badge-secondary"><?php echo $mhs['angkatan']; ?></span>
+                                                <strong class="d-block mb-1"><?php echo $mhs['nama']; ?></strong>
+                                                <span class="text-muted small"><i class="fas fa-id-card mr-1"></i><?php echo $mhs['npm']; ?></span>
+                                                <span class="badge badge-secondary ml-1"><?php echo $mhs['angkatan']; ?></span>
                                             </td>
+                                            
+                                            <td class="align-middle text-center">
+                                                <span class="badge badge-info px-2 py-1"><?php echo $mhs['prodi']; ?></span>
+                                            </td>
+                                            
                                             <td class="align-middle"><?php echo $mhs['judul']; ?></td>
+                                            
                                             <td class="align-middle small">
                                                 1. <?php echo $mhs['nama_p1']; ?><br>
                                                 2. <?php echo $mhs['nama_p2']; ?>
                                             </td>
+                                            
                                             <td class="text-center align-middle">
                                                 <?php if (!empty($mhs['tgl_daftar'])): ?>
                                                     <span class="badge badge-success px-2 py-1">
@@ -102,6 +107,7 @@
                                                     -
                                                 <?php endif; ?>
                                             </td>
+                                            
                                             <td class="text-center align-middle">
                                                 <?php 
                                                     if ((isset($mhs['status_ujian']) && strtolower($mhs['status_ujian']) == 'mengulang') || (isset($mhs['status_acc_kaprodi']) && strtolower($mhs['status_acc_kaprodi']) == 'ditolak')) {
@@ -118,7 +124,7 @@
                                     <?php endforeach; ?>
                                 <?php else: ?>
                                         <tr>
-                                            <td colspan="6" class="text-center py-5 text-muted">
+                                            <td colspan="7" class="text-center py-5 text-muted">
                                             <i class="fas fa-user-graduate fa-3x mb-3 opacity-50"></i><br>
                                             Belum ada mahasiswa yang siap pendadaran.
                                         </td>

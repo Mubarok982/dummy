@@ -38,7 +38,7 @@ class Operator extends CI_Controller {
 
         $config['base_url'] = base_url('operator/manajemen_akun');
         $config['total_rows'] = $this->M_akun_opt->count_all_users($role, $prodi, $keyword);
-        $config['per_page'] = 15;
+        $config['per_page'] = 10;
         $config['reuse_query_string'] = TRUE;
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
@@ -242,7 +242,7 @@ class Operator extends CI_Controller {
         $this->load->library('pagination');
         $config['base_url'] = base_url('operator/data_mahasiswa');
         $config['total_rows'] = $this->M_Data->count_mahasiswa_lengkap($f_prodi, $f_kelengkapan, $f_keyword);
-        $config['per_page'] = 15;
+        $config['per_page'] = 10;
         $config['reuse_query_string'] = TRUE;
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
@@ -342,7 +342,7 @@ class Operator extends CI_Controller {
         // Pagination
         $config['base_url'] = base_url('operator/mahasiswa_siap_sempro');
         $config['total_rows'] = $total_rows;
-        $config['per_page'] = 15;
+        $config['per_page'] = 10;
         $config['reuse_query_string'] = TRUE;
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
@@ -443,7 +443,7 @@ class Operator extends CI_Controller {
         // Pagination
         $config['base_url'] = base_url('operator/mahasiswa_siap_pendadaran');
         $config['total_rows'] = $total_rows;
-        $config['per_page'] = 15;
+        $config['per_page'] = 10;
         $config['reuse_query_string'] = TRUE;
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
@@ -545,7 +545,7 @@ class Operator extends CI_Controller {
         // Pagination
         $config['base_url'] = base_url('operator/list_revisi');
         $config['total_rows'] = $total_rows;
-        $config['per_page'] = 15;
+        $config['per_page'] = 10;
         $config['reuse_query_string'] = TRUE;
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
@@ -626,7 +626,7 @@ class Operator extends CI_Controller {
         $this->load->library('pagination');
         $config['base_url'] = base_url('operator/acc_judul');
         $config['total_rows'] = $this->M_Data->count_acc_judul($keyword, $status, $prodi);
-        $config['per_page'] = 15;
+        $config['per_page'] = 10;
         $config['reuse_query_string'] = TRUE;
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
@@ -699,7 +699,7 @@ class Operator extends CI_Controller {
         $this->load->library('pagination');
         $config['base_url'] = base_url('operator/acc_dospem');
         $config['total_rows'] = $this->M_skripsi_opt->count_pengajuan_dospem($keyword, $prodi);
-        $config['per_page'] = 15;
+        $config['per_page'] = 10;
         $config['reuse_query_string'] = TRUE;
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
@@ -1184,7 +1184,7 @@ public function get_detail_kinerja_ajax()
         // Pagination
         $config['base_url'] = base_url('operator/cek_plagiarisme_list');
         $config['total_rows'] = $total_rows;
-        $config['per_page'] = 15;
+        $config['per_page'] = 10;
         $config['reuse_query_string'] = TRUE;
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';

@@ -42,7 +42,6 @@
                                             <th style="width: 20%;">Judul Skripsi</th>
                                             <th style="width: 25%;">Status Kelulusan</th>
                                             <th style="width: 37%;">Catatan Dosen</th>
-                                               <th class="text-center sortable" data-sort="bab" style="width: 8%">BAB</th>
                                             <th class="text-center" style="width: 10%;">Detail</th>
                                         </tr>
                                     </thead>
