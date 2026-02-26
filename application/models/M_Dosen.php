@@ -636,5 +636,26 @@ public function get_bimbingan_list($id_dosen, $keyword = null, $prodi = null, $a
         $this->db->order_by('dibuat_pada', 'DESC');
         return $this->db->get('histori_judul_skripsi')->result_array();
     }
+
+    public function delete($id)
+{
+    // ambil data
+    $row = $this->Model_mhs->get_by_id($id);
+
+    if ($row) {
+        // hapus file fisik
+        $path = './uploads/' . $row->file;
+        if (file_exists($path)) {
+            unlink($path);
+        }
+
+        // hapus record database
+        $this->Model_mhs->delete($id);
+
+        redirect('mhs/progress');
+    } else {
+        echo "Data tidak ditemukan";
+    }
+}
 }
 
