@@ -41,18 +41,82 @@ class M_Mahasiswa extends CI_Model {
         return $this->db->insert('skripsi', $data);
     }
     
-    public function update_skripsi_judul($id_mahasiswa, $data)
+ public function update_skripsi_judul($id_mahasiswa, $data)
+{
+    // ==============================================================
+    // 1. Ambil data mahasiswa + id skripsi
+    // ==============================================================
+    $this->db->select('M.npm, S.id as id_skripsi');
+    $this->db->from('data_mahasiswa M');
+    $this->db->join('skripsi S', 'M.id = S.id_mahasiswa', 'left');
+    $this->db->where('M.id', $id_mahasiswa);
+    $mhs = $this->db->get()->row();
+
+    if ($mhs && !empty($mhs->npm))
     {
-        $this->db->where('id_mahasiswa', $id_mahasiswa);
-        $update_data = [
-            'tema'               => $data['tema'],
-            'judul'              => $data['judul'],
-            'pembimbing1'        => $data['pembimbing1'],
-            'pembimbing2'        => $data['pembimbing2'],
-            'status_acc_kaprodi' => 'menunggu' // Status di-reset agar Kaprodi bisa cek ulang
-        ];
-        return $this->db->update('skripsi', $update_data);
+        $npm     = $mhs->npm;
+        $folder  = FCPATH . 'uploads/progres/';
+
+        // ==============================================================
+        // 2. HAPUS FILE BAB 1–6 SECARA SPESIFIK & BERSIH
+        //    pola yang dicari: *npm*bab(1-6)*
+        // ==============================================================
+
+        for ($i = 1; $i <= 6; $i++) {
+            // cari file yang mengandung NPM dan BAB X
+            $patterns = [
+                $folder . "*{$npm}*bab{$i}*.pdf",
+                $folder . "*{$npm}*BAB{$i}*.pdf",
+                $folder . "*bab{$i}*{$npm}*.pdf",
+                $folder . "*BAB{$i}*{$npm}*.pdf",
+                $folder . "*{$npm}*bab {$i}*.pdf",
+                $folder . "*bab {$i}*{$npm}*.pdf",
+            ];
+
+            foreach ($patterns as $pattern) {
+                foreach (glob($pattern) as $file) {
+                    if (is_file($file)) {
+                        unlink($file);
+                    }
+                }
+            }
+        }
+
+        // ==============================================================
+        // 3. HAPUS DATA PROGRES DI DATABASE KHUSUS BAB 1–6
+        // ==============================================================
+
+        $this->db->where('npm', $npm);
+        $this->db->where_in('bab', ['1','2','3','4','5','6']);
+        $this->db->delete('progres_skripsi');
+
+        // ==============================================================
+        // 4. Hapus status ujian Mengulang
+        // ==============================================================
+
+        if (!empty($mhs->id_skripsi)) {
+            $this->db->delete('ujian_skripsi', [
+                'id_skripsi' => $mhs->id_skripsi,
+                'status'     => 'Mengulang'
+            ]);
+        }
     }
+
+    // ==============================================================
+    // 5. Simpan judul baru
+    // ==============================================================
+    $update_data = [
+        'tema'               => $data['tema'],
+        'judul'              => $data['judul'],
+        'pembimbing1'        => $data['pembimbing1'],
+        'pembimbing2'        => $data['pembimbing2'],
+        'status_acc_kaprodi' => 'menunggu',
+        'tgl_pengajuan_judul'=> date('Y-m-d H:i:s')
+    ];
+
+    $this->db->where('id_mahasiswa', $id_mahasiswa);
+    return $this->db->update('skripsi', $update_data);
+}
     
     public function get_progres_by_skripsi($id_skripsi)
     {
@@ -88,10 +152,65 @@ class M_Mahasiswa extends CI_Model {
         return $this->db->insert('progres_skripsi', $data);
     }
     
-    public function update_progres($id_progres, $data)
+public function update_progres($id_progres, $data)
     {
+        // 1. Update progres ke database seperti biasa
         $this->db->where('id', $id_progres);
-        return $this->db->update('progres_skripsi', $data);
+        $update = $this->db->update('progres_skripsi', $data);
+
+        // 2. --- OTOMATISASI INSERT KE UJIAN PENDADARAN & PEMBERSIHAN DATA ---
+        if ($update) {
+            // Ambil data progres yang baru saja diupdate
+            $progres = $this->db->get_where('progres_skripsi', ['id' => $id_progres])->row();
+            
+            if ($progres) {
+                
+                // =====================================================================
+                // FITUR EFISIENSI: HAPUS BAB SEBELUMNYA DARI DATABASE
+                // Menghapus riwayat bab lama agar database tetap bersih dan ringan
+                // =====================================================================
+                $this->db->where('npm', $progres->npm);
+                $this->db->where('bab <', $progres->bab);
+                $this->db->delete('progres_skripsi');
+                // =====================================================================
+
+                // Cek apakah ini Bab 6 (Naskah Akhir) dan kedua dosen memberikan nilai ACC (100%)
+                if ($progres->bab >= 6 && $progres->progres_dosen1 == 100 && $progres->progres_dosen2 == 100) {
+                    
+                    // Ambil id_skripsi dan prodi dari mahasiswa
+                    $this->db->select('S.id as id_skripsi, M.prodi');
+                    $this->db->from('skripsi S');
+                    $this->db->join('data_mahasiswa M', 'S.id_mahasiswa = M.id');
+                    $this->db->where('M.npm', $progres->npm);
+                    $mhs = $this->db->get()->row();
+
+                    if ($mhs) {
+                        // Tentukan ID Jenis Ujian Pendadaran sesuai prodi
+                        $id_jenis_pendadaran = 2; // Default
+                        if ($mhs->prodi == 'Teknik Informatika S1') $id_jenis_pendadaran = 6;
+                        elseif ($mhs->prodi == 'Teknologi Informasi D3') $id_jenis_pendadaran = 8;
+
+                        // KUNCI MENGULANG: Cek pendadaran yang aktif
+                        $this->db->where('id_skripsi', $mhs->id_skripsi);
+                        $this->db->where('id_jenis_ujian_skripsi', $id_jenis_pendadaran);
+                        $this->db->where_in('status', ['Berlangsung', 'Perbaikan', 'Diterima', 'Lulus']);
+                        $cek_pendadaran = $this->db->get('ujian_skripsi')->num_rows();
+
+                        if ($cek_pendadaran == 0) {
+                            // Insert otomatis ke ujian_skripsi untuk PENDADARAN
+                            $this->db->insert('ujian_skripsi', [
+                                'id_skripsi' => $mhs->id_skripsi,
+                                'id_jenis_ujian_skripsi' => $id_jenis_pendadaran,
+                                'status' => 'Berlangsung',
+                                'tanggal_daftar' => date('Y-m-d')
+                            ]);
+                        }
+                    }
+                }
+            }
+        }
+        
+        return $update;
     }
 
     public function simpan_draft_skripsi($data)

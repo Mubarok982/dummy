@@ -57,10 +57,90 @@ class M_Dosen extends CI_Model {
         return $this->db->get_where('progres_skripsi', ['id' => $id_progres])->row_array();
     }
     
-    public function update_progres($id_progres, $data)
+   public function update_progres($id_progres, $data)
     {
+        // 1. Update nilai/koreksi dari dosen ke database
         $this->db->where('id', $id_progres);
-        return $this->db->update('progres_skripsi', $data);
+        $update = $this->db->update('progres_skripsi', $data);
+
+        // 2. --- OTOMATISASI PENDAFTARAN UJIAN (SEMPRO & PENDADARAN) ---
+        if ($update) {
+            // Cek status progres saat ini setelah dosen memberi nilai
+            $progres = $this->db->get_where('progres_skripsi', ['id' => $id_progres])->row();
+            
+            if ($progres) {
+                
+                // =====================================================================
+                // FITUR EFISIENSI: HAPUS DATA BAB SEBELUMNYA
+                // Menghapus riwayat bab lama agar database tetap bersih dan ringan
+                // =====================================================================
+                $this->db->where('npm', $progres->npm);
+                $this->db->where('bab <', $progres->bab);
+                $this->db->delete('progres_skripsi');
+                // =====================================================================
+
+                // Jika kedua dosen sudah ACC (100%)
+                if ($progres->progres_dosen1 == 100 && $progres->progres_dosen2 == 100) {
+                    
+                    // Ambil data skripsi & prodi mahasiswa
+                    $this->db->select('S.id as id_skripsi, M.prodi');
+                    $this->db->from('skripsi S');
+                    $this->db->join('data_mahasiswa M', 'S.id_mahasiswa = M.id');
+                    $this->db->where('M.npm', $progres->npm);
+                    $mhs = $this->db->get()->row();
+
+                    if ($mhs) {
+                        
+                        // --- A. JIKA BAB 3 (OTOMATIS DAFTAR SEMPRO) ---
+                        if ($progres->bab == 3) {
+                            $id_jenis_ujian = 1; // Default
+                            if ($mhs->prodi == 'Teknik Informatika S1') $id_jenis_ujian = 5;
+                            elseif ($mhs->prodi == 'Teknologi Informasi D3') $id_jenis_ujian = 7;
+
+                            // Cek agar tidak duplikat (abaikan jika status sebelumnya 'Mengulang')
+                            $this->db->where('id_skripsi', $mhs->id_skripsi);
+                            $this->db->where('id_jenis_ujian_skripsi', $id_jenis_ujian);
+                            $this->db->where_in('status', ['Berlangsung', 'Perbaikan', 'Diterima', 'Lulus']);
+                            $cek_sempro = $this->db->get('ujian_skripsi')->num_rows();
+
+                            if ($cek_sempro == 0) {
+                                $this->db->insert('ujian_skripsi', [
+                                    'id_skripsi' => $mhs->id_skripsi,
+                                    'id_jenis_ujian_skripsi' => $id_jenis_ujian,
+                                    'status' => 'Berlangsung',
+                                    'tanggal_daftar' => date('Y-m-d')
+                                ]);
+                            }
+                        }
+
+                        // --- B. JIKA BAB 6 / TERAKHIR (OTOMATIS DAFTAR PENDADARAN) ---
+                        if ($progres->bab >= 6) {
+                            $id_jenis_ujian = 2; // Default
+                            if ($mhs->prodi == 'Teknik Informatika S1') $id_jenis_ujian = 6;
+                            elseif ($mhs->prodi == 'Teknologi Informasi D3') $id_jenis_ujian = 8;
+
+                            // Cek agar tidak duplikat (abaikan jika status sebelumnya 'Mengulang')
+                            $this->db->where('id_skripsi', $mhs->id_skripsi);
+                            $this->db->where('id_jenis_ujian_skripsi', $id_jenis_ujian);
+                            $this->db->where_in('status', ['Berlangsung', 'Perbaikan', 'Diterima', 'Lulus']);
+                            $cek_pendadaran = $this->db->get('ujian_skripsi')->num_rows();
+
+                            if ($cek_pendadaran == 0) {
+                                $this->db->insert('ujian_skripsi', [
+                                    'id_skripsi' => $mhs->id_skripsi,
+                                    'id_jenis_ujian_skripsi' => $id_jenis_ujian,
+                                    'status' => 'Berlangsung',
+                                    'tanggal_daftar' => date('Y-m-d')
+                                ]);
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+
+        return $update;
     }
 
     public function count_total_bimbingan($id_dosen)

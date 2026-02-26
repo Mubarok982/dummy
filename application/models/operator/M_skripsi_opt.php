@@ -65,11 +65,67 @@ class M_skripsi_opt extends CI_Model {
         $this->db->order_by('S.tgl_pengajuan_judul', 'ASC');
         return $this->db->get()->result_array();
     }
-
-    public function update_skripsi($id_skripsi, $data)
+public function update_skripsi($id_skripsi, $data)
     {
         $this->db->where('id', $id_skripsi);
-        return $this->db->update('skripsi', $data);
+        $update = $this->db->update('skripsi', $data);
+
+        // Jika Judul / Dospem di-ACC Kaprodi
+        if ($update && isset($data['status_acc_kaprodi']) && $data['status_acc_kaprodi'] == 'diterima') {
+            
+            $this->db->select('M.npm, M.prodi');
+            $this->db->from('skripsi S');
+            $this->db->join('data_mahasiswa M', 'S.id_mahasiswa = M.id');
+            $this->db->where('S.id', $id_skripsi);
+            $mhs = $this->db->get()->row();
+
+            if ($mhs) {
+                // ==============================================================
+                // LOGIKA MENGULANG: HAPUS SEMUA FILE FISIK DAN DATABASE
+                // ==============================================================
+                $this->db->where('id_skripsi', $id_skripsi);
+                $this->db->where('status', 'Mengulang');
+                $cek_mengulang = $this->db->get('ujian_skripsi')->num_rows();
+
+                if ($cek_mengulang > 0) {
+                    // 1. Hapus File Fisik PDF dari Folder Server
+                    $files = $this->db->get_where('progres_skripsi', ['npm' => $mhs->npm])->result();
+                    foreach ($files as $f) {
+                        $path = FCPATH . 'uploads/progres/' . $f->file; 
+                        if (!empty($f->file) && file_exists($path) && !is_dir($path)) {
+                            unlink($path); // Hapus permanen
+                        }
+                    }
+                    // 2. Hapus seluruh progress lama dari database agar kembali murni ke Bab 1
+                    $this->db->where('npm', $mhs->npm);
+                    $this->db->delete('progres_skripsi');
+                }
+
+                // ==============================================================
+                // OTOMATISASI INSERT KE UJIAN_SKRIPSI (SEMPRO)
+                // ==============================================================
+                $id_jenis_sempro = 1; 
+                if ($mhs->prodi == 'Teknik Informatika S1') $id_jenis_sempro = 5; 
+                elseif ($mhs->prodi == 'Teknologi Informasi D3') $id_jenis_sempro = 7; 
+
+                // Cari Sempro yang sedang aktif (Abaikan yang statusnya Mengulang)
+                $this->db->where('id_skripsi', $id_skripsi);
+                $this->db->where('id_jenis_ujian_skripsi', $id_jenis_sempro);
+                $this->db->where_in('status', ['Berlangsung', 'Perbaikan', 'Diterima', 'Lulus']);
+                $cek_ujian = $this->db->get('ujian_skripsi')->num_rows();
+                
+                if ($cek_ujian == 0) {
+                    $this->db->insert('ujian_skripsi', [
+                        'id_skripsi' => $id_skripsi,
+                        'id_jenis_ujian_skripsi' => $id_jenis_sempro,
+                        'status' => 'Berlangsung',
+                        'tanggal_daftar' => date('Y-m-d')
+                    ]);
+                }
+            }
+        }
+        
+        return $update;
     }
 
     // Pagination methods for ACC DOSPEM
