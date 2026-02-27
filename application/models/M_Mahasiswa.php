@@ -54,57 +54,45 @@ class M_Mahasiswa extends CI_Model {
 
     if ($mhs && !empty($mhs->npm))
     {
-        $npm     = $mhs->npm;
-        $folder  = FCPATH . 'uploads/progres/';
+        $npm = $mhs->npm;
+        $id_skripsi = $mhs->id_skripsi;
 
-        // ==============================================================
-        // 2. HAPUS FILE BAB 1–6 SECARA SPESIFIK & BERSIH
-        //    pola yang dicari: *npm*bab(1-6)*
-        // ==============================================================
+        if (!empty($id_skripsi)) {
+            $this->db->where('id_skripsi', $id_skripsi); // Fokus pada ID Skripsi saat ini
+        } else {
+            $this->db->where('npm', $npm); // Fallback jika ID Skripsi kosong
+        }
+        
+        // Ambil data progres dari Bab 1 sampai Bab 6
+        $this->db->where_in('bab', [1, 2, 3, 4, 5, 6]);
+        $files_to_delete = $this->db->get('progres_skripsi')->result();
 
-        for ($i = 1; $i <= 6; $i++) {
-            // cari file yang mengandung NPM dan BAB X
-            $patterns = [
-                $folder . "*{$npm}*bab{$i}*.pdf",
-                $folder . "*{$npm}*BAB{$i}*.pdf",
-                $folder . "*bab{$i}*{$npm}*.pdf",
-                $folder . "*BAB{$i}*{$npm}*.pdf",
-                $folder . "*{$npm}*bab {$i}*.pdf",
-                $folder . "*bab {$i}*{$npm}*.pdf",
-            ];
-
-            foreach ($patterns as $pattern) {
-                foreach (glob($pattern) as $file) {
-                    if (is_file($file)) {
-                        unlink($file);
-                    }
+        // Eksekusi hapus file fisik
+        foreach ($files_to_delete as $file_data) {
+            if (!empty($file_data->file)) {
+                $path = FCPATH . 'uploads/progres/' . $file_data->file;
+                if (file_exists($path) && is_file($path)) {
+                    unlink($path);
                 }
             }
         }
 
-        // ==============================================================
-        // 3. HAPUS DATA PROGRES DI DATABASE KHUSUS BAB 1–6
-        // ==============================================================
-
-        $this->db->where('npm', $npm);
-        $this->db->where_in('bab', ['1','2','3','4','5','6']);
+        if (!empty($id_skripsi)) {
+            $this->db->where('id_skripsi', $id_skripsi);
+        } else {
+            $this->db->where('npm', $npm);
+        }
+        $this->db->where_in('bab', [1, 2, 3, 4, 5, 6]);
         $this->db->delete('progres_skripsi');
 
-        // ==============================================================
-        // 4. Hapus status ujian Mengulang
-        // ==============================================================
 
-        if (!empty($mhs->id_skripsi)) {
-            $this->db->delete('ujian_skripsi', [
-                'id_skripsi' => $mhs->id_skripsi,
-                'status'     => 'Mengulang'
-            ]);
+        if (!empty($id_skripsi)) {
+            $this->db->where('id_skripsi', $id_skripsi);
+            $this->db->where('status', 'Mengulang');
+            $this->db->delete('ujian_skripsi');
         }
     }
 
-    // ==============================================================
-    // 5. Simpan judul baru
-    // ==============================================================
     $update_data = [
         'tema'               => $data['tema'],
         'judul'              => $data['judul'],

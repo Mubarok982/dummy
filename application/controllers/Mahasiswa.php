@@ -86,6 +86,13 @@ class Mahasiswa extends CI_Controller {
                 'status_acc_kaprodi' => 'menunggu'
             ];
 
+            $this->M_Mahasiswa->update_skripsi_judul($id_mahasiswa, [
+                'tema' => $this->input->post('tema'),
+                'judul' => $this->input->post('judul'),
+                'pembimbing1' => $this->input->post('pembimbing1'),
+                'pembimbing2' => $this->input->post('pembimbing2'),
+            ]);
+
             $this->M_Mahasiswa->insert_skripsi($data);
             $this->session->set_flashdata('pesan_sukses', 'Pengajuan judul baru berhasil dikirim.');
             $this->M_Log->record('Judul', 'Mengajukan judul baru: ' . $data['judul']);
@@ -177,7 +184,7 @@ class Mahasiswa extends CI_Controller {
         $this->load->view('template/footer');
     }
 
-    public function upload_progres_bab()
+   public function upload_progres_bab()
     {
         $id_mahasiswa = $this->session->userdata('id');
         $skripsi = $this->M_Mahasiswa->get_skripsi_by_mhs($id_mahasiswa);
@@ -239,8 +246,12 @@ class Mahasiswa extends CI_Controller {
             
             $status_plagiasi_awal = ($bab == 1) ? 'Menunggu' : '-';
 
+            // ========================================================
+            // PENYEMPURNAAN: MEMASUKKAN ID_SKRIPSI KE DATABASE PROGRES
+            // ========================================================
             $progres_data = [
                 'npm'            => $npm,
+                'id_skripsi'     => $skripsi['id'], // <--- KUNCI UTAMA RELASI BARU
                 'bab'            => $bab,
                 'file'           => $file_data['file_name'], 
                 'progres_dosen1' => 0,          
@@ -252,6 +263,7 @@ class Mahasiswa extends CI_Controller {
                 'status_plagiasi'      => $status_plagiasi_awal, 
                 'persentase_kemiripan' => 0
             ];
+            // ========================================================
             
             $this->M_Mahasiswa->insert_progres($progres_data);
             $id_baru = $this->db->insert_id();
