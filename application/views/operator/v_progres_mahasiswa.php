@@ -3,12 +3,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1 class="m-0"><?php echo $title; ?></h1>
+                    <h1 class="m-0"><?php echo isset($title) ? $title : 'Riwayat Progres Mahasiswa'; ?></h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="<?php echo base_url('operator/dashboard'); ?>">Dashboard</a></li>
-                        <li class="breadcrumb-item active"><?php echo $title; ?></li>
+                        <li class="breadcrumb-item active"><?php echo isset($title) ? $title : 'Progress'; ?></li>
                     </ol>
                 </div>
             </div>
@@ -31,7 +31,7 @@
                                         <div class="input-group-prepend">
                                             <span class="input-group-text"><i class="fas fa-search"></i></span>
                                         </div>
-                                        <input type="text" name="keyword" class="form-control" placeholder="Nama, NPM, atau Judul..." value="<?php echo $keyword; ?>">
+                                        <input type="text" name="keyword" class="form-control" placeholder="Nama, NPM, atau Judul..." value="<?php echo isset($keyword) ? $keyword : ''; ?>">
                                     </div>
                                 </div>
                             </div>
@@ -42,7 +42,7 @@
                                         <option value="all">Semua Prodi</option>
                                         <?php if(!empty($list_prodi)): ?>
                                             <?php foreach ($list_prodi as $prodi_option): ?>
-                                                <option value="<?php echo $prodi_option['prodi']; ?>" <?php echo ($prodi == $prodi_option['prodi']) ? 'selected' : ''; ?>><?php echo $prodi_option['prodi']; ?></option>
+                                                <option value="<?php echo $prodi_option['prodi']; ?>" <?php echo (isset($prodi) && $prodi == $prodi_option['prodi']) ? 'selected' : ''; ?>><?php echo $prodi_option['prodi']; ?></option>
                                             <?php endforeach; ?>
                                         <?php endif; ?>
                                     </select>
@@ -77,8 +77,29 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if (!empty($list_revisi)): ?>
-                                <?php $no = $start_index + 1; foreach ($list_revisi as $revisi): ?>
+                            <?php 
+                            // ============================================================
+                            // LOGIKA ANTI-DUPLIKAT (Menyaring baris file yang sama)
+                            // ============================================================
+                            $seen_files = []; // Array pelacak nama file yang sudah ditampilkan
+                            $filtered_revisi = []; 
+                            
+                            if (!empty($list_revisi)) {
+                                foreach ($list_revisi as $revisi) {
+                                    // Jadikan nama file sebagai kunci unik.
+                                    // Jika file ini sudah pernah dirender, lewati baris ini.
+                                    $unique_key = $revisi['file'];
+                                    
+                                    if (empty($unique_key) || !in_array($unique_key, $seen_files)) {
+                                        $seen_files[] = $unique_key;
+                                        $filtered_revisi[] = $revisi;
+                                    }
+                                }
+                            }
+                            ?>
+
+                            <?php if (!empty($filtered_revisi)): ?>
+                                <?php $no = isset($start_index) ? $start_index + 1 : 1; foreach ($filtered_revisi as $revisi): ?>
                                     <tr>
                                         <td class="text-center font-weight-bold text-muted"><?php echo $no++; ?></td>
                                         
@@ -145,11 +166,11 @@
                 <div class="card-footer py-2 bg-white">
                     <div class="row align-items-center">
                         <div class="col-sm-6 text-muted small">
-                            Total Data: <b><?php echo $total_rows; ?></b>
+                            Total Data: <b><?php echo count($filtered_revisi); ?></b>
                         </div>
                         <div class="col-sm-6">
                             <div class="float-right m-0">
-                                <?php echo $pagination; ?>
+                                <?php echo isset($pagination) ? $pagination : ''; ?>
                             </div>
                         </div>
                     </div>
@@ -159,8 +180,9 @@
     </section>
 </div>
 
-<?php if (!empty($list_revisi)): ?>
-    <?php foreach ($list_revisi as $revisi): ?>
+<?php if (!empty($filtered_revisi)): ?>
+    <?php foreach ($filtered_revisi as $revisi): ?>
+        
         <div class="modal fade" id="modalDetail<?php echo $revisi['id']; ?>" tabindex="-1" role="dialog" aria-hidden="true">
             <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
                 <div class="modal-content shadow-lg border-0">
@@ -175,20 +197,20 @@
                                 <div class="card h-100 border-primary shadow-sm">
                                     <div class="card-header bg-white border-bottom-primary">
                                         <small class="text-muted text-uppercase font-weight-bold d-block">Pembimbing 1</small>
-                                        <h6 class="text-primary font-weight-bold m-0"><i class="fas fa-user-tie mr-1"></i> <?php echo $revisi['nama_p1'] ?: '-'; ?></h6>
+                                        <h6 class="text-primary font-weight-bold m-0"><i class="fas fa-user-tie mr-1"></i> <?php echo isset($revisi['nama_p1']) ? $revisi['nama_p1'] : '-'; ?></h6>
                                     </div>
                                     <div class="card-body">
                                         <div class="mb-3">
                                             <span class="text-muted small">Status Nilai:</span><br>
                                             <?php $bg_p1 = ($revisi['progres_dosen1'] == 100) ? 'success' : 'warning'; ?>
                                             <span class="badge badge-<?php echo $bg_p1; ?> px-3 py-2" style="font-size: 14px;">
-                                                <?php echo $revisi['nilai_dosen1'] ?: 'Menunggu'; ?> (<?php echo $revisi['progres_dosen1']; ?>%)
+                                                <?php echo !empty($revisi['nilai_dosen1']) ? $revisi['nilai_dosen1'] : 'Menunggu'; ?> (<?php echo $revisi['progres_dosen1']; ?>%)
                                             </span>
                                         </div>
                                         <div>
                                             <span class="text-muted small">Komentar/Catatan:</span>
                                             <div class="p-3 bg-light rounded border mt-1" style="min-height: 100px; max-height: 200px; overflow-y: auto;">
-                                                <span class="font-italic text-dark"><?php echo nl2br($revisi['komentar_dosen1']) ?: '- Belum ada komentar -'; ?></span>
+                                                <span class="font-italic text-dark"><?php echo !empty($revisi['komentar_dosen1']) ? nl2br($revisi['komentar_dosen1']) : '- Belum ada komentar -'; ?></span>
                                             </div>
                                         </div>
                                     </div>
@@ -199,20 +221,20 @@
                                 <div class="card h-100 border-info shadow-sm">
                                     <div class="card-header bg-white border-bottom-info">
                                         <small class="text-muted text-uppercase font-weight-bold d-block">Pembimbing 2</small>
-                                        <h6 class="text-info font-weight-bold m-0"><i class="fas fa-user-tie mr-1"></i> <?php echo $revisi['nama_p2'] ?: '-'; ?></h6>
+                                        <h6 class="text-info font-weight-bold m-0"><i class="fas fa-user-tie mr-1"></i> <?php echo isset($revisi['nama_p2']) ? $revisi['nama_p2'] : '-'; ?></h6>
                                     </div>
                                     <div class="card-body">
                                         <div class="mb-3">
                                             <span class="text-muted small">Status Nilai:</span><br>
                                             <?php $bg_p2 = ($revisi['progres_dosen2'] == 100) ? 'success' : 'warning'; ?>
                                             <span class="badge badge-<?php echo $bg_p2; ?> px-3 py-2" style="font-size: 14px;">
-                                                <?php echo $revisi['nilai_dosen2'] ?: 'Menunggu'; ?> (<?php echo $revisi['progres_dosen2']; ?>%)
+                                                <?php echo !empty($revisi['nilai_dosen2']) ? $revisi['nilai_dosen2'] : 'Menunggu'; ?> (<?php echo $revisi['progres_dosen2']; ?>%)
                                             </span>
                                         </div>
                                         <div>
                                             <span class="text-muted small">Komentar/Catatan:</span>
                                             <div class="p-3 bg-light rounded border mt-1" style="min-height: 100px; max-height: 200px; overflow-y: auto;">
-                                                <span class="font-italic text-dark"><?php echo nl2br($revisi['komentar_dosen2']) ?: '- Belum ada komentar -'; ?></span>
+                                                <span class="font-italic text-dark"><?php echo !empty($revisi['komentar_dosen2']) ? nl2br($revisi['komentar_dosen2']) : '- Belum ada komentar -'; ?></span>
                                             </div>
                                         </div>
                                     </div>
@@ -227,12 +249,7 @@
                 </div>
             </div>
         </div>
-    <?php endforeach; ?>
-<?php endif; ?>
 
-
-<?php if (!empty($list_revisi)): ?>
-    <?php foreach ($list_revisi as $revisi): ?>
         <div class="modal fade" id="modalKoreksi<?php echo $revisi['id']; ?>" tabindex="-1" role="dialog" aria-hidden="true">
             <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
                 <div class="modal-content text-left shadow-lg border-0">
@@ -252,7 +269,7 @@
                                     <i class="fas fa-user-tie fa-2x text-primary mr-3"></i>
                                     <div>
                                         <small class="text-muted d-block text-uppercase font-weight-bold">Pembimbing 1</small>
-                                        <h6 class="text-primary font-weight-bold m-0"><?php echo $revisi['nama_p1'] ?: '-'; ?></h6>
+                                        <h6 class="text-primary font-weight-bold m-0"><?php echo isset($revisi['nama_p1']) ? $revisi['nama_p1'] : '-'; ?></h6>
                                     </div>
                                 </div>
                                 <div class="form-group mb-3">
@@ -295,7 +312,7 @@
                                     <i class="fas fa-user-tie fa-2x text-info mr-3"></i>
                                     <div>
                                         <small class="text-muted d-block text-uppercase font-weight-bold">Pembimbing 2</small>
-                                        <h6 class="text-info font-weight-bold m-0"><?php echo $revisi['nama_p2'] ?: '-'; ?></h6>
+                                        <h6 class="text-info font-weight-bold m-0"><?php echo isset($revisi['nama_p2']) ? $revisi['nama_p2'] : '-'; ?></h6>
                                     </div>
                                 </div>
                                 <div class="form-group mb-3">
@@ -342,6 +359,7 @@
                 </div>
             </div>
         </div>
+
     <?php endforeach; ?>
 <?php endif; ?>
 

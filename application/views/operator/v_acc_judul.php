@@ -69,33 +69,35 @@
                         </div>
                         
                         <div class="card-body">
-                            <!-- Filter Form -->
                             <form method="GET" action="<?php echo base_url('operator/acc_judul'); ?>" class="mb-3">
                                 <div class="row">
                                     <div class="col-md-4">
-                                        <input type="text" name="keyword" class="form-control" placeholder="Cari nama/NPM/judul..." value="<?php echo $keyword; ?>">
+                                        <input type="text" name="keyword" class="form-control" placeholder="Cari nama/NPM/judul..." value="<?php echo isset($keyword) ? $keyword : ''; ?>">
                                     </div>
                                     <div class="col-md-3">
                                         <select name="status" class="form-control">
                                             <option value="all">Semua Status</option>
-                                            <?php foreach ($list_status_acc as $status_option): ?>
-                                                <option value="<?php echo $status_option['status']; ?>" <?php echo ($status == $status_option['status']) ? 'selected' : ''; ?>><?php echo $status_option['status']; ?></option>
-                                            <?php endforeach; ?>
+                                            <?php if(isset($list_status_acc)): ?>
+                                                <?php foreach ($list_status_acc as $status_option): ?>
+                                                    <option value="<?php echo $status_option['status']; ?>" <?php echo (isset($status) && $status == $status_option['status']) ? 'selected' : ''; ?>><?php echo $status_option['status']; ?></option>
+                                                <?php endforeach; ?>
+                                            <?php endif; ?>
                                         </select>
                                     </div>
                                     <div class="col-md-3">
                                         <select name="prodi" class="form-control">
                                             <option value="all">Semua Prodi</option>
-                                            <?php foreach ($list_prodi as $prodi_option): ?>
-                                                <option value="<?php echo $prodi_option['prodi']; ?>" <?php echo ($prodi == $prodi_option['prodi']) ? 'selected' : ''; ?>><?php echo $prodi_option['prodi']; ?></option>
-                                            <?php endforeach; ?>
+                                            <?php if(isset($list_prodi)): ?>
+                                                <?php foreach ($list_prodi as $prodi_option): ?>
+                                                    <option value="<?php echo $prodi_option['prodi']; ?>" <?php echo (isset($prodi) && $prodi == $prodi_option['prodi']) ? 'selected' : ''; ?>><?php echo $prodi_option['prodi']; ?></option>
+                                                <?php endforeach; ?>
+                                            <?php endif; ?>
                                         </select>
                                     </div>
                                     <div class="col-md-2">
                                         <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-search"></i> Filter</button>
                                     </div>
                                 </div>
-                                <!-- Top sort controls removed; header-click sorting used -->
                             </form>
 
                             <div class="table-responsive" style="height: 600px;">
@@ -111,7 +113,28 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php if (empty($mahasiswa)): ?>
+                                    <?php 
+                                    // ============================================================
+                                    // LOGIKA ANTI-DUPLIKAT: Menyaring entri ganda dari database
+                                    // Hanya mengambil ID Skripsi terbesar (Terbaru) untuk tiap NPM
+                                    // ============================================================
+                                    $filtered_mahasiswa = [];
+                                    if (!empty($mahasiswa)) {
+                                        $temp_mhs = [];
+                                        foreach ($mahasiswa as $m) {
+                                            $npm = $m['npm'];
+                                            // Jika NPM belum dicatat, ATAU jika sudah dicatat tapi baris yang sedang dilooping ini 
+                                            // punya id_skripsi yang lebih besar (lebih baru), maka timpa data lamanya!
+                                            if (!isset($temp_mhs[$npm]) || $m['id_skripsi'] > $temp_mhs[$npm]['id_skripsi']) {
+                                                $temp_mhs[$npm] = $m;
+                                            }
+                                        }
+                                        // Kembalikan menjadi array berindeks angka biasa
+                                        $filtered_mahasiswa = array_values($temp_mhs);
+                                    }
+                                    ?>
+
+                                    <?php if (empty($filtered_mahasiswa)): ?>
                                         <tr>
                                             <td colspan="7" class="text-center py-5 text-muted">
                                                 <i class="fas fa-users-slash fa-3x mb-3 text-gray-300"></i><br>
@@ -119,13 +142,13 @@
                                             </td>
                                         </tr>
                                     <?php else: ?>
-                                        <?php $no = 1; foreach ($mahasiswa as $m): ?>
+                                        <?php $no = 1; foreach ($filtered_mahasiswa as $m): ?>
                                         <tr>
                                             <td class="align-middle text-center"><?php echo $no++; ?></td>
                                             <td class="align-middle text-center"><span class="badge badge-light border"><?php echo $m['npm']; ?></span></td>
                                             <td class="align-middle">
                                                 <span class="font-weight-bold text-dark"><?php echo $m['nama']; ?></span><br>
-                                                <small class="text-muted">Angkatan: <?php echo $m['angkatan']; ?></small>
+                                                <small class="text-muted">Angkatan: <?php echo isset($m['angkatan']) ? $m['angkatan'] : '-'; ?></small>
                                             </td>
                                             
                                             <td class="align-middle text-wrap" style="min-width: 250px; max-width: 400px;">
@@ -143,9 +166,6 @@
                                                 <div class="text-muted d-flex justify-content-between">
                                                     <span><i class="fas fa-user-tie text-secondary mr-1"></i> P2: <?php echo $m['p2'] ?: '-'; ?></span>
                                                 </div>
-                                                
-                                                <?php if($m['id_skripsi']): ?>
-                                                <?php endif; ?>
                                             </td>
 
                                             <td class="align-middle text-center">
@@ -163,7 +183,7 @@
                                                             <span class="badge badge-<?= ($m['status_acc_kaprodi'] == 'diterima') ? 'success' : 'danger' ?> p-2 mb-1">
                                                                 STATUS: <?= strtoupper($m['status_acc_kaprodi']) ?>
                                                             </span>
-                                                            <?php endif; ?>
+                                                        <?php endif; ?>
                                                     </div>
                                                 <?php else: ?>
                                                     <span class="text-muted font-italic text-sm">Menunggu Input</span>
@@ -199,11 +219,11 @@
                                                                 <label>Pembimbing 1</label>
                                                                 <select name="pembimbing1" class="form-control select2" style="width: 100%;" required>
                                                                     <option value="">-- Pilih Dosen --</option>
-                                                                    <?php foreach($dosen_list as $d): ?>
+                                                                    <?php if(isset($dosen_list)): foreach($dosen_list as $d): ?>
                                                                         <option value="<?= $d['id']; ?>" <?= ($d['nama'] == $m['p1']) ? 'selected' : ''; ?>>
                                                                             <?= $d['nama']; ?>
                                                                         </option>
-                                                                    <?php endforeach; ?>
+                                                                    <?php endforeach; endif; ?>
                                                                 </select>
                                                             </div>
 
@@ -211,11 +231,11 @@
                                                                 <label>Pembimbing 2</label>
                                                                 <select name="pembimbing2" class="form-control select2" style="width: 100%;" required>
                                                                     <option value="">-- Pilih Dosen --</option>
-                                                                    <?php foreach($dosen_list as $d): ?>
+                                                                    <?php if(isset($dosen_list)): foreach($dosen_list as $d): ?>
                                                                         <option value="<?= $d['id']; ?>" <?= ($d['nama'] == $m['p2']) ? 'selected' : ''; ?>>
                                                                             <?= $d['nama']; ?>
                                                                         </option>
-                                                                    <?php endforeach; ?>
+                                                                    <?php endforeach; endif; ?>
                                                                 </select>
                                                             </div>
                                                             
@@ -239,7 +259,7 @@
                         <div class="card-footer py-2 bg-white">
                             <div class="row align-items-center">
                                 <div class="col-sm-6 text-muted small">
-                                    Total Data: <b><?php echo isset($total_rows) ? $total_rows : 0; ?></b>
+                                    Total Data: <b><?php echo count($filtered_mahasiswa); ?></b>
                                 </div>
                                 <div class="col-sm-6">
                                     <div class="float-right">

@@ -36,26 +36,23 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <!-- Filter Form -->
                     <form method="GET" action="<?php echo base_url('operator/cek_plagiarisme_list'); ?>" class="mb-3">
                         <div class="row">
                             <div class="col-md-4">
-                                <input type="text" name="keyword" class="form-control" placeholder="Cari nama/NPM..." value="<?php echo $keyword; ?>">
+                                <input type="text" name="keyword" class="form-control" placeholder="Cari nama/NPM..." value="<?php echo isset($keyword) ? $keyword : ''; ?>">
                             </div>
                             <div class="col-md-3">
                                 <select name="status" class="form-control">
                                     <option value="all">Semua Status</option>
-                                    <option value="Menunggu" <?php echo ($status == 'Menunggu') ? 'selected' : ''; ?>>Menunggu</option>
-                                    <option value="Lulus" <?php echo ($status == 'Lulus') ? 'selected' : ''; ?>>Lulus</option>
-                                    <option value="Tolak" <?php echo ($status == 'Tolak') ? 'selected' : ''; ?>>Tolak</option>
+                                    <option value="Menunggu" <?php echo (isset($status) && $status == 'Menunggu') ? 'selected' : ''; ?>>Menunggu</option>
+                                    <option value="Lulus" <?php echo (isset($status) && $status == 'Lulus') ? 'selected' : ''; ?>>Lulus</option>
+                                    <option value="Tolak" <?php echo (isset($status) && $status == 'Tolak') ? 'selected' : ''; ?>>Tolak</option>
                                 </select>
                             </div>
-                            <!-- Top sort_by removed; use header-click sorting -->
                             <div class="col-md-2">
                                 <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-search"></i> Filter</button>
                             </div>
                         </div>
-                        <!-- Top sort_order removed; use header-click sorting -->
                     </form>
 
                     <div class="table-responsive">
@@ -73,11 +70,30 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if (empty($list_plagiasi)): ?>
-                                <?php else: ?>
-                                <?php foreach ($list_plagiasi as $key => $row): ?>
+                            <?php 
+                            if (empty($list_plagiasi)): ?>
+                                <?php else: 
+                                // ============================================================
+                                // LOGIKA ANTI-DUPLIKAT (Menyaring entri ganda dari hasil JOIN model)
+                                // ============================================================
+                                $seen_files = []; // Array untuk melacak file yang sudah dirender
+                                $no_urut = 1;
+                                
+                                foreach ($list_plagiasi as $row): 
+                                    
+                                    // Kunci unik: Kombinasi ID Progres dan Nama File
+                                    // Jika kunci ini sudah pernah muncul di looping sebelumnya, SKIP!
+                                    $unique_key = $row['id'] . '_' . $row['progres_file'];
+                                    
+                                    if (in_array($unique_key, $seen_files)) {
+                                        continue; 
+                                    }
+                                    
+                                    // Tandai file ini sebagai "sudah ditampilkan"
+                                    $seen_files[] = $unique_key;
+                            ?>
                                 <tr>
-                                    <td class="text-center"><?php echo $key + 1; ?></td>
+                                    <td class="text-center"><?php echo $no_urut++; ?></td>
                                     
                                     <td>
                                         <div class="user-block">

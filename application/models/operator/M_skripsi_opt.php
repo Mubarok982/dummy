@@ -3,12 +3,16 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class M_skripsi_opt extends CI_Model {
 
+    // 1. MENU PROGRESS MAHASISWA
     public function get_all_mahasiswa_skripsi()
     {
         $this->db->select('A.id AS id_mhs, A.nama, M.npm, M.prodi, S.id AS id_skripsi, S.judul, S.pembimbing1, S.pembimbing2, P1.nama AS nama_p1, P2.nama AS nama_p2');
         $this->db->from('mstr_akun A');
         $this->db->join('data_mahasiswa M', 'A.id = M.id', 'inner');
-        $this->db->join('skripsi S', 'A.id = S.id_mahasiswa', 'left');
+        
+        // [KOREKSI ANTI-DUPLIKAT]: Hanya Join ke Judul Skripsi yang PALING BARU (MAX id)
+        $this->db->join('(SELECT * FROM skripsi WHERE id IN (SELECT MAX(id) FROM skripsi GROUP BY id_mahasiswa)) S', 'A.id = S.id_mahasiswa', 'left');
+        
         $this->db->join('mstr_akun P1', 'S.pembimbing1 = P1.id', 'left');
         $this->db->join('mstr_akun P2', 'S.pembimbing2 = P2.id', 'left');
         $this->db->where('A.role', 'mahasiswa');
@@ -33,6 +37,7 @@ class M_skripsi_opt extends CI_Model {
         return $this->db->update('skripsi', $data);
     }
 
+    // 2. MENU CEK PLAGIARISME
     public function get_plagiarisme_tasks()
     {
         $this->db->select('HP.*, PS.npm, PS.bab, A.nama, S.judul, PS.file AS progres_file');
@@ -40,7 +45,10 @@ class M_skripsi_opt extends CI_Model {
         $this->db->join('progres_skripsi PS', 'HP.id_progres = PS.id');
         $this->db->join('data_mahasiswa DM', 'PS.npm = DM.npm');
         $this->db->join('mstr_akun A', 'DM.id = A.id');
-        $this->db->join('skripsi S', 'DM.id = S.id_mahasiswa', 'left');
+        
+        // [KOREKSI ANTI-DUPLIKAT]: Hanya ambil Judul Skripsi terbaru
+        $this->db->join('(SELECT * FROM skripsi WHERE id IN (SELECT MAX(id) FROM skripsi GROUP BY id_mahasiswa)) S', 'DM.id = S.id_mahasiswa', 'left');
+        
         $this->db->where('HP.status', 'Menunggu');
         $this->db->order_by('HP.tanggal_cek', 'ASC');
         return $this->db->get()->result_array();
@@ -53,6 +61,7 @@ class M_skripsi_opt extends CI_Model {
         return $this->db->update('hasil_plagiarisme', $data);
     }
 
+    // 3. MENU ACC JUDUL DAN DOSPEM
     public function get_pengajuan_dospem_menunggu()
     {
         $this->db->select('S.*, A_MHS.nama AS nama_mahasiswa, DM.npm, A1.nama AS nama_p1, A2.nama AS nama_p2');
@@ -62,10 +71,15 @@ class M_skripsi_opt extends CI_Model {
         $this->db->join('mstr_akun A1', 'S.pembimbing1 = A1.id', 'left');
         $this->db->join('mstr_akun A2', 'S.pembimbing2 = A2.id', 'left');
         $this->db->where('S.status_acc_kaprodi', 'menunggu');
+        
+        // [KOREKSI ANTI-DUPLIKAT]: Paksa sistem mengabaikan status menunggu dari judul yg sudah usang
+        $this->db->where('S.id IN (SELECT MAX(id) FROM skripsi GROUP BY id_mahasiswa)', NULL, FALSE);
+        
         $this->db->order_by('S.tgl_pengajuan_judul', 'ASC');
         return $this->db->get()->result_array();
     }
-public function update_skripsi($id_skripsi, $data)
+
+    public function update_skripsi($id_skripsi, $data)
     {
         $this->db->where('id', $id_skripsi);
         $update = $this->db->update('skripsi', $data);
@@ -80,27 +94,6 @@ public function update_skripsi($id_skripsi, $data)
             $mhs = $this->db->get()->row();
 
             if ($mhs) {
-                // ==============================================================
-                // LOGIKA MENGULANG: HAPUS SEMUA FILE FISIK DAN DATABASE
-                // ==============================================================
-                $this->db->where('id_skripsi', $id_skripsi);
-                $this->db->where('status', 'Mengulang');
-                $cek_mengulang = $this->db->get('ujian_skripsi')->num_rows();
-
-                if ($cek_mengulang > 0) {
-                    // 1. Hapus File Fisik PDF dari Folder Server
-                    $files = $this->db->get_where('progres_skripsi', ['npm' => $mhs->npm])->result();
-                    foreach ($files as $f) {
-                        $path = FCPATH . 'uploads/progres/' . $f->file; 
-                        if (!empty($f->file) && file_exists($path) && !is_dir($path)) {
-                            unlink($path); // Hapus permanen
-                        }
-                    }
-                    // 2. Hapus seluruh progress lama dari database agar kembali murni ke Bab 1
-                    $this->db->where('npm', $mhs->npm);
-                    $this->db->delete('progres_skripsi');
-                }
-
                 // ==============================================================
                 // OTOMATISASI INSERT KE UJIAN_SKRIPSI (SEMPRO)
                 // ==============================================================
@@ -136,10 +129,15 @@ public function update_skripsi($id_skripsi, $data)
         $this->db->join('data_mahasiswa DM', 'S.id_mahasiswa = DM.id');
         $this->db->where('S.status_acc_kaprodi', 'menunggu');
         
+        // [KOREKSI ANTI-DUPLIKAT]
+        $this->db->where('S.id IN (SELECT MAX(id) FROM skripsi GROUP BY id_mahasiswa)', NULL, FALSE);
+        
         if ($keyword) {
+            $this->db->group_start();
             $this->db->like('A_MHS.nama', $keyword);
             $this->db->or_like('DM.npm', $keyword);
             $this->db->or_like('S.judul', $keyword);
+            $this->db->group_end();
         }
         
         if ($prodi) {
@@ -159,6 +157,9 @@ public function update_skripsi($id_skripsi, $data)
         $this->db->join('mstr_akun A2', 'S.pembimbing2 = A2.id', 'left');
         $this->db->where('S.status_acc_kaprodi', 'menunggu');
         
+        // [KOREKSI ANTI-DUPLIKAT]
+        $this->db->where('S.id IN (SELECT MAX(id) FROM skripsi GROUP BY id_mahasiswa)', NULL, FALSE);
+        
         if ($keyword) {
             $this->db->group_start();
             $this->db->like('A_MHS.nama', $keyword);
@@ -176,7 +177,7 @@ public function update_skripsi($id_skripsi, $data)
         return $this->db->get()->result_array();
     }
 
-public function update_status_ujian($id_ujian, $data)
+    public function update_status_ujian($id_ujian, $data)
     {
         // Hanya update status saja, TIDAK ADA LAGI PENGHAPUSAN FILE!
         $this->db->where('id', $id_ujian);
