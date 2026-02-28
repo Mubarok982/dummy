@@ -626,7 +626,7 @@ class Operator extends CI_Controller {
         $this->load->library('pagination');
         $config['base_url'] = base_url('operator/acc_judul');
         $config['total_rows'] = $this->M_Data->count_acc_judul($keyword, $status, $prodi);
-        $config['per_page'] = 10;
+        $config['per_page'] = 15;
         $config['reuse_query_string'] = TRUE;
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';

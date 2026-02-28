@@ -58,14 +58,16 @@
 
             <?php
             // ============================================================
-            // 2. PEMISAHAN RIWAYAT BERDASARKAN ID SKRIPSI (RELASI DATABASE)
+            // 2. PEMISAHAN RIWAYAT BERDASARKAN ID SKRIPSI
             // ============================================================
             $target_bab = 1; 
             $is_revisi = false;
             
-            $valid_progress = []; // Menyimpan progres khusus untuk ID Skripsi yang aktif
+            $valid_progress = []; 
             $acc_bab_3_count = 0; 
             $acc_bab_max_count = 0; 
+
+            $highest_acc_bab = 0;
 
             if (isset($progres_riwayat) && !empty($progres_riwayat)) {
                 $riwayat_asc = array_reverse($progres_riwayat); 
@@ -73,35 +75,40 @@
                 foreach ($riwayat_asc as $pr) {
                     $id_skripsi_pr = isset($pr->id_skripsi) ? $pr->id_skripsi : 0;
 
-                    // Jika ID Skripsi di riwayat SAMA dengan ID Skripsi judul saat ini
                     if ($id_skripsi_pr == $id_skripsi_aktif) {
                         $valid_progress[] = $pr;
                         
-                        // Hitung jumlah ACC untuk keperluan logika status "Perbaikan"
                         if ($pr->bab == 3 && $pr->progres_dosen1 == 100 && $pr->progres_dosen2 == 100) $acc_bab_3_count++;
                         if ($pr->bab >= $max_bab_prodi && $pr->progres_dosen1 == 100 && $pr->progres_dosen2 == 100) $acc_bab_max_count++;
+
+                        if ($pr->progres_dosen1 == 100 && $pr->progres_dosen2 == 100) {
+                            if ($pr->bab > $highest_acc_bab) {
+                                $highest_acc_bab = $pr->bab;
+                            }
+                        }
                     }
                 }
             }
 
-            // --- PERHITUNGAN TARGET BAB NORMAL ---
+            // PERHITUNGAN TARGET BAB
             if (empty($valid_progress)) {
-                // Berarti ini judul baru (Mengulang), progres untuk ID ini masih kosong
                 $target_bab = 1;
                 $is_revisi = false;
-                if ($original_status_ujian == 'mengulang') $status_ujian = null; // Buka gembok form
+                if ($original_status_ujian == 'mengulang') $status_ujian = null; 
             } else {
                 $last_p = end($valid_progress); 
-                if ($last_p->progres_dosen1 == 100 && $last_p->progres_dosen2 == 100) {
-                    $target_bab = $last_p->bab + 1; // ACC Penuh -> Naik Bab
-                } else {
-                    $target_bab = $last_p->bab; // Belum ACC -> Revisi
+                
+                if ($last_p->progres_dosen1 < 100 || $last_p->progres_dosen2 < 100) {
+                    $target_bab = $last_p->bab; 
                     $is_revisi = true;
+                } else {
+                    $target_bab = $highest_acc_bab + 1;
+                    $is_revisi = false;
                 }
             }
 
             // ============================================================
-            // 3. GATEKEEPER & OVERRIDE UNTUK STATUS PERBAIKAN (MUNDUR PAKSA)
+            // 3. GATEKEEPER & LOGIKA ALUR UJIAN AKADEMIK (DI-KUAT-KAN)
             // ============================================================
             $is_locked = false;
             $notif_type = ""; 
@@ -110,81 +117,100 @@
             $alert_style = 'callout-info';
             $pesan_info = $is_revisi ? 'Silakan upload revisi untuk bab ini.' : 'Silakan upload file untuk melanjutkan progres.';
 
-            // --- JIKA DOSEN MENGUBAH STATUS MENJADI "PERBAIKAN" ---
-            if ($original_status_ujian == 'perbaikan') {
-                
-                // KASUS A: PERBAIKAN SEMPRO (Posisi Normalnya di Bab 4)
-                if ($target_bab == 4) {
-                    if ($acc_bab_3_count >= 2) {
-                        // Jika sudah ada 2 file Bab 3 yang di-ACC (Pra-Sidang & Revisi Pasca-Sidang)
-                        $target_bab = 4;
-                        $is_locked = false;
-                        $notif_type = "revisi_sempro_selesai_lanjut";
-                        $status_card = 'card-success';
-                        $text_header = 'Lanjut Bab 4';
-                        $pesan_info = 'Revisi Sempro (Bab 3) Anda telah di-ACC Dosen. Silakan lanjut upload progres Bab 4.';
-                    } else {
-                        // Paksa mundur ke Bab 3 untuk minta file revisi
-                        $target_bab = 3;
-                        $is_revisi = true;
-                        $is_locked = false;
-                        $notif_type = "revisi_sempro";
-                        $status_card = 'card-warning';
-                        $text_header = 'Upload Revisi Sempro';
-                        $pesan_info = '<b>STATUS: PERBAIKAN SEMPRO.</b> Silakan upload <b>Bab 3</b> yang sudah direvisi pasca sidang.';
-                    }
-                }
-                
-                // KASUS B: PERBAIKAN PENDADARAN (Posisi Normalnya > Batas Bab)
-                elseif ($target_bab > $max_bab_prodi) {
-                    if ($acc_bab_max_count >= 2) {
-                        // Jika sudah 2x ACC Bab 6 -> Sukses
-                        $target_bab = $max_bab_prodi;
-                        $is_locked = true;
-                        $notif_type = "revisi_pendadaran_selesai";
-                    } else {
-                        // Paksa mundur ke Bab 6 untuk minta file revisi
-                        $target_bab = $max_bab_prodi;
-                        $is_revisi = true;
-                        $is_locked = false;
-                        $notif_type = "revisi_pendadaran";
-                        $status_card = 'card-warning';
-                        $text_header = 'Upload Revisi Pendadaran';
-                        $pesan_info = '<b>STATUS: PERBAIKAN PENDADARAN.</b> Silakan upload <b>Bab '.$max_bab_prodi.'</b> yang sudah direvisi pasca sidang.';
-                    }
-                }
+            // Cek apakah ada record ujian di database untuk Pendadaran secara spesifik
+            $CI =& get_instance();
+            $CI->db->select('id_jenis_ujian_skripsi, status');
+            $CI->db->from('ujian_skripsi');
+            $CI->db->where('id_skripsi', $id_skripsi_aktif);
+            $CI->db->order_by('id', 'DESC');
+            $CI->db->limit(1);
+            $ujian_terakhir_db = $CI->db->get()->row();
+            
+            $is_fase_pendadaran = false;
+            if ($target_bab > $max_bab_prodi) {
+                $is_fase_pendadaran = true;
+            } elseif ($ujian_terakhir_db && in_array($ujian_terakhir_db->id_jenis_ujian_skripsi, [2, 6, 8])) {
+                // ID Jenis Ujian Pendadaran (Umum, SI, D3)
+                $is_fase_pendadaran = true;
             }
 
-            // --- GATEKEEPER SEMPRO (Di Bab 4) ---
-            if ($target_bab == 4 && $notif_type == "") {
-                if (in_array($original_status_ujian, ['diterima', 'lulus', 'selesai'])) {
-                    $is_locked = false; 
-                } elseif ($original_status_ujian == 'mengulang') {
-                    $is_locked = true; $notif_type = "mengulang";
-                } elseif ($original_status_ujian == 'berlangsung' || $original_status_ujian == 'menunggu') {
-                    $is_locked = true; $notif_type = "sempro_berlangsung";
+            // PRIORITAS 1: MENGULANG
+            if ($original_status_ujian == 'mengulang') {
+                $is_locked = true; 
+                $notif_type = "mengulang";
+            }
+            
+            // PRIORITAS 2: BERLANGSUNG
+            elseif ($original_status_ujian == 'berlangsung') {
+                $is_locked = true;
+                // KUNCI: Gunakan deteksi fase pendadaran yang lebih kuat
+                if ($is_fase_pendadaran) {
+                    $notif_type = "pendadaran_berlangsung";
+                    $target_bab = $max_bab_prodi; // Tahan
                 } else {
-                    $is_locked = true; $notif_type = "siap_sempro";
+                    $notif_type = "sempro_berlangsung";
+                    $target_bab = 4; // Tahan
                 }
             }
             
-            // --- GATEKEEPER PENDADARAN (> Batas Maksimal Bab) ---
-            elseif ($target_bab > $max_bab_prodi && $notif_type == "") {
-                if ($original_status_ujian == 'mengulang') {
-                    $is_locked = true; $notif_type = "mengulang";
-                } elseif ($original_status_ujian == 'berlangsung' || $original_status_ujian == 'menunggu') {
-                    $is_locked = true; $notif_type = "pendadaran_berlangsung";
-                } elseif (in_array($original_status_ujian, ['diterima', 'lulus', 'selesai'])) {
-                    $is_locked = true; $notif_type = "lulus_akhir";
-                } else {
-                    $notif_type = "siap_pendadaran"; $is_locked = true; $target_bab = $max_bab_prodi; 
+            // PRIORITAS 3: PERBAIKAN PASCA SIDANG
+            elseif ($original_status_ujian == 'perbaikan') {
+                // Perbaikan Pendadaran
+                if ($is_fase_pendadaran) {
+                    if ($acc_bab_max_count >= 2) {
+                        $target_bab = $max_bab_prodi;
+                        $is_locked = true;
+                        $notif_type = "siap_pendadaran"; 
+                    } else {
+                        $target_bab = $max_bab_prodi;
+                        $is_revisi = true;
+                        $is_locked = false;
+                        $status_card = 'card-warning';
+                        $text_header = 'Upload Revisi Pendadaran';
+                        $pesan_info = '<b>STATUS: PERBAIKAN PENDADARAN.</b> Silakan upload <b>Bab '.$max_bab_prodi.'</b> yang sudah direvisi.';
+                    }
+                } 
+                // Perbaikan Sempro
+                else {
+                    if ($acc_bab_3_count >= 2) {
+                        $target_bab = 4;
+                        $is_locked = true;
+                        $notif_type = "siap_sempro"; 
+                    } else {
+                        $target_bab = 3;
+                        $is_revisi = true;
+                        $is_locked = false;
+                        $status_card = 'card-warning';
+                        $text_header = 'Upload Revisi Sempro';
+                        $pesan_info = '<b>STATUS: PERBAIKAN SEMPRO.</b> Silakan upload <b>Bab 3</b> yang sudah direvisi.';
+                    }
+                }
+            }
+            
+            // PRIORITAS 4: NORMAL (BELUM DAFTAR) ATAU SUDAH LULUS
+            else {
+                // PENGECEKAN FASE PENDADARAN (Bab > Max)
+                if ($is_fase_pendadaran) {
+                    if (in_array($original_status_ujian, ['diterima', 'lulus', 'selesai'])) {
+                        $is_locked = true; 
+                        $notif_type = "lulus_akhir"; 
+                    } else {
+                        $is_locked = true; 
+                        $notif_type = "siap_pendadaran"; 
+                        $target_bab = $max_bab_prodi;
+                    }
+                }
+                // PENGECEKAN FASE SEMPRO (Bab 4)
+                elseif ($target_bab == 4) {
+                    if (in_array($original_status_ujian, ['diterima', 'lulus', 'selesai'])) {
+                        $is_locked = false; 
+                    } else {
+                        $is_locked = true; 
+                        $notif_type = "siap_sempro";
+                    }
                 }
             }
 
-            // Pengaman darurat 
-            if ($original_status_ujian == 'mengulang') {
-                $is_locked = true; $notif_type = "mengulang";
-            }
             if ($target_bab > 6) $target_bab = 6;
             ?>
 
@@ -228,14 +254,12 @@
                                             $status_bimbingan_label = "CEK PLAGIARISME";
                                         } else {
                                             if ($notif_type == 'mengulang') $status_bimbingan_label = "MENGULANG";
-                                            elseif ($notif_type == 'siap_sempro') $status_bimbingan_label = "SIAP SEMPRO";
                                             elseif ($notif_type == 'sempro_berlangsung') $status_bimbingan_label = "PROSES SEMPRO";
-                                            elseif ($notif_type == 'revisi_sempro') $status_bimbingan_label = "REVISI SEMPRO";
-                                            elseif ($notif_type == 'revisi_sempro_selesai_lanjut') $status_bimbingan_label = "BIMBINGAN";
-                                            elseif ($notif_type == 'siap_pendadaran') $status_bimbingan_label = "SIAP PENDADARAN";
                                             elseif ($notif_type == 'pendadaran_berlangsung') $status_bimbingan_label = "PROSES PENDADARAN";
+                                            elseif ($notif_type == 'siap_sempro') $status_bimbingan_label = "SIAP SEMPRO";
+                                            elseif ($notif_type == 'siap_pendadaran') $status_bimbingan_label = "SIAP PENDADARAN";
+                                            elseif ($notif_type == 'revisi_sempro') $status_bimbingan_label = "REVISI SEMPRO";
                                             elseif ($notif_type == 'revisi_pendadaran') $status_bimbingan_label = "REVISI PENDADARAN";
-                                            elseif ($notif_type == 'revisi_pendadaran_selesai') $status_bimbingan_label = "REVISI SELESAI";
                                             elseif ($notif_type == 'lulus_akhir') $status_bimbingan_label = "LULUS PENDADARAN";
                                         }
                                         
@@ -261,51 +285,53 @@
                         </div>
                     <?php else: ?>
 
-                        <?php if ($notif_type == 'siap_sempro'): ?>
-                            <div class="card bg-gradient-info shadow-lg mb-4">
-                                <div class="card-body text-center p-4">
-                                    <div class="mb-3"><i class="fas fa-bullhorn fa-4x text-white"></i></div>
-                                    <h3 class="font-weight-bold text-white">Siap Seminar Proposal</h3>
-                                    <p class="text-white">Selamat, Bab 1-3 telah disetujui! Silakan daftar sidang.</p>
-                                    <a href="http://website-administrasi.com" target="_blank" class="btn btn-light font-weight-bold shadow pulse-button">
-                                        <i class="fas fa-external-link-alt mr-2"></i> Daftar Sempro
-                                    </a>
-                                </div>
-                            </div>
-
-                        <?php elseif ($notif_type == 'sempro_berlangsung'): ?>
+                        <?php if ($notif_type == 'sempro_berlangsung'): ?>
                             <div class="card bg-gradient-primary shadow-lg mb-4">
                                 <div class="card-body text-center p-4">
                                     <div class="mb-3"><i class="fas fa-calendar-check fa-4x text-white"></i></div>
                                     <h3 class="font-weight-bold text-white">Seminar Proposal Sedang Diproses</h3>
-                                    <p class="text-white">Selamat! Anda telah mendaftar/sedang menempuh Seminar Proposal.</p>
+                                    <p class="text-white">Anda telah mendaftar Ujian Sempro. Silakan tunggu jadwal dan hasil ujian dari Administrasi/Kaprodi.</p>
                                 </div>
                             </div>
-
-                        <?php elseif ($notif_type == 'revisi_sempro_selesai_lanjut'): ?>
-                            <div class="card bg-gradient-success shadow-lg mb-4">
-                                <div class="card-body text-center p-4">
-                                    <div class="mb-3"><i class="fas fa-check-circle fa-4x text-white"></i></div>
-                                    <h3 class="font-weight-bold text-white">Revisi Sempro Selesai!</h3>
-                                    <p class="text-white lead">File revisi Bab 3 Anda telah dikoreksi dan disetujui (100%). <br>Anda sekarang dapat melanjutkan bimbingan ke Bab 4.</p>
-                                </div>
-                            </div>
-
-                        <?php elseif ($notif_type == 'revisi_pendadaran_selesai'): ?>
-                            <div class="card bg-gradient-success shadow-lg mb-4">
-                                <div class="card-body text-center p-4">
-                                    <div class="mb-3"><i class="fas fa-check-circle fa-4x text-white"></i></div>
-                                    <h3 class="font-weight-bold text-white">Revisi Pendadaran Selesai!</h3>
-                                    <p class="text-white lead">File revisi akhir Anda telah dikoreksi dan disetujui <b>(100%)</b>. <br>Menunggu verifikasi perubahan status Lulus oleh Kaprodi/Admin.</p>
-                                </div>
-                            </div>
-
+                            
                         <?php elseif ($notif_type == 'pendadaran_berlangsung'): ?>
                             <div class="card bg-gradient-primary shadow-lg mb-4">
                                 <div class="card-body text-center p-4">
                                     <div class="mb-3"><i class="fas fa-calendar-check fa-4x text-white"></i></div>
                                     <h3 class="font-weight-bold text-white">Ujian Pendadaran Sedang Diproses</h3>
-                                    <p class="text-white">Semoga sukses dalam sidang Pendadaran Skripsi Anda!</p>
+                                    <p class="text-white">Anda telah mendaftar Ujian Pendadaran Skripsi. Silakan tunggu jadwal dan hasil sidang.</p>
+                                </div>
+                            </div>
+
+                        <?php elseif ($notif_type == 'siap_sempro'): ?>
+                            <div class="card bg-gradient-info shadow-lg mb-4">
+                                <div class="card-body text-center p-4">
+                                    <div class="mb-3"><i class="fas fa-bullhorn fa-4x text-white"></i></div>
+                                    <h3 class="font-weight-bold text-white">Siap Seminar Proposal</h3>
+                                    <?php if ($original_status_ujian == 'perbaikan'): ?>
+                                        <p class="text-white">File Revisi Pasca-Sidang Anda telah di-ACC. Silakan Daftar/Konfirmasi Sempro kembali ke Administrasi.</p>
+                                    <?php else: ?>
+                                        <p class="text-white">Selamat, Bimbingan BAB 3 telah disetujui Dosen! Silakan daftar Seminar Proposal sekarang.</p>
+                                    <?php endif; ?>
+                                    <a href="http://website-administrasi.com" target="_blank" class="btn btn-light font-weight-bold shadow pulse-button mt-2">
+                                        <i class="fas fa-external-link-alt mr-2"></i> Link Pendaftaran Administrasi
+                                    </a>
+                                </div>
+                            </div>
+
+                        <?php elseif ($notif_type == 'siap_pendadaran'): ?>
+                            <div class="card bg-gradient-success shadow-lg mb-4">
+                                <div class="card-body text-center p-4">
+                                    <div class="mb-3"><i class="fas fa-graduation-cap fa-4x text-white"></i></div>
+                                    <h3 class="font-weight-bold text-white">Luar Biasa! Siap Ujian Pendadaran</h3>
+                                    <?php if ($original_status_ujian == 'perbaikan'): ?>
+                                        <p class="text-white lead">Revisi Akhir telah di-ACC. Silakan Konfirmasi Ujian Ulang / Pengesahan ke Administrasi.</p>
+                                    <?php else: ?>
+                                        <p class="text-white lead">Selamat! Anda telah menyelesaikan seluruh bimbingan materi skripsi.</p>
+                                    <?php endif; ?>
+                                    <a href="http://website-administrasi.com" target="_blank" class="btn btn-warning btn-lg text-dark font-weight-bold shadow pulse-button mt-3">
+                                        <i class="fas fa-external-link-alt mr-2"></i> Daftar Pendadaran Sekarang
+                                    </a>
                                 </div>
                             </div>
 
@@ -314,7 +340,7 @@
                                 <div class="card-body text-center p-4">
                                     <div class="mb-3"><i class="fas fa-trophy fa-4x text-white"></i></div>
                                     <h3 class="font-weight-bold text-white">SELAMAT! ANDA LULUS</h3>
-                                    <p class="text-white lead">Anda telah resmi Lulus Sidang Pendadaran. Bimbingan ditutup.</p>
+                                    <p class="text-white lead">Anda telah resmi lulus dan menyelesaikan seluruh tahapan skripsi. <br>Proses Bimbingan ditutup secara permanen.</p>
                                 </div>
                             </div>
 
@@ -330,24 +356,10 @@
                                     </a>
                                 </div>
                             </div>
-
-                        <?php elseif ($notif_type == 'siap_pendadaran'): ?>
-                            <div class="card bg-gradient-success shadow-lg mb-4">
-                                <div class="card-body text-center p-4">
-                                    <div class="mb-3"><i class="fas fa-graduation-cap fa-4x text-white"></i></div>
-                                    <h3 class="font-weight-bold text-white">Luar Biasa! Siap Pendadaran</h3>
-                                    <p class="text-white lead">Selamat! Anda telah menyelesaikan seluruh bimbingan materi.</p>
-                                    <div class="mt-4">
-                                        <a href="http://website-administrasi.com" target="_blank" class="btn btn-warning btn-lg text-dark font-weight-bold shadow pulse-button">
-                                            <i class="fas fa-external-link-alt mr-2"></i> Daftar Pendadaran Sekarang
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
                         <?php endif; ?>
 
                         <?php if ($is_locked): ?>
-                            <?php if (!in_array($notif_type, ['siap_pendadaran', 'siap_sempro', 'mengulang', 'sempro_berlangsung', 'pendadaran_berlangsung', 'revisi_pendadaran_selesai', 'lulus_akhir'])): ?>
+                            <?php if (!in_array($notif_type, ['siap_pendadaran', 'siap_sempro', 'mengulang', 'lulus_akhir', 'sempro_berlangsung', 'pendadaran_berlangsung'])): ?>
                                 <div class="card shadow mb-4 border-left-secondary">
                                     <div class="card-body text-center text-muted py-5">
                                         <div class="mb-3"><i class="fas fa-lock fa-4x text-gray-300"></i></div>
@@ -374,7 +386,6 @@
 
                                     <input type="hidden" name="bab" value="<?= $target_bab ?>">
                                     <input type="hidden" name="is_revisi" value="<?= $is_revisi ? '1' : '0' ?>">
-                                    
                                     <input type="hidden" name="id_skripsi" value="<?= $id_skripsi_aktif ?>">
 
                                     <div class="card card-outline card-info mb-3">
@@ -439,13 +450,9 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php if (isset($progres_riwayat) && !empty($progres_riwayat)): ?>
-                                            <?php foreach (array_reverse($progres_riwayat) as $pr): 
+                                        <?php if (!empty($valid_progress)): ?>
+                                            <?php foreach (array_reverse($valid_progress) as $pr): 
                                                 $format_tgl = date('d M Y H:i', strtotime($pr->created_at));
-                                                
-                                                // Identifikasi menggunakan Relasi ID Skripsi (Sangat Presisi!)
-                                                $id_skripsi_pr = isset($pr->id_skripsi) ? $pr->id_skripsi : 0;
-                                                $is_old_title = ($id_skripsi_pr != $id_skripsi_aktif);
 
                                                 $p1 = $pr->progres_dosen1;
                                                 $p2 = $pr->progres_dosen2;
@@ -456,14 +463,10 @@
                                                 $komentar = $k1 . ($k1 && $k2 ? "<br>" : "") . $k2;
                                                 if(empty($komentar)) $komentar = "<span class='text-muted font-italic'>- Menunggu koreksi -</span>";
                                             ?>
-                                                <tr class="<?= $is_old_title ? 'bg-light text-muted' : '' ?>">
+                                                <tr>
                                                     <td>
                                                         <div><?= $format_tgl ?></div>
-                                                        <?php if ($is_old_title): ?>
-                                                            <span class="badge badge-secondary mt-1">Riwayat Lama</span>
-                                                        <?php else: ?>
-                                                            <span class="badge badge-success mt-1">Judul Aktif</span>
-                                                        <?php endif; ?>
+                                                        <span class="badge badge-success mt-1">Judul Aktif</span>
                                                     </td>
                                                     <td>
                                                         <span class="font-weight-bold">BAB <?= $pr->bab ?></span>
@@ -476,12 +479,9 @@
                                                         if ($is_acc) {
                                                             $badge_status = "ACC Selesai";
                                                             $badge_class = "badge-success";
-                                                        } elseif (!$is_old_title && !$is_acc) {
+                                                        } elseif (!$is_acc) {
                                                             $badge_status = "Koreksi";
                                                             $badge_class = "badge-info";
-                                                        } else {
-                                                            $badge_status = "Dibatalkan";
-                                                            $badge_class = "badge-danger";
                                                         }
                                                         ?>
                                                         <span class="badge <?= $badge_class ?>"><?= $badge_status ?></span>
@@ -495,7 +495,7 @@
                                                 </tr>
                                             <?php endforeach; ?>
                                         <?php else: ?>
-                                            <tr><td colspan="5" class="text-center text-muted py-4">Belum ada riwayat bimbingan.</td></tr>
+                                            <tr><td colspan="5" class="text-center text-muted py-4">Belum ada riwayat bimbingan untuk judul ini.</td></tr>
                                         <?php endif; ?>
                                     </tbody>
                                 </table>
