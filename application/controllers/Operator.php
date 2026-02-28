@@ -545,7 +545,7 @@ class Operator extends CI_Controller {
         // Pagination
         $config['base_url'] = base_url('operator/list_revisi');
         $config['total_rows'] = $total_rows;
-        $config['per_page'] = 10;
+        $config['per_page'] = 30;
         $config['reuse_query_string'] = TRUE;
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';

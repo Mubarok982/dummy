@@ -109,6 +109,7 @@
                                         <th class="text-left sortable" style="width: 20%;" data-sort="nama">Nama Mahasiswa</th>
                                         <th class="text-left sortable" style="width: 25%;" data-sort="judul">Judul Skripsi</th>
                                         <th class="text-left" style="width: 20%;">Pembimbing</th>
+                                        <th style="width: 10%;" class="sortable" data-sort="status_acc">Status</th>
                                         <th style="width: 10%;">Aksi</th>
                                     </tr>
                                 </thead>

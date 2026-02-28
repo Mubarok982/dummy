@@ -17,160 +17,166 @@
 
     <section class="content">
         <div class="container-fluid">
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-white">
-                    <h3 class="card-title font-weight-bold"><i class="fas fa-filter text-primary mr-1"></i> Filter Data</h3>
-                </div>
-                <div class="card-body">
-                    <form method="GET" action="<?php echo base_url('operator/list_revisi'); ?>">
-                        <div class="row">
-                            <div class="col-md-5">
-                                <div class="form-group mb-md-0">
-                                    <label class="text-muted small text-uppercase">Cari Mahasiswa/Judul</label>
-                                    <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text"><i class="fas fa-search"></i></span>
-                                        </div>
-                                        <input type="text" name="keyword" class="form-control" placeholder="Nama, NPM, atau Judul..." value="<?php echo isset($keyword) ? $keyword : ''; ?>">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-group mb-md-0">
-                                    <label class="text-muted small text-uppercase">Program Studi</label>
-                                    <select name="prodi" class="form-control">
-                                        <option value="all">Semua Prodi</option>
-                                        <?php if(!empty($list_prodi)): ?>
-                                            <?php foreach ($list_prodi as $prodi_option): ?>
-                                                <option value="<?php echo $prodi_option['prodi']; ?>" <?php echo (isset($prodi) && $prodi == $prodi_option['prodi']) ? 'selected' : ''; ?>><?php echo $prodi_option['prodi']; ?></option>
-                                            <?php endforeach; ?>
-                                        <?php endif; ?>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-3 d-flex align-items-end">
-                                <div class="btn-group w-100 mt-2 mt-md-0">
-                                    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Filter</button>
-                                    <a href="<?php echo base_url('operator/list_revisi'); ?>" class="btn btn-secondary"><i class="fas fa-undo"></i> Reset</a>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
+            
+            <div class="alert alert-info shadow-sm">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-info-circle fa-2x mr-3"></i>
+                    <div>
+                        <h5 class="mb-1 font-weight-bold">Informasi Riwayat Progres</h5>
+                        <p class="mb-0">
+                            Halaman ini menampilkan seluruh riwayat progres bimbingan skripsi mahasiswa beserta status koreksi dari dosen pembimbing. Anda juga dapat melihat detail komentar atau melakukan koreksi manual jika diperlukan.
+                        </p>
+                    </div>
                 </div>
             </div>
 
-            <div class="card shadow-sm border-top-primary">
-                <div class="card-header bg-white">
-                    <h3 class="card-title font-weight-bold"><i class="fas fa-history text-primary mr-1"></i> Riwayat Progress Mahasiswa</h3>
+            <div class="card card-outline card-primary shadow-sm">
+                <div class="card-header">
+                    <h3 class="card-title"> <i class="fas fa-history mr-1"></i> Daftar Riwayat Progres Bimbingan</h3>
                 </div>
-                <div class="card-body p-0 table-responsive">
-                    <table class="table table-hover table-striped align-middle mb-0">
-                        <thead class="bg-light">
-                            <tr>
-                                <th style="width: 5%;" class="text-center">No</th>
-                                <th style="width: 25%;">Mahasiswa & Skripsi</th>
-                                <th style="width: 10%;" class="text-center">BAB</th>
-                                <th style="width: 15%;" class="text-center">Tgl Upload</th>
-                                <th style="width: 15%;" class="text-center">Tgl Verifikasi</th>
-                                <th style="width: 15%;" class="text-center">File Dokumen</th>
-                                <th style="width: 15%;" class="text-center"><i class="fas fa-cogs"></i> Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php 
-                            // ============================================================
-                            // LOGIKA ANTI-DUPLIKAT (Menyaring baris file yang sama)
-                            // ============================================================
-                            $seen_files = []; // Array pelacak nama file yang sudah ditampilkan
-                            $filtered_revisi = []; 
-                            
-                            if (!empty($list_revisi)) {
-                                foreach ($list_revisi as $revisi) {
-                                    // Jadikan nama file sebagai kunci unik.
-                                    // Jika file ini sudah pernah dirender, lewati baris ini.
-                                    $unique_key = $revisi['file'];
-                                    
-                                    if (empty($unique_key) || !in_array($unique_key, $seen_files)) {
-                                        $seen_files[] = $unique_key;
-                                        $filtered_revisi[] = $revisi;
+                <div class="card-body">
+                    
+                    <form method="GET" action="<?php echo base_url('operator/list_revisi'); ?>" class="mb-3">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label>Pencarian</label>
+                                <input type="text" name="keyword" class="form-control" placeholder="Cari nama/NPM/judul..." value="<?php echo isset($keyword) ? $keyword : ''; ?>">
+                            </div>
+                            <div class="col-md-3">
+                                <label>Prodi</label>
+                                <select name="prodi" class="form-control">
+                                    <option value="all">Semua Prodi</option>
+                                    <?php if(!empty($list_prodi)): ?>
+                                        <?php foreach ($list_prodi as $prodi_option): ?>
+                                            <option value="<?php echo $prodi_option['prodi']; ?>" <?php echo (isset($prodi) && $prodi == $prodi_option['prodi']) ? 'selected' : ''; ?>><?php echo $prodi_option['prodi']; ?></option>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label>&nbsp;</label>
+                                <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-search mr-1"></i> Filter</button>
+                            </div>
+                            <?php if((isset($keyword) && $keyword) || (isset($prodi) && $prodi != 'all')): ?>
+                            <div class="col-md-2">
+                                <label>&nbsp;</label>
+                                <a href="<?php echo base_url('operator/list_revisi'); ?>" class="btn btn-secondary btn-block"><i class="fas fa-undo"></i> Reset</a>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                    </form>
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped table-hover align-middle">
+                            <thead class="bg-light">
+                                <tr class="text-center">
+                                    <th style="width: 5%;">No</th>
+                                    <th style="width: 20%;">Mahasiswa</th>
+                                    <th style="width: 25%;">Judul Skripsi</th>
+                                    <th style="width: 8%;">BAB</th>
+                                    <th style="width: 12%;">Tgl Upload</th>
+                                    <th style="width: 12%;">Tgl Verifikasi</th>
+                                    <th style="width: 8%;">File</th>
+                                    <th style="width: 10%;">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php 
+                                // ============================================================
+                                // LOGIKA ANTI-DUPLIKAT 
+                                // ============================================================
+                                $seen_files = []; 
+                                $filtered_revisi = []; 
+                                
+                                if (!empty($list_revisi)) {
+                                    foreach ($list_revisi as $revisi) {
+                                        $unique_key = $revisi['file'];
+                                        
+                                        if (empty($unique_key) || !in_array($unique_key, $seen_files)) {
+                                            $seen_files[] = $unique_key;
+                                            $filtered_revisi[] = $revisi;
+                                        }
                                     }
                                 }
-                            }
-                            ?>
+                                ?>
 
-                            <?php if (!empty($filtered_revisi)): ?>
-                                <?php $no = isset($start_index) ? $start_index + 1 : 1; foreach ($filtered_revisi as $revisi): ?>
+                                <?php if (!empty($filtered_revisi)): ?>
+                                    <?php $no = isset($start_index) ? $start_index + 1 : 1; foreach ($filtered_revisi as $revisi): ?>
+                                        <tr>
+                                            <td class="text-center font-weight-bold text-muted align-middle"><?php echo $no++; ?></td>
+                                            
+                                            <td class="align-middle">
+                                                <strong class="d-block mb-1"><?php echo $revisi['nama_mhs']; ?></strong>
+                                                <div class="d-flex align-items-center">
+                                                    <span class="text-muted small mr-2"><i class="fas fa-id-card mr-1"></i><?php echo $revisi['npm']; ?></span>
+                                                    <span class="badge badge-info"><?php echo $revisi['prodi']; ?></span>
+                                                </div>
+                                            </td>
+
+                                            <td class="align-middle text-wrap">
+                                                <span class="text-muted text-sm font-italic"><?php echo $revisi['judul']; ?></span>
+                                            </td>
+                                            
+                                            <td class="text-center align-middle">
+                                                <span class="badge badge-primary px-3 py-2" style="font-size: 14px;">BAB <?php echo $revisi['bab']; ?></span>
+                                            </td>
+
+                                            <td class="text-center small align-middle">
+                                                <span class="text-dark font-weight-bold"><?php echo date('d M Y', strtotime($revisi['tgl_upload'])); ?></span><br>
+                                                <span class="text-muted"><?php echo date('H:i', strtotime($revisi['tgl_upload'])); ?> WIB</span>
+                                            </td>
+
+                                            <td class="text-center small align-middle">
+                                                <?php if($revisi['tgl_verifikasi']): ?>
+                                                    <span class="text-success font-weight-bold"><i class="fas fa-check-double mr-1"></i> <?php echo date('d M Y', strtotime($revisi['tgl_verifikasi'])); ?></span><br>
+                                                    <span class="text-muted"><?php echo date('H:i', strtotime($revisi['tgl_verifikasi'])); ?> WIB</span>
+                                                <?php else: ?>
+                                                    -
+                                                <?php endif; ?>
+                                            </td>
+
+                                            <td class="text-center align-middle">
+                                                <?php if (!empty($revisi['file'])): ?>
+                                                    <a href="<?php echo base_url('uploads/progres/' . $revisi['file']); ?>" target="_blank" class="btn btn-sm btn-outline-danger shadow-sm">
+                                                        <i class="fas fa-file-pdf mr-1"></i> PDF
+                                                    </a>
+                                                <?php else: ?>
+                                                    -
+                                                <?php endif; ?>
+                                            </td>
+
+                                            <td class="text-center align-middle">
+                                                <div class="btn-group-vertical w-100 shadow-sm">
+                                                    <button type="button" class="btn btn-sm btn-info font-weight-bold" data-toggle="modal" data-target="#modalDetail<?php echo $revisi['id']; ?>">
+                                                        <i class="fas fa-search mr-1"></i> Detail
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-warning font-weight-bold text-dark" data-toggle="modal" data-target="#modalKoreksi<?php echo $revisi['id']; ?>">
+                                                        <i class="fas fa-edit mr-1"></i> Koreksi
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
                                     <tr>
-                                        <td class="text-center font-weight-bold text-muted"><?php echo $no++; ?></td>
-                                        
-                                        <td>
-                                            <span class="font-weight-bold text-dark d-block mb-1"><?php echo $revisi['nama_mhs']; ?></span>
-                                            <span class="badge badge-info mb-1"><i class="fas fa-id-card mr-1"></i><?php echo $revisi['npm']; ?></span>
-                                            <span class="badge badge-secondary mb-2"><?php echo $revisi['prodi']; ?></span>
-                                            <div class="small text-muted text-truncate" style="max-width: 250px;" title="<?php echo $revisi['judul']; ?>">
-                                                <strong>Judul:</strong> <?php echo $revisi['judul']; ?>
-                                            </div>
-                                        </td>
-                                        
-                                        <td class="text-center">
-                                            <span class="badge badge-primary px-3 py-2" style="font-size: 14px;">BAB <?php echo $revisi['bab']; ?></span>
-                                        </td>
-
-                                        <td class="text-center small">
-                                            <span class="text-dark font-weight-bold"><?php echo date('d M Y', strtotime($revisi['tgl_upload'])); ?></span><br>
-                                            <span class="text-muted"><?php echo date('H:i', strtotime($revisi['tgl_upload'])); ?> WIB</span>
-                                        </td>
-
-                                        <td class="text-center small">
-                                            <?php if($revisi['tgl_verifikasi']): ?>
-                                                <span class="text-success font-weight-bold"><i class="fas fa-check-double mr-1"></i> <?php echo date('d M Y', strtotime($revisi['tgl_verifikasi'])); ?></span><br>
-                                                <span class="text-muted"><?php echo date('H:i', strtotime($revisi['tgl_verifikasi'])); ?> WIB</span>
-                                            <?php else: ?>
-                                                <span class="badge badge-light text-muted border">-</span>
-                                            <?php endif; ?>
-                                        </td>
-
-                                        <td class="text-center">
-                                            <?php if (!empty($revisi['file'])): ?>
-                                                <a href="<?php echo base_url('uploads/progres/' . $revisi['file']); ?>" target="_blank" class="btn btn-sm btn-outline-danger shadow-sm">
-                                                    <i class="fas fa-file-pdf mr-1"></i> Buka File
-                                                </a>
-                                            <?php else: ?>
-                                                <span class="badge badge-light text-muted border">Tidak ada file</span>
-                                            <?php endif; ?>
-                                        </td>
-
-                                        <td class="text-center align-middle">
-                                            <div class="btn-group-vertical w-100 shadow-sm">
-                                                <button type="button" class="btn btn-sm btn-info font-weight-bold" data-toggle="modal" data-target="#modalDetail<?php echo $revisi['id']; ?>">
-                                                    <i class="fas fa-search mr-1"></i> Lihat Detail
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-warning font-weight-bold text-dark" data-toggle="modal" data-target="#modalKoreksi<?php echo $revisi['id']; ?>">
-                                                    <i class="fas fa-edit mr-1"></i> Koreksi
-                                                </button>
-                                            </div>
+                                        <td colspan="8" class="text-center py-5 text-muted">
+                                            <i class="fas fa-search-minus fa-3x mb-3 opacity-50"></i><br>
+                                            Tidak ada riwayat progres bimbingan.
                                         </td>
                                     </tr>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <tr>
-                                    <td colspan="7" class="text-center py-5">
-                                        <i class="fas fa-search-minus fa-3x text-muted mb-3 opacity-50"></i><br>
-                                        <span class="text-muted">Tidak ada riwayat progres bimbingan.</span>
-                                    </td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="card-footer py-2 bg-white">
-                    <div class="row align-items-center">
-                        <div class="col-sm-6 text-muted small">
-                            Total Data: <b><?php echo count($filtered_revisi); ?></b>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="float-right m-0">
-                                <?php echo isset($pagination) ? $pagination : ''; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card-footer py-2 bg-white">
+                        <div class="row align-items-center">
+                            <div class="col-sm-6 text-muted small">
+                                Total Data: <b><?php echo count($filtered_revisi); ?></b>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="float-right m-0">
+                                    <?php echo isset($pagination) ? $pagination : ''; ?>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -364,7 +370,6 @@
 <?php endif; ?>
 
 <style>
-    /* Styling tambahan untuk merapikan UI Tabel & Modal */
     .table td { vertical-align: middle !important; }
     .custom-control-label::before { width: 1.25rem; height: 1.25rem; border: 2px solid #adb5bd;}
     .custom-control-label::after { width: 1.25rem; height: 1.25rem; }
