@@ -63,7 +63,7 @@ class Mahasiswa extends CI_Controller {
         $this->load->view('template/footer');
     }
 
-    public function submit_judul()
+   public function submit_judul()
     {
         $id_mahasiswa = $this->session->userdata('id');
         
@@ -75,38 +75,33 @@ class Mahasiswa extends CI_Controller {
         if ($this->form_validation->run() == FALSE) {
             $this->pengajuan_judul();
         } else {
+            // Data mutlak untuk judul baru
             $data = [
                 'id_mahasiswa' => $id_mahasiswa,
                 'tema' => $this->input->post('tema'),
                 'judul' => $this->input->post('judul'),
                 'pembimbing1' => $this->input->post('pembimbing1'),
                 'pembimbing2' => $this->input->post('pembimbing2'),
-                'tgl_pengajuan_judul' => date('Y-m-d'),
+                'tgl_pengajuan_judul' => date('Y-m-d H:i:s'),
                 'skema' => 'Reguler',
                 'status_acc_kaprodi' => 'menunggu'
             ];
 
-            $this->M_Mahasiswa->update_skripsi_judul($id_mahasiswa, [
-                'tema' => $this->input->post('tema'),
-                'judul' => $this->input->post('judul'),
-                'pembimbing1' => $this->input->post('pembimbing1'),
-                'pembimbing2' => $this->input->post('pembimbing2'),
-            ]);
 
             $this->M_Mahasiswa->insert_skripsi($data);
+            
             $this->session->set_flashdata('pesan_sukses', 'Pengajuan judul baru berhasil dikirim.');
             $this->M_Log->record('Judul', 'Mengajukan judul baru: ' . $data['judul']);
             redirect('mahasiswa/pengajuan_judul');
         }
     }
 
-    public function bimbingan()
+public function bimbingan()
     {
         $id_mahasiswa = $this->session->userdata('id');
         $data['title'] = 'Bimbingan Skripsi';
         
-        // 1. Ambil Data Skripsi & Mahasiswa (Join)
-        // Pastikan model get_skripsi_by_mhs melakukan JOIN ke tabel data_mahasiswa untuk ambil 'prodi'
+        // 1. Ambil Data Skripsi & Mahasiswa
         $data['skripsi'] = $this->M_Mahasiswa->get_skripsi_by_mhs($id_mahasiswa);
 
         if (!$data['skripsi']) {
@@ -114,26 +109,28 @@ class Mahasiswa extends CI_Controller {
             redirect('mahasiswa/pengajuan_judul');
         }
 
+        $id_skripsi = $data['skripsi']['id'];
         $npm_mhs = $data['skripsi']['npm'] ?? $this->session->userdata('npm');
         
-        // --- LOGIKA BARU: TENTUKAN MAX BAB BERDASARKAN PRODI ---
-        $prodi = $this->session->userdata('prodi'); // Ambil dari session
-        // Atau ambil dari data skripsi jika session kosong
+        // --- LOGIKA BATAS BAB & JENIS UJIAN BERDASARKAN PRODI ---
+        $prodi = $this->session->userdata('prodi'); 
         if(empty($prodi) && isset($data['skripsi']['prodi'])) {
             $prodi = $data['skripsi']['prodi'];
         }
 
-        // Default S1 (Bab 6)
+        // Default S1
         $max_bab = 6; 
+        $id_ujian_sempro = [1, 5]; // Default 1, Teknik Informatika S1 = 5
+        $id_ujian_pendadaran = [2, 6]; // Default 2, Teknik Informatika S1 = 6
         
-        // Cek jika D3 (Bab 5)
+        // Jika D3
         if (stripos($prodi, 'D3') !== false || stripos($prodi, 'Diploma 3') !== false) {
             $max_bab = 5;
+            $id_ujian_sempro = [7]; // Teknologi Informasi D3 = 7
+            $id_ujian_pendadaran = [8]; // Teknologi Informasi D3 = 8
         }
+        $data['max_bab'] = $max_bab; 
         
-        $data['max_bab'] = $max_bab; // Kirim ke View
-        // -------------------------------------------------------
-
         $data['status_acc'] = $data['skripsi']['status_acc_kaprodi'] ?? 'menunggu';
         
         $recipients = $this->M_Chat->get_valid_chat_recipients_mhs($npm_mhs);
@@ -143,48 +140,187 @@ class Mahasiswa extends CI_Controller {
             'pembimbing2' => null
         ];
 
-        $progres = $this->M_Mahasiswa->get_progres_by_skripsi($data['skripsi']['id']);
-        
-        if (empty($progres)) {
-            $data['next_bab'] = 1;
-            $data['last_progres'] = NULL;
-        } else {
-            $last = end($progres); 
-            $data['last_progres'] = $last;
-            
-            $p1 = $last['progres_dosen1'] ?? 0;
-            $p2 = $last['progres_dosen2'] ?? 0;
+        // 2. ANALISA PROGRESS MAHASISWA & HITUNG BAB TERTINGGI (ACC 100%)
+        $progres = $this->M_Mahasiswa->get_progres_by_skripsi($id_skripsi);
+        $highest_acc_bab = 0;
+        $is_revisi = false;
+        $target_bab = 1;
+        $acc_bab_3_count = 0;
+        $acc_bab_max_count = 0;
 
-            if ($p1 == 100 && $p2 == 100) {
-                $data['next_bab'] = $last['bab'] + 1;
+        if (empty($progres)) {
+            $target_bab = 1;
+        } else {
+            foreach ($progres as $p) {
+                if ($p['progres_dosen1'] == 100 && $p['progres_dosen2'] == 100) {
+                    if ($p['bab'] > $highest_acc_bab) $highest_acc_bab = $p['bab'];
+                    if ($p['bab'] == 3) $acc_bab_3_count++;
+                    if ($p['bab'] >= $max_bab) $acc_bab_max_count++;
+                }
+            }
+
+            $last = end($progres);
+            if ($last['progres_dosen1'] < 100 || $last['progres_dosen2'] < 100) {
+                $target_bab = $last['bab'];
+                $is_revisi = true;
             } else {
-                $data['next_bab'] = $last['bab'];
+                $target_bab = $highest_acc_bab + 1;
+                $is_revisi = false;
             }
         }
 
-        // Cegah next_bab melebihi max_bab prodi
-        if ($data['next_bab'] > $max_bab) {
-            $data['next_bab'] = $max_bab; 
-            $data['is_finished'] = true; // Tandai sudah selesai
-        } else {
-            $data['is_finished'] = false;
+        // 3. CEK STATUS UJIAN (PEMISAHAN MUTLAK SEMPRO & PENDADARAN BERDASARKAN ID UJIAN)
+        $ujian_db = $this->db
+            ->order_by('id', 'DESC')
+            ->get_where('ujian_skripsi', ['id_skripsi' => $id_skripsi])
+            ->result();
+
+        $status_sempro = null;
+        $status_pendadaran = null;
+
+        // Simpan ID terbaru masing-masing kategori (ID terbaru = ujian terbaru)
+        $latest_sempro_id = 0;
+        $latest_pendadaran_id = 0;
+
+        foreach ($ujian_db as $u) {
+            // Kategori SEMPRO
+            if (in_array($u->id_jenis_ujian_skripsi, $id_ujian_sempro)) {
+                if ($u->id > $latest_sempro_id) {
+                    $latest_sempro_id = $u->id;
+                    $status_sempro = strtolower($u->status);
+                }
+            }
+
+            // Kategori PENDADARAN
+            if (in_array($u->id_jenis_ujian_skripsi, $id_ujian_pendadaran)) {
+                if ($u->id > $latest_pendadaran_id) {
+                    $latest_pendadaran_id = $u->id;
+                    $status_pendadaran = strtolower($u->status);
+                }
+            }
         }
 
+        // 4. GATEKEEPER LOGIC (Penentuan Notifikasi dan Kunci Upload)
+        $is_locked = false;
+        $notif_type = ""; 
+        $status_card = 'card-primary';
+        $text_header = 'Upload Progres Baru';
+        $pesan_info = 'Silakan upload file untuk melanjutkan progres bimbingan Anda.';
+
+        // GLOBAL: STATUS MENGULANG MUTLAK MEMATIKAN SEMUANYA
+        if ($status_sempro == 'mengulang' || $status_pendadaran == 'mengulang') {
+            $is_locked = true; 
+            $notif_type = "mengulang";
+        }
+        else {
+            // ============================================
+            // FASE PENDADARAN (Jika Bab >= Batas Maksimal)
+            // ============================================
+            if ($highest_acc_bab >= $max_bab) {
+                if (in_array($status_pendadaran, ['diterima', 'lulus', 'selesai'])) {
+                    // Lulus Pendadaran
+                    $target_bab = $max_bab;
+                    $is_locked = true;
+                    $notif_type = "lulus_akhir";
+                } 
+                elseif ($status_pendadaran == 'perbaikan') {
+                    if ($acc_bab_max_count >= 2) {
+                        // Revisi udah di ACC dosen -> Tahan & Suruh Daftar Ulang (Tunggu Admin klik Lulus)
+                        $target_bab = $max_bab;
+                        $is_locked = true;
+                        $notif_type = "siap_pendadaran_ulang"; 
+                    } else {
+                        // Buka form untuk upload Revisi Pendadaran
+                        $target_bab = $max_bab;
+                        $is_revisi = true;
+                        $is_locked = false;
+                        $status_card = 'card-warning';
+                        $text_header = 'Upload Revisi Pendadaran';
+                        $pesan_info = '<b>STATUS: PERBAIKAN PENDADARAN.</b> Silakan upload <b>Bab '.$max_bab.'</b> yang sudah direvisi pasca sidang.';
+                    }
+                } 
+                elseif ($status_pendadaran == 'berlangsung' || $status_pendadaran == 'menunggu') {
+                    // Ujian Sedang Terjadi
+                    $target_bab = $max_bab;
+                    $is_locked = true;
+                    $notif_type = "pendadaran_berlangsung"; 
+                }
+                else {
+                    // Belum daftar atau status belum terdata
+                    $target_bab = $max_bab;
+                    $is_locked = true;
+                    $notif_type = "siap_pendadaran"; 
+                }
+            }
+
+            // ============================================
+            // FASE SEMPRO (Jika target_bab menyentuh Bab 4)
+            // ============================================
+            elseif ($highest_acc_bab == 3) {
+                if (in_array($status_sempro, ['diterima', 'lulus', 'selesai'])) {
+                    // Lulus Sempro -> Form Terbuka Lanjut Bab 4
+                    $target_bab = 4;
+                    $is_locked = false;
+                } 
+                elseif ($status_sempro == 'perbaikan') {
+                    if ($acc_bab_3_count >= 2) {
+                        // Revisi Sempro udah di ACC -> Tahan & Suruh Konfirmasi (Tunggu Admin)
+                        $target_bab = 4; 
+                        $is_locked = true;
+                        $notif_type = "siap_sempro_ulang"; 
+                    } else {
+                        // Buka form untuk upload Revisi Sempro
+                        $target_bab = 3;
+                        $is_revisi = true;
+                        $is_locked = false;
+                        $status_card = 'card-warning';
+                        $text_header = 'Upload Revisi Sempro';
+                        $pesan_info = '<b>STATUS: PERBAIKAN SEMPRO.</b> Silakan upload <b>Bab 3</b> yang sudah direvisi pasca sidang.';
+                    }
+                } 
+                elseif ($status_sempro == 'berlangsung' || $status_sempro == 'menunggu') {
+                    // Sempro Sedang Terjadi
+                    $target_bab = 4;
+                    $is_locked = true;
+                    $notif_type = "sempro_berlangsung"; 
+                }
+                else {
+                    // Belum Daftar Sempro
+                    $target_bab = 4;
+                    $is_locked = true;
+                    $notif_type = "siap_sempro"; 
+                }
+            }
+            
+            // Jika statusnya cuma revisi biasa antar Bab (Di luar Sempro/Pendadaran)
+            if ($is_revisi && !$is_locked && $notif_type == "") {
+                $status_card = 'card-warning';
+                $text_header = 'Upload Revisi';
+                $pesan_info = 'Silakan upload revisi bab ini berdasarkan catatan dosen.';
+            }
+        }
+
+        // Pengaman Batas maksimal mutlak
+        if ($target_bab > $max_bab) $target_bab = $max_bab;
+
+        // 5. KIRIM DATA MATANG KE VIEW
+        $data['target_bab'] = $target_bab;
+        $data['is_revisi']  = $is_revisi;
+        $data['is_locked']  = $is_locked;
+        $data['notif_type'] = $notif_type;
+        $data['status_card']= $status_card;
+        $data['text_header']= $text_header;
+        $data['pesan_info'] = $pesan_info;
+        
         $data['progres_riwayat'] = $this->M_Mahasiswa->get_riwayat_progres($npm_mhs); 
-        
-     // Ambil Status Ujian (Sempro/Pendadaran)
-        $ujian = $this->M_Mahasiswa->get_status_ujian_terakhir($data['skripsi']['id']);
-        
-        // Langsung ambil dari kolom status
-        $data['status_ujian'] = $ujian ? $ujian['status'] : null;
-        
+
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
         $this->load->view('mahasiswa/v_bimbingan', $data);
         $this->load->view('template/footer');
     }
-
-   public function upload_progres_bab()
+    
+public function upload_progres_bab()
     {
         $id_mahasiswa = $this->session->userdata('id');
         $skripsi = $this->M_Mahasiswa->get_skripsi_by_mhs($id_mahasiswa);
@@ -194,28 +330,41 @@ class Mahasiswa extends CI_Controller {
             redirect('mahasiswa/bimbingan');
         }
 
-        // ========== FITUR BARU: HANDLE UPDATE JUDUL ==========
+        // ========== HANDLE UPDATE JUDUL DARI FORM BIMBINGAN ==========
         $gunakan_judul_lama = $this->input->post('gunakan_judul_lama');
         
         if (!$gunakan_judul_lama) {
-            // User ingin mengubah judul
+            // User ingin mengubah judul saat proses bimbingan.
             $judul_baru = $this->input->post('judul');
             
-            if ($judul_baru) {
-                $data_update_judul = [
+            if (!empty($judul_baru) && $judul_baru != $skripsi['judul']) {
+                // Jika ganti judul saat bimbingan, KITA HARUS BUAT ID SKRIPSI BARU!
+                // Jangan pakai update_skripsi_with_histori karena itu akan mengacaukan ID lama.
+                $data_judul_baru = [
+                    'id_mahasiswa' => $id_mahasiswa,
+                    'tema' => $skripsi['tema'], // Copy tema lama
                     'judul' => $judul_baru,
-                    'status_acc_kaprodi' => 'menunggu' // Reset ke menunggu approval kaprodi
+                    'pembimbing1' => $skripsi['pembimbing1'], // Copy dospem lama
+                    'pembimbing2' => $skripsi['pembimbing2'],
+                    'tgl_pengajuan_judul' => date('Y-m-d H:i:s'),
+                    'skema' => $skripsi['skema'],
+                    'status_acc_kaprodi' => 'menunggu' // Judul baru butuh ACC ulang!
                 ];
                 
-                // Update dengan sistem histori
-                $this->M_Dosen->update_skripsi_with_histori($skripsi['id'], $data_update_judul);
+                // Masukkan judul baru sebagai entri baru di database
+                $this->M_Mahasiswa->insert_skripsi($data_judul_baru);
                 
-                // Update data skripsi lokal
-                $skripsi['judul'] = $judul_baru;
+                $this->session->set_flashdata('pesan_sukses', 'Judul berhasil diubah. Karena judul baru, Anda harus menunggu persetujuan Kaprodi kembali sebelum bisa melanjutkan upload.');
+                $this->M_Log->record('Judul', 'Mengubah judul skripsi via Bimbingan: ' . $judul_baru);
+                
+                // Paksa mahasiswa kembali, karena mereka gak boleh upload progres untuk judul yang statusnya baru "Menunggu"
+                redirect('mahasiswa/bimbingan');
+                return;
             }
         }
         // =================================================
-        
+
+        // JIKA TIDAK GANTI JUDUL, LANJUTKAN UPLOAD SEPERTI BIASA
         $npm  = $this->session->userdata('npm');
         $nama = $this->session->userdata('nama'); 
         $bab  = $this->input->post('bab');
@@ -246,12 +395,10 @@ class Mahasiswa extends CI_Controller {
             
             $status_plagiasi_awal = ($bab == 1) ? 'Menunggu' : '-';
 
-            // ========================================================
-            // PENYEMPURNAAN: MEMASUKKAN ID_SKRIPSI KE DATABASE PROGRES
-            // ========================================================
+            // Masukkan ke ID Skripsi yang aktif (lama)
             $progres_data = [
                 'npm'            => $npm,
-                'id_skripsi'     => $skripsi['id'], // <--- KUNCI UTAMA RELASI BARU
+                'id_skripsi'     => $skripsi['id'], 
                 'bab'            => $bab,
                 'file'           => $file_data['file_name'], 
                 'progres_dosen1' => 0,          
@@ -263,7 +410,6 @@ class Mahasiswa extends CI_Controller {
                 'status_plagiasi'      => $status_plagiasi_awal, 
                 'persentase_kemiripan' => 0
             ];
-            // ========================================================
             
             $this->M_Mahasiswa->insert_progres($progres_data);
             $id_baru = $this->db->insert_id();
@@ -460,11 +606,10 @@ class Mahasiswa extends CI_Controller {
         }
     }
 
-    public function update_judul($id_skripsi)
+   public function update_judul($id_skripsi)
     {
         $id_mahasiswa = $this->session->userdata('id');
         
-        // Validasi form
         $this->form_validation->set_rules('judul', 'Judul Skripsi', 'required|trim');
         $this->form_validation->set_rules('tema', 'Tema', 'required');
         $this->form_validation->set_rules('pembimbing1', 'Pembimbing 1', 'required');
@@ -473,23 +618,27 @@ class Mahasiswa extends CI_Controller {
         if ($this->form_validation->run() == FALSE) {
             $this->session->set_flashdata('pesan_error', validation_errors());
         } else {
-            $data_update = [
-                'judul' => $this->input->post('judul'),
+            // Karena sistem Anda sekarang menggunakan riwayat, kita hentikan update_skripsi_with_histori
+            // dan kita paksakan insert baru agar ID Skripsinya berubah!
+            $data_judul_baru = [
+                'id_mahasiswa' => $id_mahasiswa,
                 'tema' => $this->input->post('tema'),
+                'judul' => $this->input->post('judul'),
                 'pembimbing1' => $this->input->post('pembimbing1'),
                 'pembimbing2' => $this->input->post('pembimbing2'),
-                'tgl_pengajuan_judul' => $this->input->post('tgl_pengajuan_judul') ? $this->input->post('tgl_pengajuan_judul') : date('Y-m-d'),
+                'tgl_pengajuan_judul' => $this->input->post('tgl_pengajuan_judul') ? $this->input->post('tgl_pengajuan_judul') : date('Y-m-d H:i:s'),
+                'skema' => 'Reguler',
                 'status_acc_kaprodi' => 'menunggu'
             ];
 
-            // Update dengan sistem histori
-            $result = $this->M_Dosen->update_skripsi_with_histori($id_skripsi, $data_update);
+            // Insert sebagai judul/skripsi baru
+            $result = $this->M_Mahasiswa->insert_skripsi($data_judul_baru);
 
             if ($result) {
-                $this->session->set_flashdata('pesan_sukses', 'Judul skripsi berhasil diperbarui dan menunggu persetujuan kaprodi.');
-                $this->M_Log->record('Judul', 'Mengubah judul skripsi menjadi: ' . $data_update['judul']);
+                $this->session->set_flashdata('pesan_sukses', 'Judul skripsi berhasil diajukan ulang dan menunggu persetujuan kaprodi.');
+                $this->M_Log->record('Judul', 'Ganti judul skripsi baru menjadi: ' . $data_judul_baru['judul']);
             } else {
-                $this->session->set_flashdata('pesan_error', 'Gagal memperbarui judul skripsi.');
+                $this->session->set_flashdata('pesan_error', 'Gagal mengajukan judul skripsi baru.');
             }
         }
         redirect('mahasiswa/pengajuan_judul');

@@ -124,35 +124,50 @@ class M_Mahasiswa extends CI_Model {
             $progres = $this->db->get_where('progres_skripsi', ['id' => $id_progres])->row();
             
             if ($progres) {
-                if ($progres->bab >= 6 && $progres->progres_dosen1 == 100 && $progres->progres_dosen2 == 100) {
+                // Pastikan dosen 1 & 2 sudah ACC 100%
+                if ($progres->progres_dosen1 == 100 && $progres->progres_dosen2 == 100) {
                     
                     // Ambil id_skripsi dan prodi dari mahasiswa
                     $this->db->select('S.id as id_skripsi, M.prodi');
                     $this->db->from('skripsi S');
                     $this->db->join('data_mahasiswa M', 'S.id_mahasiswa = M.id');
                     $this->db->where('M.npm', $progres->npm);
+                    // KUNCI UTAMA FIX BUG: Wajib order by DESC agar mengambil ID Judul TERBARU!
+                    $this->db->order_by('S.id', 'DESC'); 
                     $mhs = $this->db->get()->row();
 
                     if ($mhs) {
-                        // Tentukan ID Jenis Ujian Pendadaran sesuai prodi
+                        // Tentukan ID Jenis Ujian Pendadaran & Max Bab sesuai prodi
                         $id_jenis_pendadaran = 2; // Default
-                        if ($mhs->prodi == 'Teknik Informatika S1') $id_jenis_pendadaran = 6;
-                        elseif ($mhs->prodi == 'Teknologi Informasi D3') $id_jenis_pendadaran = 8;
+                        $max_bab = 6;
 
-                        // KUNCI MENGULANG: Cek pendadaran yang aktif
-                        $this->db->where('id_skripsi', $mhs->id_skripsi);
-                        $this->db->where('id_jenis_ujian_skripsi', $id_jenis_pendadaran);
-                        $this->db->where_in('status', ['Berlangsung', 'Perbaikan', 'Diterima', 'Lulus']);
-                        $cek_pendadaran = $this->db->get('ujian_skripsi')->num_rows();
+                        if (stripos($mhs->prodi, 'Teknik Informatika S1') !== false) {
+                            $id_jenis_pendadaran = 6;
+                            $max_bab = 6;
+                        } elseif (stripos($mhs->prodi, 'D3') !== false || stripos($mhs->prodi, 'Diploma') !== false) {
+                            $id_jenis_pendadaran = 8;
+                            $max_bab = 5;
+                        }
 
-                        if ($cek_pendadaran == 0) {
-                            // Insert otomatis ke ujian_skripsi untuk PENDADARAN
-                            $this->db->insert('ujian_skripsi', [
-                                'id_skripsi' => $mhs->id_skripsi,
-                                'id_jenis_ujian_skripsi' => $id_jenis_pendadaran,
-                                'status' => 'Berlangsung',
-                                'tanggal_daftar' => date('Y-m-d')
-                            ]);
+                        // Pastikan otomatisasi hanya jalan kalau Bab yang di-ACC adalah Bab Maksimal (5/6)
+                        if ($progres->bab >= $max_bab) {
+                            
+                            // Cek apakah pendadaran yang aktif untuk id_skripsi TERBARU ini sudah ada
+                            $this->db->where('id_skripsi', $mhs->id_skripsi);
+                            $this->db->where('id_jenis_ujian_skripsi', $id_jenis_pendadaran);
+                            $this->db->where_in('status', ['Berlangsung', 'Perbaikan', 'Diterima', 'Lulus']);
+                            $cek_pendadaran = $this->db->get('ujian_skripsi')->num_rows();
+
+                            if ($cek_pendadaran == 0) {
+                                // Insert otomatis ke ujian_skripsi untuk PENDADARAN
+                                // Sekarang 100% masuk ke ID Skripsi yang BARU
+                                $this->db->insert('ujian_skripsi', [
+                                    'id_skripsi' => $mhs->id_skripsi,
+                                    'id_jenis_ujian_skripsi' => $id_jenis_pendadaran,
+                                    'status' => 'Berlangsung',
+                                    'tanggal_daftar' => date('Y-m-d')
+                                ]);
+                            }
                         }
                     }
                 }
