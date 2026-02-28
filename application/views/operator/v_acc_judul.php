@@ -114,28 +114,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php 
-                                    // ============================================================
-                                    // LOGIKA ANTI-DUPLIKAT: Menyaring entri ganda dari database
-                                    // Hanya mengambil ID Skripsi terbesar (Terbaru) untuk tiap NPM
-                                    // ============================================================
-                                    $filtered_mahasiswa = [];
-                                    if (!empty($mahasiswa)) {
-                                        $temp_mhs = [];
-                                        foreach ($mahasiswa as $m) {
-                                            $npm = $m['npm'];
-                                            // Jika NPM belum dicatat, ATAU jika sudah dicatat tapi baris yang sedang dilooping ini 
-                                            // punya id_skripsi yang lebih besar (lebih baru), maka timpa data lamanya!
-                                            if (!isset($temp_mhs[$npm]) || $m['id_skripsi'] > $temp_mhs[$npm]['id_skripsi']) {
-                                                $temp_mhs[$npm] = $m;
-                                            }
-                                        }
-                                        // Kembalikan menjadi array berindeks angka biasa
-                                        $filtered_mahasiswa = array_values($temp_mhs);
-                                    }
-                                    ?>
-
-                                    <?php if (empty($filtered_mahasiswa)): ?>
+                                    <?php if (empty($mahasiswa)): ?>
                                         <tr>
                                             <td colspan="7" class="text-center py-5 text-muted">
                                                 <i class="fas fa-users-slash fa-3x mb-3 text-gray-300"></i><br>
@@ -143,9 +122,13 @@
                                             </td>
                                         </tr>
                                     <?php else: ?>
-                                        <?php $no = 1; foreach ($filtered_mahasiswa as $m): ?>
+                                        <?php 
+                                        // Start index dari controller agar penomoran tidak reset ke 1
+                                        $no = isset($start_index) ? $start_index + 1 : 1; 
+                                        foreach ($mahasiswa as $m): 
+                                        ?>
                                         <tr>
-                                            <td class="align-middle text-center"><?php echo $no++; ?></td>
+                                            <td class="align-middle text-center font-weight-bold text-muted"><?php echo $no++; ?></td>
                                             <td class="align-middle text-center"><span class="badge badge-light border"><?php echo $m['npm']; ?></span></td>
                                             <td class="align-middle">
                                                 <span class="font-weight-bold text-dark"><?php echo $m['nama']; ?></span><br>
@@ -193,7 +176,7 @@
 
                                             <td class="align-middle text-center">
                                                 <?php if($m['id_skripsi']): ?>
-                                                    <a href="<?php echo base_url('operator/edit_dospem/' . $m['id_skripsi']); ?>"
+                                                    <a href="#" data-toggle="modal" data-target="#modalEditPembimbing<?= $m['id_skripsi']; ?>"
                                                        class="btn btn-warning btn-sm shadow-sm">
                                                         <i class="fas fa-edit mr-1"></i> Edit
                                                     </a>
@@ -205,10 +188,10 @@
 
                                         <div class="modal fade" id="modalEditPembimbing<?= $m['id_skripsi']; ?>" tabindex="-1" aria-hidden="true">
                                             <div class="modal-dialog">
-                                                <div class="modal-content">
+                                                <div class="modal-content text-left">
                                                     <div class="modal-header bg-warning">
-                                                        <h5 class="modal-title"><i class="fas fa-user-edit mr-2"></i> Ganti Pembimbing</h5>
-                                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                        <h5 class="modal-title text-dark font-weight-bold"><i class="fas fa-user-edit mr-2"></i> Ganti Pembimbing</h5>
+                                                        <button type="button" class="close text-dark" data-dismiss="modal" aria-label="Close">
                                                             <span aria-hidden="true">&times;</span>
                                                         </button>
                                                     </div>
@@ -260,10 +243,10 @@
                         <div class="card-footer py-2 bg-white">
                             <div class="row align-items-center">
                                 <div class="col-sm-6 text-muted small">
-                                    Total Data: <b><?php echo count($filtered_mahasiswa); ?></b>
+                                    Total Data: <b><?php echo isset($total_rows) ? $total_rows : 0; ?></b>
                                 </div>
                                 <div class="col-sm-6">
-                                    <div class="float-right">
+                                    <div class="float-right m-0">
                                         <?php echo isset($pagination) ? $pagination : ''; ?>
                                     </div>
                                 </div>

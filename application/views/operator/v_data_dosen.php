@@ -33,9 +33,15 @@
                                     <label>Program Studi</label>
                                     <select class="form-control" name="prodi">
                                         <option value="">-- Semua Prodi --</option>
-                                        <option value="Teknik Informatika S1" <?= (isset($f_prodi) && $f_prodi == 'Teknik Informatika S1') ? 'selected' : '' ?>>Teknik Informatika S1</option>
-                                        <option value="Sistem Informasi S1" <?= (isset($f_prodi) && $f_prodi == 'Sistem Informasi S1') ? 'selected' : '' ?>>Sistem Informasi S1</option>
-                                        <option value="Teknologi Informasi S1" <?= (isset($f_prodi) && $f_prodi == 'Teknologi Informasi S1') ? 'selected' : '' ?>>Teknologi Informasi S1</option>
+                                        
+                                        <?php if(isset($list_prodi) && !empty($list_prodi)): ?>
+                                            <?php foreach($list_prodi as $p): ?>
+                                                <option value="<?= $p['prodi'] ?>" <?= (isset($f_prodi) && $f_prodi == $p['prodi']) ? 'selected' : '' ?>>
+                                                    <?= $p['prodi'] ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
+                                        
                                     </select>
                                 </div>
                             </div>
@@ -189,9 +195,14 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="card-body table-responsive p-0">
+                    </div>
 
                 <div class="card-footer bg-white clearfix">
-                    <?= isset($pagination) ? $pagination : '' ?>
+                    <ul class="pagination pagination-sm m-0 float-right">
+                        <?= isset($pagination) ? $pagination : '' ?>
+                    </ul>
+                </div>
                 </div>
             </div>
 

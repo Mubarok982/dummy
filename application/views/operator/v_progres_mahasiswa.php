@@ -81,27 +81,12 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php 
-                                // ============================================================
-                                // LOGIKA ANTI-DUPLIKAT 
-                                // ============================================================
-                                $seen_files = []; 
-                                $filtered_revisi = []; 
-                                
-                                if (!empty($list_revisi)) {
-                                    foreach ($list_revisi as $revisi) {
-                                        $unique_key = $revisi['file'];
-                                        
-                                        if (empty($unique_key) || !in_array($unique_key, $seen_files)) {
-                                            $seen_files[] = $unique_key;
-                                            $filtered_revisi[] = $revisi;
-                                        }
-                                    }
-                                }
-                                ?>
-
-                                <?php if (!empty($filtered_revisi)): ?>
-                                    <?php $no = isset($start_index) ? $start_index + 1 : 1; foreach ($filtered_revisi as $revisi): ?>
+                                <?php if (!empty($list_revisi)): ?>
+                                    <?php 
+                                    // Start index dari controller agar penomoran lanjut ke halaman berikutnya (tidak reset ke 1)
+                                    $no = isset($start_index) ? $start_index + 1 : 1; 
+                                    foreach ($list_revisi as $revisi): 
+                                    ?>
                                         <tr>
                                             <td class="text-center font-weight-bold text-muted align-middle"><?php echo $no++; ?></td>
                                             
@@ -114,7 +99,7 @@
                                             </td>
 
                                             <td class="align-middle text-wrap">
-                                                <span class="text-muted text-sm font-italic"><?php echo $revisi['judul']; ?></span>
+                                                <span class="text-muted text-sm font-italic"><?php echo !empty($revisi['judul']) ? $revisi['judul'] : '- Belum ada judul -'; ?></span>
                                             </td>
                                             
                                             <td class="text-center align-middle">
@@ -168,10 +153,11 @@
                             </tbody>
                         </table>
                     </div>
+                    
                     <div class="card-footer py-2 bg-white">
                         <div class="row align-items-center">
                             <div class="col-sm-6 text-muted small">
-                                Total Data: <b><?php echo count($filtered_revisi); ?></b>
+                                Total Data: <b><?php echo isset($total_rows) ? $total_rows : 0; ?></b>
                             </div>
                             <div class="col-sm-6">
                                 <div class="float-right m-0">
@@ -186,8 +172,8 @@
     </section>
 </div>
 
-<?php if (!empty($filtered_revisi)): ?>
-    <?php foreach ($filtered_revisi as $revisi): ?>
+<?php if (!empty($list_revisi)): ?>
+    <?php foreach ($list_revisi as $revisi): ?>
         
         <div class="modal fade" id="modalDetail<?php echo $revisi['id']; ?>" tabindex="-1" role="dialog" aria-hidden="true">
             <div class="modal-dialog modal-lg modal-dialog-centered" role="document">

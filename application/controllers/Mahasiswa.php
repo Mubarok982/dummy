@@ -30,13 +30,22 @@ class Mahasiswa extends CI_Controller {
         redirect('mahasiswa/bimbingan');
     }
 
- public function pengajuan_judul()
+public function pengajuan_judul()
     {
         $id_mahasiswa = $this->session->userdata('id');
         $data['title'] = 'Pengajuan Judul Skripsi';
         
         $data['skripsi'] = $this->M_Mahasiswa->get_skripsi_by_mhs($id_mahasiswa);
-        $data['dosen_list'] = $this->M_Data->get_dosen_pembimbing_list();
+        
+        // --- AMBIL PRODI MAHASISWA SAAT INI ---
+        $prodi_mhs = $this->session->userdata('prodi');
+        if (empty($prodi_mhs) && isset($data['skripsi']['prodi'])) {
+            $prodi_mhs = $data['skripsi']['prodi'];
+        }
+        
+        // --- AMBIL DOSEN HANYA YANG SE-PRODI ---
+        // Jika belum ada fungsi get_dosen_by_prodi, kita akan buat di model M_Data
+        $data['dosen_list'] = $this->M_Data->get_dosen_by_prodi($prodi_mhs);
 
         // --- TAMBAHAN LOGIKA MENGULANG ---
         // Cek apakah mahasiswa sudah pernah ujian dan statusnya mengulang
