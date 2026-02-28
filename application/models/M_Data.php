@@ -1476,4 +1476,30 @@ class M_Data extends CI_Model
         return $this->db->get()->result_array();
     }
 
+    public function get_all_mahasiswa_lengkap_no_limit()
+    {
+        $this->db->select('
+            mstr_akun.id as id_user,
+            mstr_akun.nama,
+            mstr_akun.foto,
+            data_mahasiswa.npm,
+            data_mahasiswa.prodi,
+            data_mahasiswa.angkatan,
+            data_mahasiswa.telepon,
+            skripsi.id as id_skripsi,
+            skripsi.judul,
+            skripsi.pembimbing1 as p1,
+            skripsi.pembimbing2 as p2
+        ');
+        $this->db->from('mstr_akun');
+        $this->db->join('data_mahasiswa', 'mstr_akun.id = data_mahasiswa.id', 'left');
+        $this->db->join('skripsi', 'data_mahasiswa.id = skripsi.id_mahasiswa', 'left');
+        $this->db->where('mstr_akun.role', 'mahasiswa');
+        
+        // Urutkan DESC agar data skripsi (judul/dosen) terbaru yang ditarik lebih dulu
+        $this->db->order_by('skripsi.id', 'DESC'); 
+        
+        return $this->db->get()->result_array();
+    }
+
 }

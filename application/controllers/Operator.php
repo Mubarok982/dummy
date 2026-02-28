@@ -267,30 +267,125 @@ class Operator extends CI_Controller {
         $f_kelengkapan = $this->input->get('kelengkapan');
         $f_keyword = $this->input->get('keyword');
         
-        // Pagination
+        // 1. AMBIL SEMUA DATA (Tanpa Limit Pagination di Model)
+        // Pastikan Anda memanggil fungsi model yang mengambil SEMUA data tanpa limit/offset
+        $all_data = $this->M_Data->get_all_mahasiswa_lengkap_no_limit();
+
+        // 2. FILTERING & LOGIKA ANTI-DUPLIKAT
+        $temp_mhs = [];
+
+        foreach ($all_data as $m) {
+            $match = true;
+
+            // Filter Program Studi
+            if ($f_prodi && $f_prodi != 'all') {
+                if (strtolower($m['prodi']) != strtolower($f_prodi)) {
+                    $match = false;
+                }
+            }
+
+            // Filter Keyword (Nama / NPM)
+            if ($f_keyword) {
+                $search_text = strtolower(($m['nama'] ?? '') . ' ' . ($m['npm'] ?? ''));
+                if (strpos($search_text, strtolower($f_keyword)) === false) {
+                    $match = false;
+                }
+            }
+
+            // Filter Kelengkapan Data (Sesuai perhitungan di View)
+            if ($match && $f_kelengkapan) {
+                $lengkap = 0;
+                if (!empty($m['foto'])) $lengkap++;
+                if (!empty($m['telepon'])) $lengkap++;
+                if (!empty($m['judul'])) $lengkap++;
+                if (!empty($m['p1']) && !empty($m['p2'])) $lengkap++;
+                
+                $persentase = ($lengkap / 4) * 100;
+
+                if ($f_kelengkapan == 'lengkap' && $persentase < 100) $match = false;
+                if ($f_kelengkapan == 'sebagian' && ($persentase == 100 || $persentase < 50)) $match = false;
+                if ($f_kelengkapan == 'belum' && $persentase >= 50) $match = false;
+            }
+
+            // Logika Anti Duplikat: Berdasarkan NPM (Ambil ID Skripsi Terbesar / Data Terbaru)
+            if ($match) {
+                $npm = $m['npm'];
+                if (!isset($temp_mhs[$npm])) {
+                    $temp_mhs[$npm] = $m;
+                } else {
+                    // Jika NPM sudah ada, bandingkan ID Skripsi-nya (Jika ada relasi ke tabel skripsi)
+                    // Timpa data lama jika id_skripsi data saat ini lebih besar (lebih baru)
+                    if (isset($m['id_skripsi']) && isset($temp_mhs[$npm]['id_skripsi'])) {
+                        if ($m['id_skripsi'] > $temp_mhs[$npm]['id_skripsi']) {
+                            $temp_mhs[$npm] = $m;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Kembalikan ke format array berindeks angka
+        $filtered_data = array_values($temp_mhs);
+
+        // Sorting by Nama A-Z (Opsional, agar rapi)
+        usort($filtered_data, function($a, $b) {
+            return strcmp(strtolower($a['nama']), strtolower($b['nama']));
+        });
+
+        // 3. PAGINATION
         $this->load->library('pagination');
+        $total_rows = count($filtered_data);
+
         $config['base_url'] = base_url('operator/data_mahasiswa');
-        $config['total_rows'] = $this->M_Data->count_mahasiswa_lengkap($f_prodi, $f_kelengkapan, $f_keyword);
+        $config['total_rows'] = $total_rows;
         $config['per_page'] = 10;
         $config['reuse_query_string'] = TRUE;
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
 
-        config_pagination($config);
+        // Konfigurasi UI Pagination Bootstrap 4
+        $config['full_tag_open']    = '<ul class="pagination pagination-sm m-0 float-right">';
+        $config['full_tag_close']   = '</ul>';
+        $config['first_link']       = 'First';
+        $config['first_tag_open']   = '<li class="page-item">';
+        $config['first_tag_close']  = '</li>';
+        $config['last_link']        = 'Last';
+        $config['last_tag_open']    = '<li class="page-item">';
+        $config['last_tag_close']   = '</li>';
+        $config['next_link']        = '&raquo;';
+        $config['next_tag_open']    = '<li class="page-item">';
+        $config['next_tag_close']   = '</li>';
+        $config['prev_link']        = '&laquo;';
+        $config['prev_tag_open']    = '<li class="page-item">';
+        $config['prev_tag_close']   = '</li>';
+        $config['cur_tag_open']     = '<li class="page-item active"><a class="page-link" href="#">';
+        $config['cur_tag_close']    = '</a></li>';
+        $config['num_tag_open']     = '<li class="page-item">';
+        $config['num_tag_close']    = '</li>';
+        $config['attributes']       = array('class' => 'page-link');
+
         $this->pagination->initialize($config);
 
         $page = $this->input->get('page') ? $this->input->get('page') : 0;
         
-        // Get paginated data
-        $data['mahasiswa'] = $this->M_Data->get_mahasiswa_lengkap_paginated($f_prodi, $f_kelengkapan, $f_keyword, $config['per_page'], $page);
+        // Memotong data unik untuk ditampilkan di layar
+        $data['mahasiswa'] = array_slice($filtered_data, $page, $config['per_page']);
         
         $data['pagination'] = $this->pagination->create_links();
-        $data['total_rows'] = $config['total_rows'];
+        $data['total_rows'] = $total_rows;
         $data['start_index'] = $page;
         
         $data['f_prodi'] = $f_prodi;
         $data['f_kelengkapan'] = $f_kelengkapan;
         $data['f_keyword'] = $f_keyword;
+
+        // Ambil List Program Studi Dinamis dari Database
+        $this->db->distinct();
+        $this->db->select('prodi');
+        $this->db->where('prodi !=', '');
+        $this->db->where('prodi IS NOT NULL', null, false);
+        $this->db->order_by('prodi', 'ASC');
+        $data['list_prodi'] = $this->db->get('data_mahasiswa')->result_array();
 
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
