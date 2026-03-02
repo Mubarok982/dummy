@@ -526,7 +526,7 @@ class M_Data extends CI_Model
         $this->db->select('
             a.nama, a.foto,
             m.npm, m.prodi, m.angkatan,
-            s.judul,
+            s.tema, s.judul,
             d1.nama as nama_p1,
             d2.nama as nama_p2,
             u.tanggal_daftar as tgl_daftar_sempro,
@@ -692,7 +692,7 @@ class M_Data extends CI_Model
         $this->db->select('
             a.nama, a.foto,
             m.npm, m.prodi, m.angkatan,
-            s.judul,
+            s.tema, s.judul,
             d1.nama as nama_p1,
             d2.nama as nama_p2,
             u.tanggal_daftar as tgl_daftar,

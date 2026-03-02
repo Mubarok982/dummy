@@ -291,9 +291,9 @@ class Operator extends CI_Controller {
         foreach ($all_data as $item) {
             $match = true;
 
-            // Keyword search (nama, npm, judul)
+            // Keyword search (nama, npm, judul, tema)
             if ($keyword) {
-                $search_text = strtolower($item['nama'] . ' ' . $item['npm'] . ' ' . ($item['judul'] ?? ''));
+                $search_text = strtolower($item['nama'] . ' ' . $item['npm'] . ' ' . ($item['judul'] ?? '') . ' ' . ($item['tema'] ?? ''));
                 if (strpos($search_text, strtolower($keyword)) === false) {
                     $match = false;
                 }
@@ -399,9 +399,9 @@ class Operator extends CI_Controller {
         foreach ($all_data as $item) {
             $match = true;
 
-            // Keyword search (nama, npm, judul)
+            // Keyword search (nama, npm, judul, tema)
             if ($keyword) {
-                $search_text = strtolower($item['nama'] . ' ' . $item['npm'] . ' ' . ($item['judul'] ?? ''));
+                $search_text = strtolower($item['nama'] . ' ' . $item['npm'] . ' ' . ($item['judul'] ?? '') . ' ' . ($item['tema'] ?? ''));
                 if (strpos($search_text, strtolower($keyword)) === false) {
                     $match = false;
                 }
