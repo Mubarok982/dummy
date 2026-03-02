@@ -1425,4 +1425,81 @@ class M_Data extends CI_Model
         return $this->db->get()->result_array();
     }
 
+    public function get_dosen_by_prodi($prodi = null)
+    {
+        // Hubungkan tabel akun dan data_dosen untuk mendapatkan nama dan prodinya
+        $this->db->select('A.id, A.nama, D.prodi');
+        $this->db->from('mstr_akun A');
+        $this->db->join('data_dosen D', 'A.id = D.id', 'left');
+        
+        // Pastikan hanya mengambil akun dengan role 'dosen'
+        $this->db->where('A.role', 'dosen');
+        
+        // Filter berdasarkan prodi mahasiswa jika tersedia
+        if (!empty($prodi)) {
+            $this->db->where('D.prodi', $prodi);
+        }
+        
+        $this->db->order_by('A.nama', 'ASC');
+        return $this->db->get()->result_array();
+    }
+
+    // Fungsi untuk mengambil seluruh data skripsi dan join ke tabel terkait tanpa Limit/Paginasi database
+    public function get_all_acc_judul()
+    {
+        $this->db->select('
+            skripsi.id as id_skripsi, 
+            skripsi.judul, 
+            skripsi.status_acc_kaprodi, 
+            data_mahasiswa.npm, 
+            data_mahasiswa.prodi, 
+            data_mahasiswa.angkatan, 
+            mstr_akun.nama, 
+            dosen1.nama as p1, 
+            dosen2.nama as p2
+        ');
+        $this->db->from('skripsi');
+        
+        // Join ke data mahasiswa untuk ambil NPM, Prodi, Angkatan
+        $this->db->join('data_mahasiswa', 'skripsi.id_mahasiswa = data_mahasiswa.id', 'left');
+        
+        // Join ke master akun untuk ambil Nama Mahasiswa
+        $this->db->join('mstr_akun', 'data_mahasiswa.id = mstr_akun.id', 'left');
+        
+        // Join ke master akun untuk ambil Nama Dosen Pembimbing 1 dan 2
+        $this->db->join('mstr_akun as dosen1', 'skripsi.pembimbing1 = dosen1.id', 'left');
+        $this->db->join('mstr_akun as dosen2', 'skripsi.pembimbing2 = dosen2.id', 'left');
+        
+        // Pastikan diurutkan dari ID terbesar (Data Terbaru) agar logika anti-duplikat di Controller sukses
+        $this->db->order_by('skripsi.id', 'DESC');
+        
+        return $this->db->get()->result_array();
+    }
+
+    public function get_all_mahasiswa_lengkap_no_limit()
+    {
+        $this->db->select('
+            mstr_akun.id as id_user,
+            mstr_akun.nama,
+            mstr_akun.foto,
+            data_mahasiswa.npm,
+            data_mahasiswa.prodi,
+            data_mahasiswa.angkatan,
+            data_mahasiswa.telepon,
+            skripsi.id as id_skripsi,
+            skripsi.judul,
+            skripsi.pembimbing1 as p1,
+            skripsi.pembimbing2 as p2
+        ');
+        $this->db->from('mstr_akun');
+        $this->db->join('data_mahasiswa', 'mstr_akun.id = data_mahasiswa.id', 'left');
+        $this->db->join('skripsi', 'data_mahasiswa.id = skripsi.id_mahasiswa', 'left');
+        $this->db->where('mstr_akun.role', 'mahasiswa');
+        
+        // Urutkan DESC agar data skripsi (judul/dosen) terbaru yang ditarik lebih dulu
+        $this->db->order_by('skripsi.id', 'DESC'); 
+        
+        return $this->db->get()->result_array();
+    }
+
 }

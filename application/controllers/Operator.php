@@ -38,7 +38,7 @@ class Operator extends CI_Controller {
 
         $config['base_url'] = base_url('operator/manajemen_akun');
         $config['total_rows'] = $this->M_akun_opt->count_all_users($role, $prodi, $keyword);
-        $config['per_page'] = 15;
+        $config['per_page'] = 10;
         $config['reuse_query_string'] = TRUE;
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
@@ -209,7 +209,28 @@ class Operator extends CI_Controller {
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
 
-        config_pagination($config);
+        // --- KONFIGURASI TAMPILAN PAGINATION BOOTSTRAP 4 ---
+        $config['full_tag_open']    = '<ul class="pagination pagination-sm m-0 float-right">';
+        $config['full_tag_close']   = '</ul>';
+        $config['first_link']       = 'First';
+        $config['first_tag_open']   = '<li class="page-item">';
+        $config['first_tag_close']  = '</li>';
+        $config['last_link']        = 'Last';
+        $config['last_tag_open']    = '<li class="page-item">';
+        $config['last_tag_close']   = '</li>';
+        $config['next_link']        = '&raquo;';
+        $config['next_tag_open']    = '<li class="page-item">';
+        $config['next_tag_close']   = '</li>';
+        $config['prev_link']        = '&laquo;';
+        $config['prev_tag_open']    = '<li class="page-item">';
+        $config['prev_tag_close']   = '</li>';
+        $config['cur_tag_open']     = '<li class="page-item active"><a class="page-link" href="#">';
+        $config['cur_tag_close']    = '</a></li>';
+        $config['num_tag_open']     = '<li class="page-item">';
+        $config['num_tag_close']    = '</li>';
+        $config['attributes']       = array('class' => 'page-link');
+        // ----------------------------------------------------
+
         $this->pagination->initialize($config);
 
         $page = $this->input->get('page') ? $this->input->get('page') : 0;
@@ -222,6 +243,14 @@ class Operator extends CI_Controller {
         $data['f_prodi'] = $prodi;
         $data['f_jabatan'] = $jabatan;
         $data['f_keyword'] = $keyword;
+
+        // Ambil List Program Studi Dinamis
+        $this->db->distinct();
+        $this->db->select('prodi');
+        $this->db->where('prodi !=', '');
+        $this->db->where('prodi IS NOT NULL', null, false);
+        $this->db->order_by('prodi', 'ASC');
+        $data['list_prodi'] = $this->db->get('data_dosen')->result_array();
 
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
@@ -238,30 +267,125 @@ class Operator extends CI_Controller {
         $f_kelengkapan = $this->input->get('kelengkapan');
         $f_keyword = $this->input->get('keyword');
         
-        // Pagination
+        // 1. AMBIL SEMUA DATA (Tanpa Limit Pagination di Model)
+        // Pastikan Anda memanggil fungsi model yang mengambil SEMUA data tanpa limit/offset
+        $all_data = $this->M_Data->get_all_mahasiswa_lengkap_no_limit();
+
+        // 2. FILTERING & LOGIKA ANTI-DUPLIKAT
+        $temp_mhs = [];
+
+        foreach ($all_data as $m) {
+            $match = true;
+
+            // Filter Program Studi
+            if ($f_prodi && $f_prodi != 'all') {
+                if (strtolower($m['prodi']) != strtolower($f_prodi)) {
+                    $match = false;
+                }
+            }
+
+            // Filter Keyword (Nama / NPM)
+            if ($f_keyword) {
+                $search_text = strtolower(($m['nama'] ?? '') . ' ' . ($m['npm'] ?? ''));
+                if (strpos($search_text, strtolower($f_keyword)) === false) {
+                    $match = false;
+                }
+            }
+
+            // Filter Kelengkapan Data (Sesuai perhitungan di View)
+            if ($match && $f_kelengkapan) {
+                $lengkap = 0;
+                if (!empty($m['foto'])) $lengkap++;
+                if (!empty($m['telepon'])) $lengkap++;
+                if (!empty($m['judul'])) $lengkap++;
+                if (!empty($m['p1']) && !empty($m['p2'])) $lengkap++;
+                
+                $persentase = ($lengkap / 4) * 100;
+
+                if ($f_kelengkapan == 'lengkap' && $persentase < 100) $match = false;
+                if ($f_kelengkapan == 'sebagian' && ($persentase == 100 || $persentase < 50)) $match = false;
+                if ($f_kelengkapan == 'belum' && $persentase >= 50) $match = false;
+            }
+
+            // Logika Anti Duplikat: Berdasarkan NPM (Ambil ID Skripsi Terbesar / Data Terbaru)
+            if ($match) {
+                $npm = $m['npm'];
+                if (!isset($temp_mhs[$npm])) {
+                    $temp_mhs[$npm] = $m;
+                } else {
+                    // Jika NPM sudah ada, bandingkan ID Skripsi-nya (Jika ada relasi ke tabel skripsi)
+                    // Timpa data lama jika id_skripsi data saat ini lebih besar (lebih baru)
+                    if (isset($m['id_skripsi']) && isset($temp_mhs[$npm]['id_skripsi'])) {
+                        if ($m['id_skripsi'] > $temp_mhs[$npm]['id_skripsi']) {
+                            $temp_mhs[$npm] = $m;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Kembalikan ke format array berindeks angka
+        $filtered_data = array_values($temp_mhs);
+
+        // Sorting by Nama A-Z (Opsional, agar rapi)
+        usort($filtered_data, function($a, $b) {
+            return strcmp(strtolower($a['nama']), strtolower($b['nama']));
+        });
+
+        // 3. PAGINATION
         $this->load->library('pagination');
+        $total_rows = count($filtered_data);
+
         $config['base_url'] = base_url('operator/data_mahasiswa');
-        $config['total_rows'] = $this->M_Data->count_mahasiswa_lengkap($f_prodi, $f_kelengkapan, $f_keyword);
-        $config['per_page'] = 15;
+        $config['total_rows'] = $total_rows;
+        $config['per_page'] = 10;
         $config['reuse_query_string'] = TRUE;
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
 
-        config_pagination($config);
+        // Konfigurasi UI Pagination Bootstrap 4
+        $config['full_tag_open']    = '<ul class="pagination pagination-sm m-0 float-right">';
+        $config['full_tag_close']   = '</ul>';
+        $config['first_link']       = 'First';
+        $config['first_tag_open']   = '<li class="page-item">';
+        $config['first_tag_close']  = '</li>';
+        $config['last_link']        = 'Last';
+        $config['last_tag_open']    = '<li class="page-item">';
+        $config['last_tag_close']   = '</li>';
+        $config['next_link']        = '&raquo;';
+        $config['next_tag_open']    = '<li class="page-item">';
+        $config['next_tag_close']   = '</li>';
+        $config['prev_link']        = '&laquo;';
+        $config['prev_tag_open']    = '<li class="page-item">';
+        $config['prev_tag_close']   = '</li>';
+        $config['cur_tag_open']     = '<li class="page-item active"><a class="page-link" href="#">';
+        $config['cur_tag_close']    = '</a></li>';
+        $config['num_tag_open']     = '<li class="page-item">';
+        $config['num_tag_close']    = '</li>';
+        $config['attributes']       = array('class' => 'page-link');
+
         $this->pagination->initialize($config);
 
         $page = $this->input->get('page') ? $this->input->get('page') : 0;
         
-        // Get paginated data
-        $data['mahasiswa'] = $this->M_Data->get_mahasiswa_lengkap_paginated($f_prodi, $f_kelengkapan, $f_keyword, $config['per_page'], $page);
+        // Memotong data unik untuk ditampilkan di layar
+        $data['mahasiswa'] = array_slice($filtered_data, $page, $config['per_page']);
         
         $data['pagination'] = $this->pagination->create_links();
-        $data['total_rows'] = $config['total_rows'];
+        $data['total_rows'] = $total_rows;
         $data['start_index'] = $page;
         
         $data['f_prodi'] = $f_prodi;
         $data['f_kelengkapan'] = $f_kelengkapan;
         $data['f_keyword'] = $f_keyword;
+
+        // Ambil List Program Studi Dinamis dari Database
+        $this->db->distinct();
+        $this->db->select('prodi');
+        $this->db->where('prodi !=', '');
+        $this->db->where('prodi IS NOT NULL', null, false);
+        $this->db->order_by('prodi', 'ASC');
+        $data['list_prodi'] = $this->db->get('data_mahasiswa')->result_array();
 
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
@@ -342,7 +466,7 @@ class Operator extends CI_Controller {
         // Pagination
         $config['base_url'] = base_url('operator/mahasiswa_siap_sempro');
         $config['total_rows'] = $total_rows;
-        $config['per_page'] = 15;
+        $config['per_page'] = 10;
         $config['reuse_query_string'] = TRUE;
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
@@ -443,7 +567,7 @@ class Operator extends CI_Controller {
         // Pagination
         $config['base_url'] = base_url('operator/mahasiswa_siap_pendadaran');
         $config['total_rows'] = $total_rows;
-        $config['per_page'] = 15;
+        $config['per_page'] = 10;
         $config['reuse_query_string'] = TRUE;
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
@@ -490,18 +614,24 @@ class Operator extends CI_Controller {
         $keyword = $this->input->get('keyword');
         $prodi = $is_kaprodi ? $kaprodi_prodi : $this->input->get('prodi');
         $angkatan = $this->input->get('angkatan');
-        $sort_by = $this->input->get('sort_by') ?: 'nama_mhs';
-        $sort_order = $this->input->get('sort_order') ?: 'asc';
+        
+        // Default sort by tgl_upload DESC agar yang baru selalu di atas
+        $sort_by = $this->input->get('sort_by') ?: 'tgl_upload'; 
+        $sort_order = $this->input->get('sort_order') ?: 'desc';
 
         // Get all data first
         $all_data = $this->M_Data->get_riwayat_progress($keyword);
 
-        // Apply filters
+        // ==========================================================
+        // 1. FILTERING DAN ANTI-DUPLIKAT (Dipindah ke Controller)
+        // ==========================================================
         $filtered_data = [];
+        $seen_files = []; // Untuk melacak file duplikat
+
         foreach ($all_data as $item) {
             $match = true;
 
-            // Keyword search (nama, npm, judul)
+            // Keyword search
             if ($keyword) {
                 $search_text = strtolower(($item['nama_mhs'] ?? '') . ' ' . ($item['npm'] ?? '') . ' ' . ($item['judul'] ?? ''));
                 if (strpos($search_text, strtolower($keyword)) === false) {
@@ -523,39 +653,77 @@ class Operator extends CI_Controller {
                 }
             }
 
+            // Logika Anti Duplikat (Gunakan nama file sebagai kunci unik)
             if ($match) {
-                $filtered_data[] = $item;
+                $unique_key = !empty($item['file']) ? $item['file'] : $item['id'];
+
+                if (!in_array($unique_key, $seen_files)) {
+                    $seen_files[] = $unique_key;
+                    $filtered_data[] = $item;
+                }
             }
         }
 
-        // Apply sorting
+        // ==========================================================
+        // 2. SORTING (PENGURUTAN) - Default: Tanggal Terbaru di Atas
+        // ==========================================================
         usort($filtered_data, function($a, $b) use ($sort_by, $sort_order) {
+            // Jika sorting berdasarkan tanggal
+            if ($sort_by == 'tgl_upload' || $sort_by == 'created_at') {
+                $time_a = strtotime($a[$sort_by] ?? 0);
+                $time_b = strtotime($b[$sort_by] ?? 0);
+                return ($sort_order == 'desc') ? ($time_b - $time_a) : ($time_a - $time_b);
+            }
+            
+            // Jika sorting berdasarkan string (nama, dsb)
             $val_a = strtolower($a[$sort_by] ?? '');
             $val_b = strtolower($b[$sort_by] ?? '');
+            
             if ($sort_order == 'desc') {
-                return $val_b <=> $val_a;
+                return strcmp($val_b, $val_a);
             } else {
-                return $val_a <=> $val_b;
+                return strcmp($val_a, $val_b);
             }
         });
 
-        // Calculate total rows after filtering
+        // ==========================================================
+        // 3. PROSES PAGINATION (Murni dari data yang Unik & Tersortir)
+        // ==========================================================
         $total_rows = count($filtered_data);
 
-        // Pagination
         $config['base_url'] = base_url('operator/list_revisi');
         $config['total_rows'] = $total_rows;
-        $config['per_page'] = 15;
+        $config['per_page'] = 10; 
         $config['reuse_query_string'] = TRUE;
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
 
-        config_pagination($config);
+        // Konfigurasi UI Pagination Bootstrap 4 (Agar tidak berantakan)
+        $config['full_tag_open']    = '<ul class="pagination pagination-sm m-0 float-right">';
+        $config['full_tag_close']   = '</ul>';
+        $config['first_link']       = 'First';
+        $config['first_tag_open']   = '<li class="page-item">';
+        $config['first_tag_close']  = '</li>';
+        $config['last_link']        = 'Last';
+        $config['last_tag_open']    = '<li class="page-item">';
+        $config['last_tag_close']   = '</li>';
+        $config['next_link']        = '&raquo;';
+        $config['next_tag_open']    = '<li class="page-item">';
+        $config['next_tag_close']   = '</li>';
+        $config['prev_link']        = '&laquo;';
+        $config['prev_tag_open']    = '<li class="page-item">';
+        $config['prev_tag_close']   = '</li>';
+        $config['cur_tag_open']     = '<li class="page-item active"><a class="page-link" href="#">';
+        $config['cur_tag_close']    = '</a></li>';
+        $config['num_tag_open']     = '<li class="page-item">';
+        $config['num_tag_close']    = '</li>';
+        $config['attributes']       = array('class' => 'page-link');
+
         $this->pagination->initialize($config);
 
         $page = $this->input->get('page') ? $this->input->get('page') : 0;
         
-        // Slice data for pagination
+        // Slice data yang BENAR-BENAR unik untuk paginasi
         $data['list_revisi'] = array_slice($filtered_data, $page, $config['per_page']);
 
         $data['pagination'] = $this->pagination->create_links();
@@ -617,16 +785,75 @@ class Operator extends CI_Controller {
         $is_kaprodi = $this->session->userdata('is_kaprodi');
         $kaprodi_prodi = $is_kaprodi ? $this->session->userdata('prodi') : null;
 
+        $this->load->library('pagination');
+
         // Get filter parameters
         $keyword = $this->input->get('keyword');
         $status = $this->input->get('status');
         $prodi = $is_kaprodi ? $kaprodi_prodi : $this->input->get('prodi');
 
-        // Pagination
-        $this->load->library('pagination');
+        // Ambil semua data judul sekaligus tanpa batas (untuk disaring secara manual)
+        // Pastikan model M_Data memiliki fungsi get_all_acc_judul() yang tidak memakai limit
+        $all_data = $this->M_Data->get_all_acc_judul(); 
+
+        // ==========================================================
+        // 1. FILTERING DAN ANTI-DUPLIKAT (Dipindah ke Sini)
+        // ==========================================================
+        $temp_mhs = []; // Array sementara berdasar NPM
+        
+        foreach ($all_data as $m) {
+            $match = true;
+
+            // Filter Keyword (Nama, NPM, Judul)
+            if ($keyword) {
+                $search_text = strtolower(($m['nama'] ?? '') . ' ' . ($m['npm'] ?? '') . ' ' . ($m['judul'] ?? ''));
+                if (strpos($search_text, strtolower($keyword)) === false) {
+                    $match = false;
+                }
+            }
+
+            // Filter Status ACC
+            if ($status && $status != 'all') {
+                if (($m['status_acc_kaprodi'] ?? '') != $status) {
+                    $match = false;
+                }
+            }
+
+            // Filter Prodi
+            if ($prodi && $prodi != 'all') {
+                if (($m['prodi'] ?? '') != $prodi) {
+                    $match = false;
+                }
+            }
+
+            // Logika Anti Duplikat: Hanya simpan ID Skripsi Terbesar/Terbaru untuk tiap NPM
+            if ($match) {
+                $npm = $m['npm'];
+                if (!isset($temp_mhs[$npm]) || $m['id_skripsi'] > $temp_mhs[$npm]['id_skripsi']) {
+                    $temp_mhs[$npm] = $m;
+                }
+            }
+        }
+
+        // Kembalikan ke array berindeks angka
+        $filtered_data = array_values($temp_mhs);
+
+        // ==========================================================
+        // 2. SORTING: Data Terbaru Selalu di Atas
+        // ==========================================================
+        usort($filtered_data, function($a, $b) {
+            // Urutkan berdasarkan id_skripsi secara Descending (Paling besar/baru di atas)
+            return $b['id_skripsi'] - $a['id_skripsi'];
+        });
+
+        // ==========================================================
+        // 3. PAGINATION
+        // ==========================================================
+        $total_rows = count($filtered_data);
+
         $config['base_url'] = base_url('operator/acc_judul');
-        $config['total_rows'] = $this->M_Data->count_acc_judul($keyword, $status, $prodi);
-        $config['per_page'] = 15;
+        $config['total_rows'] = $total_rows;
+        $config['per_page'] = 10; // Set 15 item per halaman
         $config['reuse_query_string'] = TRUE;
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
@@ -636,11 +863,11 @@ class Operator extends CI_Controller {
 
         $page = $this->input->get('page') ? $this->input->get('page') : 0;
         
-        // Get paginated data
-        $data['mahasiswa'] = $this->M_Data->get_acc_judul_paginated($keyword, $status, $prodi, $config['per_page'], $page);
-        
+        // Memotong data unik untuk ditampilkan di layar (Pasti utuh per halaman)
+        $data['mahasiswa'] = array_slice($filtered_data, $page, $config['per_page']);
+
         $data['pagination'] = $this->pagination->create_links();
-        $data['total_rows'] = $config['total_rows'];
+        $data['total_rows'] = $total_rows;
         $data['start_index'] = $page;
 
         $data['dosen_list'] = $is_kaprodi ? $this->M_laporan_opt->get_dosen_pembimbing_list(null, null, null, $kaprodi_prodi) : $this->M_Data->get_dosen_pembimbing_list();
@@ -699,7 +926,7 @@ class Operator extends CI_Controller {
         $this->load->library('pagination');
         $config['base_url'] = base_url('operator/acc_dospem');
         $config['total_rows'] = $this->M_skripsi_opt->count_pengajuan_dospem($keyword, $prodi);
-        $config['per_page'] = 15;
+        $config['per_page'] = 10;
         $config['reuse_query_string'] = TRUE;
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
@@ -1124,7 +1351,7 @@ public function get_detail_kinerja_ajax()
     }
     // --- CEK PLAGIARISME & LAINNYA ---
 
-    public function cek_plagiarisme_list()
+  public function cek_plagiarisme_list()
     {
         $data['title'] = 'Cek Plagiarisme';
         $this->load->library('pagination');
@@ -1139,52 +1366,71 @@ public function get_detail_kinerja_ajax()
         // Get all data first
         $all_data = $this->M_Data->get_all_plagiarisme_bab_1();
 
-        // Apply filters
+        // 1. ==========================================================
+        // PENYARINGAN FILTER & ANTI-DUPLIKAT (Dipindahkan ke Controller)
+        // ==========================================================
         $filtered_data = [];
+        $seen_files = []; // Array untuk melacak data unik
+
         foreach ($all_data as $item) {
             $match = true;
 
-            // Keyword search (nama, npm)
+            // Filter Pencarian (Keyword)
             if ($keyword) {
-                $search_text = strtolower($item['nama'] . ' ' . $item['npm']);
+                $search_text = strtolower($item['nama'] . ' ' . $item['npm'] . ' ' . $item['judul']);
                 if (strpos($search_text, strtolower($keyword)) === false) {
                     $match = false;
                 }
             }
 
-            // Status filter
+            // Filter Status
             if ($status && $status != 'all') {
                 if ($item['status_plagiasi'] != $status) {
                     $match = false;
                 }
             }
 
-            // Prodi filter (assuming prodi is in the data, if not, need to join)
-            // For now, skip prodi filter as data may not have it directly
-
+            // Jika lolos filter di atas, pastikan data tidak duplikat
             if ($match) {
-                $filtered_data[] = $item;
+                // Buat kunci unik berdasarkan id & nama file progres
+                $unique_key = $item['id'] . '_' . (isset($item['progres_file']) ? $item['progres_file'] : '');
+                
+                // Jika belum pernah ada di dalam array $seen_files, masukkan ke hasil akhir
+                if (!in_array($unique_key, $seen_files)) {
+                    $seen_files[] = $unique_key;
+                    $filtered_data[] = $item;
+                }
             }
         }
 
-        // Apply sorting
+        // 2. ==========================================================
+        // PROSES SORTING 
+        // ==========================================================
         usort($filtered_data, function($a, $b) use ($sort_by, $sort_order) {
+            // Prioritaskan status 'Menunggu' agar selalu di atas (kecuali sedang menyortir kolom status_plagiasi khusus)
+            if ($sort_by != 'status_plagiasi') {
+                if ($a['status_plagiasi'] == 'Menunggu' && $b['status_plagiasi'] != 'Menunggu') return -1;
+                if ($a['status_plagiasi'] != 'Menunggu' && $b['status_plagiasi'] == 'Menunggu') return 1;
+            }
+
             $val_a = strtolower($a[$sort_by] ?? '');
             $val_b = strtolower($b[$sort_by] ?? '');
+            
             if ($sort_order == 'desc') {
-                return $val_b <=> $val_a;
+                return strcmp($val_b, $val_a); // Menggunakan strcmp untuk string comparison yang lebih aman di PHP 7.x
             } else {
-                return $val_a <=> $val_b;
+                return strcmp($val_a, $val_b);
             }
         });
 
-        // Calculate total rows after filtering
+        // 3. ==========================================================
+        // PROSES PAGINATION (Sekarang menghitung dari data unik saja)
+        // ==========================================================
         $total_rows = count($filtered_data);
 
-        // Pagination
         $config['base_url'] = base_url('operator/cek_plagiarisme_list');
         $config['total_rows'] = $total_rows;
-        $config['per_page'] = 15;
+        $config['per_page'] = 10;
         $config['reuse_query_string'] = TRUE;
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
@@ -1194,7 +1440,7 @@ public function get_detail_kinerja_ajax()
 
         $page = $this->input->get('page') ? $this->input->get('page') : 0;
         
-        // Slice data for pagination
+        // Memotong data yang BENAR-BENAR unik untuk ditampilkan (Pasti pas 10 data jika ada)
         $data['list_plagiasi'] = array_slice($filtered_data, $page, $config['per_page']);
 
         $data['pagination'] = $this->pagination->create_links();
@@ -1207,7 +1453,6 @@ public function get_detail_kinerja_ajax()
         $data['sort_by'] = $sort_by;
         $data['sort_order'] = $sort_order;
 
-        // Load dynamic filter options
         $data['list_prodi'] = $this->M_Data->get_all_prodi();
         $data['list_status_plagiarisme'] = $this->M_Data->get_unique_status_plagiarisme();
 

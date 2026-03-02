@@ -41,7 +41,6 @@
                                     <?php endforeach; ?>
                                 </select>
                             </div>
-                            <!-- Angkatan filter removed as per request -->
                             <div class="col-md-2">
                                 <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-search"></i> Filter</button>
                             </div>

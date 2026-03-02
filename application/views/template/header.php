@@ -29,6 +29,22 @@
     </ul>
 
     <ul class="navbar-nav ml-auto">
+      <ul class="navbar-nav ml-auto">
+    
+    <?php if(isset($unread_chat)): ?>
+        <li class="nav-item">
+            <a class="nav-link" href="<?php echo base_url('chat'); ?>">
+                <i class="fas fa-comments" style="font-size: 1.2rem;"></i>
+                <?php if($unread_chat > 0): ?>
+                    <span class="badge badge-danger navbar-badge" style="font-size: 0.6rem; right: 2px; top: 5px;">
+                        <?php echo $unread_chat; ?>
+                    </span>
+                <?php endif; ?>
+            </a>
+        </li>
+    <?php endif; ?>
+    
+    </ul>
       <li class="nav-item">
         <a class="nav-link text-danger" href="<?php echo base_url('auth/logout'); ?>">
           <i class="fas fa-sign-out-alt"></i> Logout

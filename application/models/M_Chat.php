@@ -161,4 +161,28 @@ public function get_list_angkatan($prodi)
         $this->db->where('id', $id_skripsi);
         return $this->db->update('skripsi', ['status_acc_kaprodi' => $status]);
     }
+
+    // Fungsi untuk menghitung pesan yang belum dibaca
+    public function count_unread_messages($id_user)
+    {
+        $this->db->where('id_penerima', $id_user);
+        $this->db->where('is_read', 0); 
+        return $this->db->count_all_results('tbl_pesan'); 
+    }
+
+    public function get_unread_senders($id_penerima)
+    {
+        $this->db->select('id_pengirim, COUNT(id) as total_unread');
+        $this->db->where('id_penerima', $id_penerima);
+        $this->db->where('is_read', 0);
+        $this->db->group_by('id_pengirim');
+        $query = $this->db->get('tbl_pesan');
+        
+        $result = [];
+        foreach($query->result_array() as $row){
+            $result[$row['id_pengirim']] = $row['total_unread'];
+        }
+        return $result; // Contoh hasil: [ '2' => 3, '5' => 1 ] (User ID 2 mengirim 3 pesan unread)
+    }
+
 }

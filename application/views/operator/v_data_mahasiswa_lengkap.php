@@ -33,15 +33,19 @@
                                     <label>Program Studi</label>
                                     <select class="form-control" name="prodi">
                                         <option value="">-- Semua Prodi --</option>
-                                        <option value="Teknik Informatika S1" <?= (isset($f_prodi) && $f_prodi == 'Teknik Informatika S1') ? 'selected' : '' ?>>Teknik Informatika S1</option>
-                                        <option value="Sistem Informasi S1" <?= (isset($f_prodi) && $f_prodi == 'Sistem Informasi S1') ? 'selected' : '' ?>>Sistem Informasi S1</option>
-                                        <option value="Teknologi Informasi S1" <?= (isset($f_prodi) && $f_prodi == 'Teknologi Informasi S1') ? 'selected' : '' ?>>Teknologi Informasi S1</option>
+                                        
+                                        <?php if(isset($list_prodi) && !empty($list_prodi)): ?>
+                                            <?php foreach($list_prodi as $p): ?>
+                                                <option value="<?= $p['prodi'] ?>" <?= (isset($f_prodi) && $f_prodi == $p['prodi']) ? 'selected' : '' ?>>
+                                                    <?= $p['prodi'] ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
+
                                     </select>
                                 </div>
                             </div>
                             
-                            <!-- Angkatan filter removed as requested -->
-
                             <div class="col-md-3">
                                 <div class="form-group">
                                     <label>Kelengkapan Data</label>
@@ -101,12 +105,13 @@
                                 </tr>
                             <?php else: ?>
                                 <?php 
-                                $no = 1;
+                                // Penomoran lanjut sesuai paginasi
+                                $no = isset($start_index) ? $start_index + 1 : 1; 
                                 foreach($mahasiswa as $m): 
                                 ?>
                                 <tr>
-                                    <td><?= $no++ ?></td>
-                                    <td>
+                                    <td class="align-middle"><?= $no++ ?></td>
+                                    <td class="align-middle">
                                         <div class="d-flex align-items-center">
                                             <?php 
                                             $foto_path = 'uploads/profile/' . $m['foto'];
@@ -118,10 +123,10 @@
                                             <span class="font-weight-bold"><?= $m['nama'] ?></span>
                                         </div>
                                     </td>
-                                    <td><?= $m['npm'] ?></td>
-                                    <td><?= $m['prodi'] ?></td>
-                                    <td class="text-center"><?= $m['angkatan'] ?></td>
-                                    <td>
+                                    <td class="align-middle"><?= $m['npm'] ?></td>
+                                    <td class="align-middle"><?= $m['prodi'] ?></td>
+                                    <td class="text-center align-middle"><?= $m['angkatan'] ?></td>
+                                    <td class="align-middle">
                                         <?php if($m['telepon']): ?>
                                             <a href="https://wa.me/<?= preg_replace('/^0/', '62', $m['telepon']) ?>" target="_blank" class="badge badge-success">
                                                 <i class="fab fa-whatsapp"></i> <?= $m['telepon'] ?>
@@ -130,7 +135,7 @@
                                             <span class="text-muted text-xs">Belum diisi</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="text-center">
+                                    <td class="text-center align-middle">
                                         <?php
                                             $lengkap = 0;
                                             $total_checks = 4;
@@ -194,7 +199,7 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="text-center">
+                                    <td class="text-center align-middle">
                                         <a href="<?= base_url('operator/edit_profil_mahasiswa/' . $m['id_user']) ?>" class="btn btn-sm btn-warning" title="Edit Profil">
                                             <i class="fas fa-edit"></i>
                                         </a>

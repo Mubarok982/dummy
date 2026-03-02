@@ -157,7 +157,7 @@
                         <div class="col-md-8">
                             <div class="card card-primary card-outline shadow-sm">
                                 <div class="card-header">
-                                    <h3 class="card-title"><i class="fas fa-tasks mr-1"></i> Progres Skripsi (Aktif)</h3>
+                                    <h3 class="card-title"><i class="fas fa-tasks mr-1"></i> Progres Skripsi</h3>
                                 </div>
                                 <div class="card-body">
                                     <h5 class="mb-2">Saat ini: <b>BAB <?php echo $current_bab; ?></b> <small class="float-right badge badge-<?php echo str_replace('bg-', '', $bg_class); ?>"><?php echo $progress_percent; ?>% Selesai</small></h5>
@@ -180,7 +180,7 @@
                                 </div>
                                 <div class="card-body p-0">
                                     <div class="table-responsive">
-                                        <table class="table table-striped table-hover mb-0">
+                                        <table class="table table-hover mb-0 align-middle">
                                             <thead class="bg-light text-center">
                                                 <tr>
                                                     <th style="width: 5%;">No</th>
@@ -192,23 +192,67 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <?php if (empty($riwayat_judul)): ?>
+                                                <?php 
+                                                // ============================================================
+                                                // LOGIKA PENGURUTAN & ANTI-DUPLIKAT
+                                                // ============================================================
+                                                $filtered_riwayat = [];
+                                                $seen_ids = [];
+
+                                                if (!empty($riwayat_judul)) {
+                                                    // 1. Urutkan riwayat dari yang paling BARU ke LAMA
+                                                    usort($riwayat_judul, function($a, $b) {
+                                                        $id_a = isset($a['id']) ? $a['id'] : 0;
+                                                        $id_b = isset($b['id']) ? $b['id'] : 0;
+                                                        
+                                                        // Jika punya ID, urutkan ID secara Descending (ID lebih besar = lebih baru)
+                                                        if ($id_a && $id_b) {
+                                                            return $id_b - $id_a;
+                                                        }
+                                                        // Fallback jika tidak ada ID, pakai tanggal
+                                                        return strtotime($b['tgl_pengajuan_judul']) - strtotime($a['tgl_pengajuan_judul']);
+                                                    });
+
+                                                    // 2. Buang baris duplikat jika ada yang terekam dua kali
+                                                    foreach ($riwayat_judul as $row) {
+                                                        $unique_id = isset($row['id']) ? $row['id'] : $row['judul'];
+                                                        if (!in_array($unique_id, $seen_ids)) {
+                                                            $seen_ids[] = $unique_id;
+                                                            $filtered_riwayat[] = $row;
+                                                        }
+                                                    }
+                                                }
+                                                ?>
+
+                                                <?php if (empty($filtered_riwayat)): ?>
                                                     <tr>
                                                         <td colspan="6" class="text-center py-4 text-muted">
                                                             <i class="fas fa-info-circle mr-1"></i> Belum ada riwayat pengajuan judul.
                                                         </td>
                                                     </tr>
                                                 <?php else: ?>
-                                                    <?php $no = 1; foreach ($riwayat_judul as $row): ?>
-                                                        <tr>
-                                                            <td class="text-center align-middle"><?php echo $no++; ?></td>
+                                                    <?php $no = 1; foreach ($filtered_riwayat as $index => $row): 
+                                                        // Data dengan Index 0 otomatis adalah data PALING BARU
+                                                        $is_old = ($index > 0); 
+                                                        $row_class = $is_old ? 'bg-light text-muted' : '';
+                                                    ?>
+                                                        <tr class="<?php echo $row_class; ?>">
+                                                            <td class="text-center align-middle">
+                                                                <span class="font-weight-bold"><?php echo $no++; ?></span>
+                                                                <br>
+                                                                <?php if($is_old): ?>
+                                                                    <span class="badge badge-secondary" style="font-size: 10px;">Lama</span>
+                                                                <?php else: ?>
+                                                                    <span class="badge badge-success" style="font-size: 10px;">Aktif</span>
+                                                                <?php endif; ?>
+                                                            </td>
                                                             <td class="text-center align-middle"><?php echo date('d M Y', strtotime($row['tgl_pengajuan_judul'])); ?></td>
                                                             <td class="align-middle">
-                                                                <span class="font-weight-bold d-block"><?php echo $row['judul']; ?></span>
-                                                                <small class="text-muted"><i class="fas fa-tag mr-1"></i> <?php echo $row['tema']; ?></small>
+                                                                <span class="font-weight-bold d-block <?php echo $is_old ? 'text-secondary' : 'text-dark'; ?>"><?php echo $row['judul']; ?></span>
+                                                                <small class="<?php echo $is_old ? 'text-muted' : 'text-secondary'; ?>"><i class="fas fa-tag mr-1"></i> <?php echo $row['tema']; ?></small>
                                                             </td>
                                                             <td class="align-middle">
-                                                                <small class="d-block text-truncate" style="max-width: 200px;"><i class="fas fa-user-tie text-primary mr-1"></i> P1: <?php echo $row['nama_p1'] ?: '-'; ?></small>
+                                                                <small class="d-block text-truncate" style="max-width: 200px;"><i class="fas fa-user-tie <?php echo $is_old ? 'text-secondary' : 'text-primary'; ?> mr-1"></i> P1: <?php echo $row['nama_p1'] ?: '-'; ?></small>
                                                                 <small class="d-block text-truncate" style="max-width: 200px;"><i class="fas fa-user-tie text-secondary mr-1"></i> P2: <?php echo $row['nama_p2'] ?: '-'; ?></small>
                                                             </td>
                                                             <td class="text-center align-middle">
@@ -217,10 +261,16 @@
                                                             <td class="text-center align-middle">
                                                                 <?php 
                                                                 $status = strtolower($row['status_acc_kaprodi']);
-                                                                $badge = 'secondary';
-                                                                if($status == 'diterima') $badge = 'success';
-                                                                elseif($status == 'ditolak') $badge = 'danger';
-                                                                elseif($status == 'menunggu') $badge = 'warning';
+                                                                
+                                                                // Jika judul lama, paksa warna badgenya abu-abu agar tidak memecah fokus
+                                                                if($is_old) {
+                                                                    $badge = 'secondary';
+                                                                } else {
+                                                                    $badge = 'secondary';
+                                                                    if($status == 'diterima') $badge = 'success';
+                                                                    elseif($status == 'ditolak') $badge = 'danger';
+                                                                    elseif($status == 'menunggu') $badge = 'warning';
+                                                                }
                                                                 ?>
                                                                 <span class="badge badge-<?php echo $badge; ?> px-3 py-2 shadow-sm">
                                                                     <?php echo strtoupper($status); ?>

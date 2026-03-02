@@ -22,29 +22,34 @@
                         <?php if(!empty($kontak)): ?>
                             <?php foreach ($kontak as $k): ?>
                                 <?php 
-                                    // LOGIKA FOTO PROFIL
-                                    // Cek apakah ada file foto di database dan filenya benar-benar ada di folder
+                                    // Logika Foto
                                     $foto_db = isset($k['foto']) ? $k['foto'] : '';
                                     $path_fisik = FCPATH . 'uploads/profile/' . $foto_db;
                                     
                                     if (!empty($foto_db) && file_exists($path_fisik)) {
-                                        // Gunakan foto asli + time() biar tidak cache saat update
                                         $foto_url = base_url('uploads/profile/' . $foto_db . '?t=' . time());
                                     } else {
-                                        // Fallback ke inisial nama jika foto tidak ada
                                         $foto_url = 'https://ui-avatars.com/api/?name=' . urlencode($k['nama']) . '&background=random&color=fff&size=128';
                                     }
+
+                                    // Cek apakah ada pesan unread dari kontak ini
+                                    $has_unread = isset($unread_senders[$k['id']]) ? $unread_senders[$k['id']] : 0;
                                 ?>
 
-                                <div class="kontak-link searchable-item" 
+                                <div class="kontak-link searchable-item position-relative" 
                                      data-id="<?php echo $k['id']; ?>" 
                                      data-nama="<?php echo $k['nama']; ?>"
                                      data-foto="<?php echo $foto_url; ?>">
                                     
-                                    <img src="<?php echo $foto_url; ?>" class="kontak-avatar">
+                                    <div class="position-relative">
+                                        <img src="<?php echo $foto_url; ?>" class="kontak-avatar">
+                                        <span class="badge badge-danger unread-dot" id="unread-dot-<?php echo $k['id']; ?>" style="position: absolute; top: -2px; right: 8px; border-radius: 50%; padding: 4px 6px; font-size: 10px; <?php echo ($has_unread > 0) ? '' : 'display:none;'; ?>">
+                                            <?php echo $has_unread; ?>
+                                        </span>
+                                    </div>
                                     
-                                    <div style="overflow: hidden;">
-                                        <h6 class="mb-0 font-weight-bold contact-name"><?php echo $k['nama']; ?></h6>
+                                    <div style="overflow: hidden; flex-grow: 1;">
+                                        <h6 class="mb-0 font-weight-bold contact-name text-dark"><?php echo $k['nama']; ?></h6>
                                         <small class="text-muted text-truncate d-block" style="max-width: 200px;">
                                             <?php echo $k['sub_info'] ?? ucfirst($k['role']); ?>
                                         </small>
@@ -135,15 +140,27 @@
     #chatPlaceholder { position: absolute; top:0; left:0; width:100%; height:100%; display:flex; justify-content:center; align-items:center; z-index:5; background:#f0f2f5;}
 
     .chat-header { padding: 10px 20px; background: #fff; border-bottom: 1px solid #ddd; display: flex; align-items: center; justify-content: space-between; height: 65px; }
-    .chat-messages { flex-grow: 1; overflow-y: auto; padding: 20px; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); /* Pattern WhatsApp-like */ background-color: #e5ddd5; }
+    .chat-messages { flex-grow: 1; overflow-y: auto; padding: 20px; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-color: #e5ddd5; }
     .chat-footer { padding: 10px 15px; background: #fff; }
 
     /* Chat Bubbles */
-    .bubble { max-width: 75%; padding: 8px 15px; border-radius: 15px; margin-bottom: 8px; font-size: 14px; position: relative; word-wrap: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+    /* Diperbesar max-width nya dari 75% ke 85% agar gambar besar bisa muat */
+    .bubble { max-width: 85%; min-width: 120px; padding: 8px 15px; border-radius: 15px; margin-bottom: 12px; font-size: 14.5px; position: relative; word-wrap: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
     .bubble.me { float: right; background: #dcf8c6; border-top-right-radius: 0; clear: both; }
     .bubble.you { float: left; background: #fff; border-top-left-radius: 0; clear: both; }
     .chat-time { font-size: 10px; color: #999; float: right; margin-top: 4px; margin-left: 8px; }
-    .direct-chat-img { max-width: 250px; border-radius: 8px; margin-bottom: 5px; cursor: pointer; border: 1px solid #ddd; }
+    
+    /* --- PERBAIKAN UKURAN GAMBAR --- */
+    .direct-chat-img { 
+        max-width: 100%; /* Mengikuti lebar maksimal bubble */
+        width: 350px;    /* Lebar standar yang jauh lebih besar */
+        height: auto;    /* Proporsional */
+        border-radius: 8px; 
+        margin-bottom: 8px; 
+        cursor: pointer; 
+        border: 1px solid rgba(0,0,0,0.1); 
+        display: block;  /* Memastikan gambar turun ke baris baru sebelum teks */
+    }
 
     /* Scrollbar Cantik */
     .kontak-scroll::-webkit-scrollbar, .chat-messages::-webkit-scrollbar { width: 6px; }
@@ -166,7 +183,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 var txtValue = nameEl.textContent || nameEl.innerText;
 
                 if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                    items[i].style.display = "flex"; // Gunakan flex agar layout tidak rusak
+                    items[i].style.display = "flex";
                     visibleCount++;
                 } else {
                     items[i].style.display = "none";
@@ -177,7 +194,7 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // --- JQUERY UNTUK LOGIKA CHAT ---
+    // --- JQUERY LOGIKA CHAT ---
     if (typeof jQuery != 'undefined') {
         $(document).ready(function() {
             let idLawan = null;
@@ -189,34 +206,35 @@ document.addEventListener("DOMContentLoaded", function() {
                 $('.kontak-link').removeClass('active');
                 $(this).addClass('active');
 
-                // Ambil Data dari Atribut HTML
+                // Ambil Data
                 idLawan = $(this).data('id');
                 let nama = $(this).data('nama');
-                let foto = $(this).data('foto'); // Ambil URL Foto
+                let foto = $(this).data('foto');
 
-                // Set Data ke Chat Header & Form
+                // Hilangkan TITIK MERAH (Badge Unread) secara visual karena chat sudah di-klik
+                $('#unread-dot-' + idLawan).hide();
+
+                // Set Data Form
                 $('#id_penerima').val(idLawan);
                 $('#namaLawanBicara').text(nama);
-                $('#headerAvatar').attr('src', foto); // Update Foto Header
+                $('#headerAvatar').attr('src', foto);
 
                 // Tampilkan Box Chat
                 $('#chatPlaceholder').hide();
                 $('#chatBox').attr('style', 'display: flex !important;');
 
-                // Load Pesan Pertama Kali
+                // Load Pesan (Saat ini berjalan, script di controller otomatis update is_read = 1)
                 loadPesan(true);
 
-                // Jalankan Interval Realtime
+                // Interval Refresh Chat (Setiap 3 detik)
                 if(intervalChat) clearInterval(intervalChat);
                 intervalChat = setInterval(function() { loadPesan(false); }, 3000);
             });
 
-            // Fungsi Load Pesan
             function loadPesan(autoScroll) {
                 if(!idLawan) return;
                 $.post("<?php echo base_url('chat/load_pesan'); ?>", {id_lawan: idLawan}, function(data){
                     $('#isiChat').html(data);
-                    // Scroll ke bawah hanya jika user baru buka chat atau mengirim pesan
                     if(autoScroll) {
                         var d = document.getElementById("isiChat");
                         d.scrollTop = d.scrollHeight;
@@ -224,32 +242,25 @@ document.addEventListener("DOMContentLoaded", function() {
                 });
             }
 
-            // Preview Gambar sebelum kirim
+            // SISA SCRIPT JQUERY SAMA (Submit form, dll)...
             $('#fileGambar').change(function() {
                 if(this.files.length > 0) {
                     $('#file-name').text(this.files[0].name);
                     $('#preview-container').slideDown();
                 }
             });
-            
-            // Batal Kirim Gambar
             $('#cancel-img').click(function(){
                 $('#fileGambar').val('');
                 $('#preview-container').slideUp();
             });
-
-            // Submit Form Kirim Pesan
             $('#formKirim').submit(function(e) {
                 e.preventDefault();
                 let pesan = $('#pesanInput').val();
                 let gambar = $('#fileGambar').val();
-
                 if($.trim(pesan) == "" && gambar == "") return;
-
                 let btn = $('.btn-send');
-                let icon = btn.html(); // Simpan icon asli
-                btn.html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true); // Loading state
-
+                let icon = btn.html();
+                btn.html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
                 $.ajax({
                     url: "<?php echo base_url('chat/kirim_pesan'); ?>",
                     type: "POST",
@@ -262,17 +273,11 @@ document.addEventListener("DOMContentLoaded", function() {
                             $('#pesanInput').val('');
                             $('#fileGambar').val('');
                             $('#preview-container').hide();
-                            loadPesan(true); // Reload dan scroll ke bawah
-                        } else {
-                            alert(res.msg);
-                        }
+                            loadPesan(true);
+                        } else { alert(res.msg); }
                     },
-                    error: function() {
-                        alert('Gagal mengirim pesan. Cek koneksi internet.');
-                    },
-                    complete: function() {
-                        btn.html(icon).prop('disabled', false); // Kembalikan tombol
-                    }
+                    error: function() { alert('Gagal mengirim pesan. Cek koneksi internet.'); },
+                    complete: function() { btn.html(icon).prop('disabled', false); }
                 });
             });
         });

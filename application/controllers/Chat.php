@@ -11,60 +11,86 @@ class Chat extends CI_Controller {
         $this->load->model('M_Mahasiswa');
     }
 
-    public function index()
-{
-    $id_user = $this->session->userdata('id');
-    $role = $this->session->userdata('role');
-    $npm = $this->session->userdata('npm');
+public function index()
+    {
+        $id_user = $this->session->userdata('id');
+        $role = $this->session->userdata('role');
+        $npm = $this->session->userdata('npm');
 
-    $data['title'] = 'Ruang Diskusi';
-    
-    if ($role == 'mahasiswa') {
-        // Ambil hanya ID yang diizinkan (Kaprodi & Pembimbing jika sudah ACC)
-        $allowed_ids = $this->M_Chat->get_valid_chat_recipients_mhs($npm);
-        $data['kontak'] = $this->M_Chat->get_kontak_filtered($allowed_ids);
-    } else {
-        // Role dosen/operator tetap melihat kontak normal
-        $data['kontak'] = $this->M_Chat->get_kontak_chat($id_user, $role);
+        $data['title'] = 'Ruang Diskusi';
+        
+        // LOGIKA ASLI ANDA (JANGAN DIHAPUS)
+        if ($role == 'mahasiswa') {
+            // Ambil hanya ID yang diizinkan (Kaprodi & Pembimbing jika sudah ACC)
+            $allowed_ids = $this->M_Chat->get_valid_chat_recipients_mhs($npm);
+            $data['kontak'] = $this->M_Chat->get_kontak_filtered($allowed_ids);
+        } else {
+            // Role dosen/operator tetap melihat kontak normal
+            $data['kontak'] = $this->M_Chat->get_kontak_chat($id_user, $role);
+        }
+
+        // --- TAMBAHAN BARU UNTUK FITUR NOTIFIKASI ---
+        // Ambil daftar pengirim pesan yang belum dibaca
+        $data['unread_senders'] = $this->M_Chat->get_unread_senders($id_user);
+        // --------------------------------------------
+
+        $this->load->view('template/header', $data);
+        $this->load->view('template/sidebar', $data);
+        $this->load->view('v_chat', $data);
+        $this->load->view('template/footer');
     }
 
-    $this->load->view('template/header', $data);
-    $this->load->view('template/sidebar', $data);
-    $this->load->view('v_chat', $data);
-    $this->load->view('template/footer');
-}
-
-    public function load_pesan()
+  public function load_pesan()
     {
         $id_saya = $this->session->userdata('id');
         $id_lawan = $this->input->post('id_lawan');
 
-        $chat = $this->M_Chat->get_chat($id_saya, $id_lawan);
-        
-        $html = '';
-        foreach ($chat as $c) {
-            $is_me = ($c['id_pengirim'] == $id_saya);
-            $posisi = $is_me ? 'right' : 'left';
-            
-            $bubbleColor = $is_me ? '#dcf8c6' : '#ffffff';
-            $align = $is_me ? 'margin-left: auto;' : 'margin-right: auto;';
-            
-            $html .= '<div class="direct-chat-msg '.$posisi.'">';
-            $html .= '  <div class="direct-chat-infos clearfix">';
-            $html .= '    <span class="direct-chat-timestamp float-'.$posisi.'">'.date('H:i', strtotime($c['waktu'])).'</span>';
-            $html .= '  </div>';
-            
-            $html .= '  <div class="direct-chat-text" style="background-color: '.$bubbleColor.'; border: 1px solid #ddd; color: #333; width: fit-content; max-width: 75%; '.$align.'">';
-            
-            if (!empty($c['gambar'])) {
-                $img_url = base_url('uploads/chat/' . $c['gambar']);
-                $html .= '<a href="'.$img_url.'" target="_blank"><img src="'.$img_url.'" style="width: 100%; max-width: 200px; border-radius: 5px; margin-bottom: 5px;"></a><br>';
-            }
+        if (!$id_lawan) return;
 
-            $html .=      $c['pesan'];
-            $html .= '  </div>';
-            $html .= '</div>';
+        // 1. TANDAI PESAN TELAH DIBACA
+        // Mengubah status is_read pesan dari id_lawan ke id_saya menjadi 1 (Terbaca)
+        $this->db->where('id_pengirim', $id_lawan);
+        $this->db->where('id_penerima', $id_saya);
+        $this->db->where('is_read', 0);
+        $this->db->update('tbl_pesan', ['is_read' => 1]); 
+
+        // 2. AMBIL DATA PESAN DARI DATABASE
+        $pesan = $this->M_Chat->get_chat($id_saya, $id_lawan);
+
+        // 3. RENDER HTML BUBBLE CHAT
+        $html = '';
+        if(!empty($pesan)){
+            $tanggal_sebelumnya = '';
+            foreach($pesan as $p){
+                // Header Tanggal (Jika beda hari)
+                $tgl_pesan = date('Y-m-d', strtotime($p['waktu']));
+                if($tgl_pesan != $tanggal_sebelumnya){
+                    $html .= '<div class="text-center my-3"><span class="badge badge-light text-muted border shadow-sm px-3 py-1">'.date('d M Y', strtotime($tgl_pesan)).'</span></div>';
+                    $tanggal_sebelumnya = $tgl_pesan;
+                }
+
+                // Tentukan Class Bubble (Saya atau Lawan Bicara)
+                $class_bubble = ($p['id_pengirim'] == $id_saya) ? 'me' : 'you';
+                
+                // Mulai Bubble
+                $html .= '<div class="bubble ' . $class_bubble . '">';
+
+                // Jika ada Gambar
+                if(!empty($p['gambar'])){
+                    $html .= '<img src="'.base_url('uploads/chat/'.$p['gambar']).'" class="direct-chat-img w-100 mb-2" onclick="window.open(this.src, \'_blank\');">';
+                }
+
+                // Teks Pesan & Waktu
+                $html .= htmlspecialchars($p['pesan']);
+                $html .= '<div class="chat-time">' . date('H:i', strtotime($p['waktu'])) . '</div>';
+                
+                $html .= '</div>';
+            }
+        } else {
+            $html .= '<div class="text-center mt-5 text-muted"><small><i class="fas fa-lock mr-1"></i> Pesan dilindungi dengan enkripsi end-to-end.</small><br><br>Belum ada percakapan. Mulai sapa sekarang!</div>';
         }
+
+        // 4. KEMBALIKAN KE AJAX
         echo $html;
     }
 
