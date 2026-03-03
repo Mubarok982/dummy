@@ -686,7 +686,7 @@ class Operator extends CI_Controller {
         $this->load->view('template/footer');
     }
 
-   public function list_revisi()
+  public function list_revisi()
     {
         $data['title'] = 'Progres Mahasiswa';
         $this->load->library('pagination');
@@ -703,12 +703,31 @@ class Operator extends CI_Controller {
 
         $all_data = $this->M_Data->get_riwayat_progress($keyword);
 
+        // ==========================================================
+        // 1. CARI ID SKRIPSI TERBARU PER MAHASISWA
+        // ==========================================================
+        // Kita butuh tahu ID skripsi mana yang "aktif" untuk setiap NPM
+        // agar progres dari judul lama tidak ikut tampil.
+        $latest_skripsi_map = [];
+        foreach ($all_data as $item) {
+            $npm = $item['npm'];
+            $id_s = isset($item['id_skripsi']) ? (int)$item['id_skripsi'] : 0;
+            
+            if (!isset($latest_skripsi_map[$npm]) || $id_s > $latest_skripsi_map[$npm]) {
+                $latest_skripsi_map[$npm] = $id_s;
+            }
+        }
+
+        // ==========================================================
+        // 2. FILTERING DATA
+        // ==========================================================
         $filtered_data = [];
-        $seen_files = []; 
+        $seen_files = []; // Untuk mencegah baris ganda (duplikat query)
 
         foreach ($all_data as $item) {
             $match = true;
 
+            // --- Filter Pencarian ---
             if ($keyword) {
                 $search_text = strtolower(($item['nama_mhs'] ?? '') . ' ' . ($item['npm'] ?? '') . ' ' . ($item['judul'] ?? ''));
                 if (strpos($search_text, strtolower($keyword)) === false) {
@@ -716,19 +735,35 @@ class Operator extends CI_Controller {
                 }
             }
 
+            // --- Filter Prodi ---
             if ($prodi && $prodi != 'all') {
                 if (($item['prodi'] ?? '') != $prodi) {
                     $match = false;
                 }
             }
 
+            // --- Filter Angkatan ---
             if ($angkatan && $angkatan != 'all') {
                 if (($item['angkatan'] ?? '') != $angkatan) {
                     $match = false;
                 }
             }
 
+            // --- LOGIKA UTAMA: HANYA DATA DARI SKRIPSI TERBARU ---
             if ($match) {
+                $npm = $item['npm'];
+                $current_id_skripsi = isset($item['id_skripsi']) ? (int)$item['id_skripsi'] : 0;
+
+                // Jika ID Skripsi data ini LEBIH KECIL dari ID Skripsi terbaru mahasiswa tersebut,
+                // berarti ini data dari judul lama -> SKIP (Jangan tampilkan)
+                if ($current_id_skripsi < $latest_skripsi_map[$npm]) {
+                    $match = false;
+                }
+            }
+
+            // --- LOGIKA ANTI DUPLIKAT ROW (BERDASARKAN FILE/ID) ---
+            if ($match) {
+                // Gunakan Nama File atau ID Progres sebagai kunci unik
                 $unique_key = !empty($item['file']) ? $item['file'] : $item['id'];
 
                 if (!in_array($unique_key, $seen_files)) {
@@ -738,6 +773,9 @@ class Operator extends CI_Controller {
             }
         }
 
+        // ==========================================================
+        // 3. SORTING
+        // ==========================================================
         usort($filtered_data, function($a, $b) use ($sort_by, $sort_order) {
             if ($sort_by == 'tgl_upload' || $sort_by == 'created_at') {
                 $time_a = strtotime($a[$sort_by] ?? 0);
@@ -755,6 +793,9 @@ class Operator extends CI_Controller {
             }
         });
 
+        // ==========================================================
+        // 4. PAGINATION
+        // ==========================================================
         $total_rows = count($filtered_data);
 
         $config['base_url'] = base_url('operator/list_revisi');
