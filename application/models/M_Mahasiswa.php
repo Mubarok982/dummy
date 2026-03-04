@@ -230,4 +230,48 @@ class M_Mahasiswa extends CI_Model {
         
         return $this->db->get()->row_array();
     }
+
+    // Fungsi untuk update judul dan mencatat histori
+    public function update_skripsi_with_histori($id_skripsi, $data_update)
+    {
+        $this->db->trans_start();
+
+        // 1. Ambil data skripsi lama
+        $lama = $this->db->get_where('skripsi', ['id' => $id_skripsi])->row();
+
+        if (!$lama) {
+            return false;
+        }
+
+        // 2. Cek apakah judul berubah
+        if (strtolower(trim($lama->judul)) !== strtolower(trim($data_update['judul']))) {
+            
+            // Masukkan data lama ke tabel histori
+            $data_histori = [
+                'id_skripsi'          => $id_skripsi,
+                'judul'               => $lama->judul,
+                'tema'                => $lama->tema,
+                'tgl_pengajuan_judul' => $lama->tgl_pengajuan_judul,
+                'dibuat_pada'         => date('Y-m-d H:i:s')
+            ];
+
+            $this->db->insert('histori_judul_skripsi', $data_histori);
+        }
+
+        // 3. Update tabel skripsi utama (ID TIDAK BERUBAH)
+        $this->db->where('id', $id_skripsi);
+        $this->db->update('skripsi', $data_update);
+
+        $this->db->trans_complete();
+
+        return $this->db->trans_status();
+    }
+
+    // Fungsi untuk mengambil histori judul berdasarkan ID Skripsi
+    public function get_histori_judul($id_skripsi)
+    {
+        $this->db->where('id_skripsi', $id_skripsi);
+        $this->db->order_by('dibuat_pada', 'DESC');
+        return $this->db->get('histori_judul_skripsi')->result_array(); // Pastikan result_array agar cocok dengan view
+    }
 }

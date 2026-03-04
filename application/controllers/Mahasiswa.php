@@ -60,7 +60,8 @@ public function pengajuan_judul()
         // --- TAMBAHAN FITUR HISTORI ---
         // Ambil histori perubahan judul jika skripsi sudah ada
         if ($data['skripsi']) {
-            $data['histori_judul'] = $this->M_Dosen->get_histori_judul($data['skripsi']['id']);
+            // GANTI $this->M_Dosen menjadi $this->M_Mahasiswa
+            $data['histori_judul'] = $this->M_Mahasiswa->get_histori_judul($data['skripsi']['id']);
         } else {
             $data['histori_judul'] = [];
         }
@@ -347,26 +348,19 @@ public function upload_progres_bab()
             $judul_baru = $this->input->post('judul');
             
             if (!empty($judul_baru) && $judul_baru != $skripsi['judul']) {
-                // Jika ganti judul saat bimbingan, KITA HARUS BUAT ID SKRIPSI BARU!
-                // Jangan pakai update_skripsi_with_histori karena itu akan mengacaukan ID lama.
-                $data_judul_baru = [
-                    'id_mahasiswa' => $id_mahasiswa,
-                    'tema' => $skripsi['tema'], // Copy tema lama
+                
+                // Gunakan fungsi histori agar ID tidak berubah!
+                $data_update = [
                     'judul' => $judul_baru,
-                    'pembimbing1' => $skripsi['pembimbing1'], // Copy dospem lama
-                    'pembimbing2' => $skripsi['pembimbing2'],
-                    'tgl_pengajuan_judul' => date('Y-m-d H:i:s'),
-                    'skema' => $skripsi['skema'],
-                    'status_acc_kaprodi' => 'menunggu' // Judul baru butuh ACC ulang!
+                    'status_acc_kaprodi' => 'menunggu' 
                 ];
                 
-                // Masukkan judul baru sebagai entri baru di database
-                $this->M_Mahasiswa->insert_skripsi($data_judul_baru);
+                $this->M_Mahasiswa->update_skripsi_with_histori($skripsi['id'], $data_update);
                 
-                $this->session->set_flashdata('pesan_sukses', 'Judul berhasil diubah. Karena judul baru, Anda harus menunggu persetujuan Kaprodi kembali sebelum bisa melanjutkan upload.');
+                $this->session->set_flashdata('pesan_sukses', 'Judul berhasil diubah dan riwayat progres aman. Karena judul baru, Anda harus menunggu persetujuan Kaprodi kembali sebelum bisa mengupload progres.');
                 $this->M_Log->record('Judul', 'Mengubah judul skripsi via Bimbingan: ' . $judul_baru);
                 
-                // Paksa mahasiswa kembali, karena mereka gak boleh upload progres untuk judul yang statusnya baru "Menunggu"
+                // Paksa mahasiswa kembali
                 redirect('mahasiswa/bimbingan');
                 return;
             }
@@ -627,27 +621,24 @@ public function upload_progres_bab()
         if ($this->form_validation->run() == FALSE) {
             $this->session->set_flashdata('pesan_error', validation_errors());
         } else {
-            // Karena sistem Anda sekarang menggunakan riwayat, kita hentikan update_skripsi_with_histori
-            // dan kita paksakan insert baru agar ID Skripsinya berubah!
-            $data_judul_baru = [
-                'id_mahasiswa' => $id_mahasiswa,
-                'tema' => $this->input->post('tema'),
-                'judul' => $this->input->post('judul'),
-                'pembimbing1' => $this->input->post('pembimbing1'),
-                'pembimbing2' => $this->input->post('pembimbing2'),
+            // Gunakan metode Update dengan Histori (ID Skripsi TETAP SAMA!)
+            $data_update = [
+                'tema'                => $this->input->post('tema'),
+                'judul'               => $this->input->post('judul'),
+                'pembimbing1'         => $this->input->post('pembimbing1'),
+                'pembimbing2'         => $this->input->post('pembimbing2'),
                 'tgl_pengajuan_judul' => $this->input->post('tgl_pengajuan_judul') ? $this->input->post('tgl_pengajuan_judul') : date('Y-m-d H:i:s'),
-                'skema' => 'Reguler',
-                'status_acc_kaprodi' => 'menunggu'
+                'status_acc_kaprodi'  => 'menunggu' // Wajib reset ke menunggu jika ganti judul
             ];
 
-            // Insert sebagai judul/skripsi baru
-            $result = $this->M_Mahasiswa->insert_skripsi($data_judul_baru);
+            // Panggil fungsi model yang baru kita buat
+            $result = $this->M_Mahasiswa->update_skripsi_with_histori($id_skripsi, $data_update);
 
             if ($result) {
-                $this->session->set_flashdata('pesan_sukses', 'Judul skripsi berhasil diajukan ulang dan menunggu persetujuan kaprodi.');
-                $this->M_Log->record('Judul', 'Ganti judul skripsi baru menjadi: ' . $data_judul_baru['judul']);
+                $this->session->set_flashdata('pesan_sukses', 'Judul skripsi berhasil diperbarui. Progres sebelumnya tetap tersimpan dengan aman.');
+                $this->M_Log->record('Judul', 'Ganti judul skripsi menjadi: ' . $data_update['judul']);
             } else {
-                $this->session->set_flashdata('pesan_error', 'Gagal mengajukan judul skripsi baru.');
+                $this->session->set_flashdata('pesan_error', 'Gagal memperbarui judul skripsi.');
             }
         }
         redirect('mahasiswa/pengajuan_judul');

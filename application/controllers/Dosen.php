@@ -173,13 +173,14 @@ class Dosen extends CI_Controller
     }
 
 
-  public function monitoring_prodi()
+public function monitoring_prodi()
     {
         if ($this->session->userdata('is_kaprodi') != 1) {
             $this->session->set_flashdata('pesan_error', 'Akses ditolak. Fitur ini hanya untuk Kaprodi.');
             redirect('dosen/bimbingan_list');
         }
-        // Use operator's laporan model + view to avoid duplication
+        
+        // Gunakan model operator untuk konsistensi data
         $this->load->model('operator/M_laporan_opt');
 
         $prodi = $this->session->userdata('prodi');
@@ -187,36 +188,118 @@ class Dosen extends CI_Controller
         $sort_by = $this->input->get('sort_by') ?: 'nama';
         $sort_order = $this->input->get('sort_order') ?: 'asc';
 
-        // Use the same page title as operator for consistency
         $data['title'] = 'Monitoring Progres Mahasiswa';
 
-        // Get all data using shared model
+        // 1. Ambil semua data mentah
         $all_data = $this->M_laporan_opt->get_laporan_progres($prodi, $keyword, NULL, NULL);
 
-        // Apply server-side sorting (consistent with operator)
-        usort($all_data, function($a, $b) use ($sort_by, $sort_order) {
+        // ==========================================================
+        // 2. FILTERING & ANTI-DUPLIKAT (Hanya ID Skripsi Terbaru per NPM)
+        // ==========================================================
+        $temp_mhs = []; // Array penampung sementara (Key = NPM)
+
+        foreach ($all_data as $item) {
+            $match = true;
+
+            // Filter Keyword (Nama, NPM, Judul) - Double check
+            if ($keyword) {
+                $search_text = strtolower(($item['nama'] ?? '') . ' ' . ($item['npm'] ?? '') . ' ' . ($item['judul'] ?? ''));
+                if (strpos($search_text, strtolower($keyword)) === false) {
+                    $match = false;
+                }
+            }
+
+            // Filter Prodi (Harusnya sudah difilter model, tapi untuk keamanan ganda)
+            if ($prodi && $prodi != 'all') {
+                if (($item['prodi'] ?? '') != $prodi) {
+                    $match = false;
+                }
+            }
+
+            // Logika Anti Duplikat
+            if ($match) {
+                $npm = $item['npm'];
+                
+                // Jika NPM belum ada di list, masukkan
+                if (!isset($temp_mhs[$npm])) {
+                    $temp_mhs[$npm] = $item;
+                } else {
+                    // Jika NPM sudah ada, bandingkan ID Skripsi
+                    // Ambil yang ID-nya lebih besar (data lebih baru/revisi judul)
+                    $id_sekarang = isset($item['id_skripsi']) ? (int)$item['id_skripsi'] : 0;
+                    $id_lama = isset($temp_mhs[$npm]['id_skripsi']) ? (int)$temp_mhs[$npm]['id_skripsi'] : 0;
+                    
+                    if ($id_sekarang > $id_lama) {
+                        $temp_mhs[$npm] = $item;
+                    }
+                }
+            }
+        }
+
+        // Kembalikan ke array index biasa (reset key NPM)
+        $filtered_data = array_values($temp_mhs);
+
+        // ==========================================================
+        // 3. SORTING
+        // ==========================================================
+        usort($filtered_data, function($a, $b) use ($sort_by, $sort_order) {
             $val_a = strtolower($a[$sort_by] ?? '');
             $val_b = strtolower($b[$sort_by] ?? '');
-            if ($sort_order == 'desc') return $val_b <=> $val_a;
-            return $val_a <=> $val_b;
+            
+            if ($sort_order == 'desc') {
+                return strcmp($val_b, $val_a);
+            } else {
+                return strcmp($val_a, $val_b);
+            }
         });
 
-        // Pagination same as operator
-        $total_rows = count($all_data);
+        // ==========================================================
+        // 4. PAGINATION (Dari data yang sudah bersih)
+        // ==========================================================
+        $total_rows = count($filtered_data);
+        
         $config['base_url'] = base_url('dosen/monitoring_prodi');
         $config['total_rows'] = $total_rows;
         $config['per_page'] = 10;
         $config['reuse_query_string'] = TRUE;
         $config['page_query_string'] = TRUE;
         $config['query_string_segment'] = 'page';
-        // use shared helper for pagination configuration
+        
+        // Load helper pagination custom jika ada, atau set manual config bootstrap
         $this->load->helper('pagination_custom');
-        config_pagination($config);
+        if (function_exists('config_pagination')) {
+            config_pagination($config);
+        } else {
+            // Fallback config jika helper tidak terload
+            $config['full_tag_open']    = '<ul class="pagination pagination-sm m-0 float-right">';
+            $config['full_tag_close']   = '</ul>';
+            $config['first_link']       = 'First';
+            $config['first_tag_open']   = '<li class="page-item">';
+            $config['first_tag_close']  = '</li>';
+            $config['last_link']        = 'Last';
+            $config['last_tag_open']    = '<li class="page-item">';
+            $config['last_tag_close']   = '</li>';
+            $config['next_link']        = '&raquo;';
+            $config['next_tag_open']    = '<li class="page-item">';
+            $config['next_tag_close']   = '</li>';
+            $config['prev_link']        = '&laquo;';
+            $config['prev_tag_open']    = '<li class="page-item">';
+            $config['prev_tag_close']   = '</li>';
+            $config['cur_tag_open']     = '<li class="page-item active"><a class="page-link" href="#">';
+            $config['cur_tag_close']    = '</a></li>';
+            $config['num_tag_open']     = '<li class="page-item">';
+            $config['num_tag_close']    = '</li>';
+            $config['attributes']       = array('class' => 'page-link');
+        }
+
         $this->load->library('pagination');
         $this->pagination->initialize($config);
 
         $page = $this->input->get('page') ? $this->input->get('page') : 0;
-        $data['laporan'] = array_slice($all_data, $page, $config['per_page']);
+        
+        // Potong data sesuai halaman (Slice)
+        $data['laporan'] = array_slice($filtered_data, $page, $config['per_page']);
+        
         $data['pagination'] = $this->pagination->create_links();
         $data['total_rows'] = $total_rows;
         $data['start_index'] = $page;
@@ -226,11 +309,11 @@ class Dosen extends CI_Controller
         $data['sort_by'] = $sort_by;
         $data['sort_order'] = $sort_order;
 
-        // Filters for UI
+        // Data pendukung untuk filter di View
         $data['list_prodi'] = $this->M_Data->get_all_prodi();
         $data['list_angkatan'] = $this->M_Data->get_unique_angkatan();
 
-        // Reuse operator view to avoid duplicated templates
+        // Reuse view Operator (karena strukturnya sama)
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
         $this->load->view('operator/v_monitoring_progres', $data);
