@@ -39,6 +39,7 @@
                     <form method="GET" action="<?php echo base_url('operator/mahasiswa_siap_sempro'); ?>" class="mb-3">
                         <div class="row">
                             <div class="col-md-4">
+                                <label>Pencarian</label>
                                 <input type="text" name="keyword" class="form-control" placeholder="Cari nama/NPM/tema/judul..." value="<?php echo $keyword; ?>">
                             </div>
                             <div class="col-md-3">

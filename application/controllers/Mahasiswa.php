@@ -344,23 +344,29 @@ public function upload_progres_bab()
         $gunakan_judul_lama = $this->input->post('gunakan_judul_lama');
         
         if (!$gunakan_judul_lama) {
-            // User ingin mengubah judul saat proses bimbingan.
-            $judul_baru = $this->input->post('judul');
+            // User ingin mengubah judul/tema saat proses bimbingan
+            $judul_baru = trim($this->input->post('judul'));
+            $tema_baru = trim($this->input->post('tema'));
             
-            if (!empty($judul_baru) && $judul_baru != $skripsi['judul']) {
+            // Cek apakah ada perbedaan (case-insensitive)
+            $judul_berubah = strtolower($judul_baru) !== strtolower($skripsi['judul']);
+            $tema_berubah = strtolower($tema_baru) !== strtolower($skripsi['tema']);
+            
+            // HANYA update jika ada perbedaan
+            if ((!empty($judul_baru) && $judul_berubah) || (!empty($tema_baru) && $tema_berubah)) {
                 
-                // Gunakan fungsi histori agar ID tidak berubah!
+                // Gunakan fungsi histori agar ID tidak berubah dan histori otomatis tersimpan
                 $data_update = [
                     'judul' => $judul_baru,
-                    'status_acc_kaprodi' => 'menunggu' 
+                    'tema' => $tema_baru
                 ];
                 
                 $this->M_Mahasiswa->update_skripsi_with_histori($skripsi['id'], $data_update);
                 
-                $this->session->set_flashdata('pesan_sukses', 'Judul berhasil diubah dan riwayat progres aman. Karena judul baru, Anda harus menunggu persetujuan Kaprodi kembali sebelum bisa mengupload progres.');
-                $this->M_Log->record('Judul', 'Mengubah judul skripsi via Bimbingan: ' . $judul_baru);
+                $this->session->set_flashdata('pesan_sukses', 'Judul/Tema berhasil diubah. Data lama tersimpan di riwayat. Perubahan berlaku untuk upload progres berikutnya.');
+                $this->M_Log->record('Judul', 'Mengubah judul skripsi via Bimbingan: ' . $judul_baru . ' - Tema: ' . $tema_baru);
                 
-                // Paksa mahasiswa kembali
+                // Kembali ke form bimbingan
                 redirect('mahasiswa/bimbingan');
                 return;
             }
@@ -400,18 +406,20 @@ public function upload_progres_bab()
 
             // Masukkan ke ID Skripsi yang aktif (lama)
             $progres_data = [
-                'npm'            => $npm,
-                'id_skripsi'     => $skripsi['id'], 
-                'bab'            => $bab,
-                'file'           => $file_data['file_name'], 
-                'progres_dosen1' => 0,          
-                'progres_dosen2' => 0,          
-                'nilai_dosen1'   => 'Menunggu', 
-                'nilai_dosen2'   => 'Menunggu', 
-                'created_at'     => date('Y-m-d H:i:s'),
-                'tgl_upload'     => date('Y-m-d H:i:s'),
-                'status_plagiasi'      => $status_plagiasi_awal, 
-                'persentase_kemiripan' => 0
+                'npm'                => $npm,
+                'id_skripsi'         => $skripsi['id'], 
+                'bab'                => $bab,
+                'judul_saat_upload'  => $skripsi['judul'],  // SNAPSHOT: Judul saat upload
+                'tema_saat_upload'   => $skripsi['tema'],   // SNAPSHOT: Tema saat upload
+                'file'               => $file_data['file_name'], 
+                'progres_dosen1'     => 0,          
+                'progres_dosen2'     => 0,          
+                'nilai_dosen1'       => 'Menunggu', 
+                'nilai_dosen2'       => 'Menunggu', 
+                'created_at'         => date('Y-m-d H:i:s'),
+                'tgl_upload'         => date('Y-m-d H:i:s'),
+                'status_plagiasi'            => $status_plagiasi_awal, 
+                'persentase_kemiripan'      => 0
             ];
             
             $this->M_Mahasiswa->insert_progres($progres_data);

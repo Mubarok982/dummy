@@ -180,7 +180,8 @@ public function monitoring_prodi()
             redirect('dosen/bimbingan_list');
         }
         
-        // Gunakan model operator untuk konsistensi data
+        // load helper dan model operator untuk konsistensi data/status
+        $this->load->helper('bimbingan');
         $this->load->model('operator/M_laporan_opt');
 
         $prodi = $this->session->userdata('prodi');
@@ -188,7 +189,8 @@ public function monitoring_prodi()
         $sort_by = $this->input->get('sort_by') ?: 'nama';
         $sort_order = $this->input->get('sort_order') ?: 'asc';
 
-        $data['title'] = 'Monitoring Progres Mahasiswa';
+        // match operator title for consistency
+        $data['title'] = 'Monitoring Progres Bimbingan';
 
         // 1. Ambil semua data mentah
         $all_data = $this->M_laporan_opt->get_laporan_progres($prodi, $keyword, NULL, NULL);

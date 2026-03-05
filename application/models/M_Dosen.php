@@ -608,8 +608,11 @@ public function get_bimbingan_list($id_dosen, $keyword = null, $prodi = null, $a
             return false;
         }
 
-        // Cek apakah judul berubah
-        if (isset($data_update['judul']) && $skripsi_lama['judul'] !== $data_update['judul']) {
+        // Cek apakah judul atau tema berubah
+        $judul_berubah = isset($data_update['judul']) && strtolower(trim($skripsi_lama['judul'])) !== strtolower(trim($data_update['judul']));
+        $tema_berubah = isset($data_update['tema']) && strtolower(trim($skripsi_lama['tema'])) !== strtolower(trim($data_update['tema']));
+
+        if ($judul_berubah || $tema_berubah) {
             $data_histori = [
                 'id_skripsi' => $id_skripsi,
                 'judul' => $skripsi_lama['judul'],

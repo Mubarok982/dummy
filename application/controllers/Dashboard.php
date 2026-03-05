@@ -53,6 +53,9 @@ class Dashboard extends CI_Controller {
 
             // Statistik untuk Mahasiswa
             $skripsi = $this->M_Mahasiswa->get_skripsi_by_mhs($id_user);
+            // selalu kirim data skripsi ke view agar judul/tema bisa ditampilkan
+            $data['skripsi'] = $skripsi;
+
             $data['statistik']['judul_status'] = $skripsi ? 'Sudah Diajukan' : 'Belum Diajukan';
             
             if ($skripsi) {

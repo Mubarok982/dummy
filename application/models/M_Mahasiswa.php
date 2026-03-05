@@ -243,8 +243,11 @@ class M_Mahasiswa extends CI_Model {
             return false;
         }
 
-        // 2. Cek apakah judul berubah
-        if (strtolower(trim($lama->judul)) !== strtolower(trim($data_update['judul']))) {
+        // 2. Cek apakah judul atau tema berubah
+        $judul_berubah = strtolower(trim($lama->judul)) !== strtolower(trim($data_update['judul']));
+        $tema_berubah = strtolower(trim($lama->tema)) !== strtolower(trim($data_update['tema']));
+
+        if ($judul_berubah || $tema_berubah) {
             
             // Masukkan data lama ke tabel histori
             $data_histori = [

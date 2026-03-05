@@ -147,6 +147,14 @@
                                 <div class="info-box-content">
                                     <span class="info-box-text">Status Judul Aktif</span>
                                     <span class="info-box-number text-lg"><?php echo isset($stats['judul_status']) ? $stats['judul_status'] : '-'; ?></span>
+                                    <?php if(isset($skripsi) && $skripsi): ?>
+                                        <small class="d-block text-truncate" style="max-width:200px;">
+                                            <strong>Judul:</strong> <?php echo $skripsi['judul']; ?>
+                                        </small>
+                                        <small class="d-block text-truncate" style="max-width:200px;">
+                                            <strong>Tema:</strong> <?php echo $skripsi['tema']; ?>
+                                        </small>
+                                    <?php endif; ?>
                                     <a href="<?php echo base_url('mahasiswa/pengajuan_judul'); ?>" class="small-box-footer text-muted text-sm mt-2 d-block">
                                         Ajukan Judul Baru <i class="fas fa-plus-circle ml-1"></i>
                                     </a>
@@ -160,6 +168,10 @@
                                     <h3 class="card-title"><i class="fas fa-tasks mr-1"></i> Progres Skripsi</h3>
                                 </div>
                                 <div class="card-body">
+                                    <?php if(isset($skripsi) && $skripsi): ?>
+                                        <h6 class="mb-1 text-truncate" style="max-width:100%;">Judul: <strong><?php echo $skripsi['judul']; ?></strong></h6>
+                                        <h6 class="mb-2 text-truncate" style="max-width:100%;">Tema: <strong><?php echo $skripsi['tema']; ?></strong></h6>
+                                    <?php endif; ?>
                                     <h5 class="mb-2">Saat ini: <b>BAB <?php echo $current_bab; ?></b> <small class="float-right badge badge-<?php echo str_replace('bg-', '', $bg_class); ?>"><?php echo $progress_percent; ?>% Selesai</small></h5>
                                     <div class="progress mb-3" style="height: 20px;">
                                         <div class="progress-bar <?php echo $bg_class; ?> progress-bar-striped progress-bar-animated" role="progressbar" style="width: <?php echo $progress_percent; ?>%"></div>

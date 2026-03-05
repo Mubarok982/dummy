@@ -80,9 +80,9 @@ if ( ! function_exists('get_status_bimbingan_label'))
                 return "SIAP SEMPRO";
             }
             
-            // Tahapan 2: BIMBINGAN - Jika sudah bab 4 atau lebih (kembali dari siap sempro)
+            // Tahapan 2: DALAM BIMBINGAN - Jika sudah bab 4 atau lebih (kembali dari siap sempro)
             if ($bab_terakhir >= 4) {
-                return "BIMBINGAN";
+                return "DALAM BIMBINGAN";
             }
         }
         
@@ -94,8 +94,8 @@ if ( ! function_exists('get_status_bimbingan_label'))
             return "SIAP SEMPRO";
         }
         
-        // Default: BIMBINGAN (sedang proses revisi atau menunggu approval)
-        return "BIMBINGAN";
+        // Default: DALAM BIMBINGAN (sedang proses revisi atau menunggu approval)
+        return "DALAM BIMBINGAN";
     }
 }
 
@@ -117,7 +117,7 @@ if ( ! function_exists('get_status_bimbingan_badge'))
             'MENUNGGU CEK PLAGIARISME' => 'badge-secondary',
             'SIAP PENDADARAN' => 'badge-success',
             'SIAP SEMPRO' => 'badge-info',
-            'BIMBINGAN' => 'badge-primary',
+            'DALAM BIMBINGAN' => 'badge-primary',
         ];
         
         $class = isset($class_map[$label]) ? $class_map[$label] : 'badge-primary';

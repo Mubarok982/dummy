@@ -83,7 +83,7 @@
                                     <b>Status Bimbingan</b> 
                                     <a class="float-right">
                                         <?php 
-                                        $label = "BIMBINGAN"; 
+                                        $label = "DALAM BIMBINGAN"; 
                                         if (isset($status_acc) && strtolower($status_acc) == 'ditolak') {
                                             $label = "DITOLAK";
                                         } else {
@@ -94,10 +94,6 @@
                                                 elseif ($notif_type == 'sempro_berlangsung') $label = "PROSES SEMPRO";
                                                 elseif ($notif_type == 'pendadaran_berlangsung') $label = "PROSES PENDADARAN";
                                                 elseif ($notif_type == 'lulus_akhir') $label = "LULUS SKRIPSI";
-                                            } elseif (isset($is_revisi) && $is_revisi && isset($is_locked) && !$is_locked) {
-                                                if (isset($target_bab) && isset($max_bab) && $target_bab >= $max_bab) $label = "REVISI PENDADARAN";
-                                                elseif (isset($target_bab) && $target_bab == 3) $label = "REVISI SEMPRO";
-                                                else $label = "REVISI BAB " . (isset($target_bab) ? $target_bab : '');
                                             }
                                         }
                                         echo $label;
@@ -107,7 +103,7 @@
                             </ul>
                             
                             <a href="<?php echo base_url('mahasiswa/riwayat_progres'); ?>" class="btn btn-primary btn-block">
-                                <i class="fas fa-history mr-1"></i> Lihat Riwayat Revisi
+                                <i class="fas fa-history mr-1"></i> Lihat Riwayat Progres
                             </a>
                         </div>
                     </div>
@@ -238,25 +234,36 @@
 
                                     <div class="card card-outline card-info mb-3">
                                         <div class="card-header">
-                                            <h5 class="card-title">
-                                                <div class="custom-control custom-checkbox d-inline-block">
-                                                    <input type="checkbox" class="custom-control-input" id="gunakan_judul_lama" name="gunakan_judul_lama" checked>
-                                                    <label class="custom-control-label" for="gunakan_judul_lama">
-                                                        Gunakan Judul Sebelumnya
-                                                    </label>
-                                                </div>
-                                            </h5>
+                                            <div class="custom-control custom-checkbox">
+                                                <input type="checkbox" class="custom-control-input" id="gunakan_judul_lama" name="gunakan_judul_lama" checked>
+                                                <label class="custom-control-label" for="gunakan_judul_lama">
+                                                    Gunakan Judul/Tema yang Sama
+                                                </label>
+                                            </div>
+                                            <small class="d-block text-muted mt-2">
+                                                <i class="fas fa-info-circle mr-1"></i>Jika ingin menggunakan judul/tema berbeda, unchecklist untuk memasukkan data baru.
+                                            </small>
                                         </div>
                                         <div class="card-body" id="judul_section" style="display: none;">
-                                            <div class="alert alert-info">
-                                                <small><i class="fas fa-info-circle mr-1"></i>
-                                                    Anda dapat mengubah judul skripsi. Judul lama akan disimpan di riwayat perubahan.
+                                            <div class="alert alert-warning">
+                                                <small><i class="fas fa-exclamation-triangle mr-1"></i>
+                                                    Anda akan mengubah judul/tema skripsi. Data lama akan disimpan otomatis di riwayat.
                                                 </small>
                                             </div>
 
                                             <div class="form-group">
-                                                <label for="edit_judul">Judul Skripsi Baru</label>
-                                                <textarea name="judul" id="edit_judul" class="form-control" rows="3"><?php echo $skripsi['judul']; ?></textarea>
+                                                <label for="edit_judul">Judul Skripsi Baru <span class="text-danger">*</span></label>
+                                                <textarea name="judul" id="edit_judul" class="form-control" rows="3" required><?php echo $skripsi['judul']; ?></textarea>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label for="edit_tema">Tema Skripsi Baru <span class="text-danger">*</span></label>
+                                                <select name="tema" id="edit_tema" class="form-control" required>
+                                                    <option value="">-- Pilih Tema --</option>
+                                                    <option value="Software Engineering" <?php echo ($skripsi['tema'] == 'Software Engineering') ? 'selected' : ''; ?>>Software Engineering</option>
+                                                    <option value="Networking" <?php echo ($skripsi['tema'] == 'Networking') ? 'selected' : ''; ?>>Networking</option>
+                                                    <option value="Artificial Intelligence" <?php echo ($skripsi['tema'] == 'Artificial Intelligence') ? 'selected' : ''; ?>>Artificial Intelligence</option>
+                                                </select>
                                             </div>
                                         </div>
                                     </div>
@@ -290,10 +297,11 @@
                                 <table class="table table-hover mb-0 align-middle small">
                                     <thead class="bg-light sticky-top">
                                         <tr>
-                                            <th style="width: 20%;">Tanggal & Judul</th>
-                                            <th style="width: 15%;">Bab</th>
+                                            <th style="width: 25%;">Tanggal Upload</th>
+                                            <th style="width: 20%;">Judul & Tema Saat Itu</th>
+                                            <th style="width: 10%;">Bab</th>
                                             <th style="width: 15%;">Status ACC</th>
-                                            <th style="width: 40%;">Catatan Dosen</th>
+                                            <th style="width: 20%;">Catatan Dosen</th>
                                             <th style="width: 10%;">File</th>
                                         </tr>
                                     </thead>
@@ -330,12 +338,20 @@
                                             ?>
                                                 <tr class="<?= $row_class ?>">
                                                     <td>
-                                                        <div class="<?= $is_old_title ? 'text-muted' : 'text-dark font-weight-bold' ?>"><?= $format_tgl ?></div>
+                                                        <small class="d-block text-dark"><?= $format_tgl ?></small>
                                                         <?php if ($is_old_title): ?>
-                                                            <span class="badge badge-secondary mt-1">Riwayat Lama</span>
+                                                            <span class="badge badge-danger">Judul Lama</span>
                                                         <?php else: ?>
-                                                            <span class="badge badge-success mt-1">Judul Aktif</span>
+                                                            <span class="badge badge-success">Judul Aktif</span>
                                                         <?php endif; ?>
+                                                    </td>
+                                                    <td>
+                                                        <small class="d-block text-dark font-weight-bold">
+                                                            <?= isset($pr->judul_saat_upload) ? substr($pr->judul_saat_upload, 0, 50) . (strlen($pr->judul_saat_upload) > 50 ? '...' : '') : 'N/A'; ?>
+                                                        </small>
+                                                        <small class="text-muted d-block">
+                                                            <i class="fas fa-tag mr-1"></i><?= isset($pr->tema_saat_upload) ? $pr->tema_saat_upload : 'N/A'; ?>
+                                                        </small>
                                                     </td>
                                                     <td>
                                                         <span class="font-weight-bold <?= $is_old_title ? 'text-secondary' : 'text-dark' ?>">BAB <?= $pr->bab ?></span>
@@ -352,7 +368,7 @@
                                                             $badge_status = "Koreksi";
                                                             $badge_class = "badge-info";
                                                         } elseif ($is_old_title) {
-                                                            $badge_status = "Diabaikan (Lama)";
+                                                            $badge_status = "Diabaikan";
                                                             $badge_class = "badge-secondary";
                                                         }
                                                         ?>
@@ -367,7 +383,7 @@
                                                 </tr>
                                             <?php endforeach; ?>
                                         <?php else: ?>
-                                            <tr><td colspan="5" class="text-center text-muted py-4">Belum ada riwayat bimbingan untuk Anda.</td></tr>
+                                            <tr><td colspan="6" class="text-center text-muted py-4">Belum ada riwayat bimbingan untuk Anda.</td></tr>
                                         <?php endif; ?>
                                     </tbody>
                                 </table>

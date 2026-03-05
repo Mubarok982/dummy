@@ -40,6 +40,8 @@ class M_laporan_opt extends CI_Model {
             P1.nama AS p1, 
             P2.nama AS p2
         ');
+        // load helper agar fungsi get_status_bimbingan_badge tersedia
+        $this->load->helper('bimbingan');
         $this->_filter_laporan($prodi, $keyword);
         $this->db->order_by('M.prodi', 'ASC');
         $this->db->order_by('A.nama', 'ASC');
@@ -89,6 +91,11 @@ class M_laporan_opt extends CI_Model {
             if (stripos($mhs['prodi'], 'D3') !== false || stripos($mhs['prodi'], 'Diploma 3') !== false) {
                 $result[$key]['max_bab'] = 5; // D3
             }
+
+            // Hitung status bimbingan menggunakan helper (central logic)
+            $badge = get_status_bimbingan_badge($result[$key]);
+            $result[$key]['status_bimbingan'] = $badge['label'];
+            $result[$key]['status_class'] = $badge['class'];
         }
         return $result;
     }

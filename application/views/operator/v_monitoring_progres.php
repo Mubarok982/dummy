@@ -31,35 +31,6 @@
                 }
             }
 
-            if (!function_exists('get_status_bimbingan')) {
-                function get_status_bimbingan($m) {
-                    $status_sempro = isset($m['status_sempro']) ? $m['status_sempro'] : '';
-                    $status_ujian = isset($m['status_ujian']) ? $m['status_ujian'] : '';
-                    $status_acc = isset($m['status_acc_kaprodi']) ? $m['status_acc_kaprodi'] : '';
-                    $p1 = isset($m['progres_dosen1']) ? intval($m['progres_dosen1']) : null;
-                    $p2 = isset($m['progres_dosen2']) ? intval($m['progres_dosen2']) : null;
-                    $last_bab = isset($m['last_bab']) ? intval($m['last_bab']) : 0;
-                    $max_bab = isset($m['max_bab']) ? intval($m['max_bab']) : 6;
-
-                    // Jika dinyatakan mengulang dari sempro atau judul ditolak -> Mengulang
-                    if (strtolower($status_ujian) == 'mengulang' || strtolower($status_acc) == 'ditolak') {
-                        return ['label' => 'MENGULANG', 'class' => 'badge-danger'];
-                    }
-
-                    if ($status_sempro == 'Menunggu Plagiarisme') return ['label' => 'MENUNGGU CEK PLAGIARISME', 'class' => 'badge-secondary'];
-
-                    if ($p1 === 100 && $p2 === 100) {
-                        if ($last_bab >= $max_bab) return ['label' => 'SIAP PENDADARAN', 'class' => 'badge-success'];
-                        if ($last_bab == 3) return ['label' => 'SIAP SEMPRO', 'class' => 'badge-info'];
-                        if ($last_bab >= 4) return ['label' => 'BIMBINGAN', 'class' => 'badge-primary'];
-                    }
-
-                    if ($status_sempro == 'Siap Pendadaran') return ['label' => 'SIAP PENDADARAN', 'class' => 'badge-success'];
-                    if ($status_sempro == 'Siap Sempro') return ['label' => 'SIAP SEMPRO', 'class' => 'badge-info'];
-
-                    return ['label' => 'BIMBINGAN', 'class' => 'badge-primary'];
-                }
-            }
             ?>
 
             <div class="card shadow-sm mb-3">
@@ -71,6 +42,7 @@
                                 <span class="text-muted font-weight-bold mr-2 ml-2"><i class="fas fa-filter"></i> Filter:</span>
                             </div>
                             
+                            <?php if(!$this->session->userdata('is_kaprodi')): ?>
                             <div class="col-md-3 col-sm-6 my-1">
                                 <select name="prodi" class="form-control form-control-sm">
                                     <option value="all">- Semua Program Studi -</option>
@@ -81,6 +53,12 @@
                                     <?php endif; ?>
                                 </select>
                             </div>
+                            <?php else: ?>
+                            <div class="col-md-3 col-sm-6 my-1">
+                                <input type="text" class="form-control form-control-sm" readonly value="<?php echo $this->session->userdata('prodi'); ?>">
+                                <input type="hidden" name="prodi" value="<?php echo $this->session->userdata('prodi'); ?>">
+                            </div>
+                            <?php endif; ?>
 
                             <!-- Angkatan filter removed as requested -->
 
@@ -189,15 +167,9 @@
 
                                             <td class="align-middle text-center">
                                                 <?php 
-                                                    // Prefer model-provided unified status if available
-                                                    if (isset($mhs['status_bimbingan'])) {
-                                                        $label = $mhs['status_bimbingan'];
-                                                        $cls = isset($mhs['status_class']) ? $mhs['status_class'] : 'badge-primary';
-                                                        echo '<span class="badge '. $cls . ' px-2 py-1 font-weight-bold">' . $label . '</span>';
-                                                    } else {
-                                                        $sb = get_status_bimbingan($mhs);
-                                                        echo '<span class="badge '. $sb['class'] . ' px-2 py-1 font-weight-bold">' . $sb['label'] . '</span>';
-                                                    }
+                                                    // calculate status badge - model already sets fields, but helper ensures up-to-date
+                                                    $badge = get_status_bimbingan_badge($mhs);
+                                                    echo '<span class="badge '. $badge['class'] . ' px-2 py-1 font-weight-bold">' . $badge['label'] . '</span>';
                                                 ?>
                                             </td>
                                         </tr>

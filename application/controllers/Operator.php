@@ -167,6 +167,19 @@ class Operator extends CI_Controller {
                 ];
             }
 
+            // Cek duplikasi email jika ada
+            if ($this->input->post('email')) {
+                $table = ($role == 'dosen') ? 'data_dosen' : 'data_mahasiswa';
+                $this->db->where('email', $this->input->post('email'));
+                $this->db->where('id !=', $id);
+                $duplicate = $this->db->count_all_results($table);
+                if ($duplicate > 0) {
+                    $this->session->set_flashdata('pesan_error', 'Email sudah digunakan oleh akun lain.');
+                    redirect('operator/edit_akun/' . $id);
+                }
+                $detail_data['email'] = $this->input->post('email');
+            }
+
             if ($this->M_akun_opt->update_user($id, $akun_data, $detail_data, $role)) {
                 $this->session->set_flashdata('pesan_sukses', 'Akun berhasil diperbarui!');
             } else {
@@ -183,9 +196,7 @@ class Operator extends CI_Controller {
     public function delete_akun($id)
     {
         $res = $this->M_akun_opt->delete_user($id);
-        if ($res === 'blocked') {
-            $this->session->set_flashdata('pesan_error', 'Penghapusan diblokir: mahasiswa ini memiliki riwayat skripsi/progres/ujian.');
-        } elseif ($res) {
+        if ($res) {
             $this->session->set_flashdata('pesan_sukses', 'Akun berhasil dihapus!');
         } else {
             $this->session->set_flashdata('pesan_error', 'Gagal menghapus akun. Cek log untuk detail.');
@@ -1122,6 +1133,7 @@ class Operator extends CI_Controller {
    public function monitoring_progres()
     {
         $data['title'] = 'Monitoring Progres Bimbingan';
+        $this->load->helper('bimbingan');
         $this->load->library('pagination');
         $is_kaprodi = $this->session->userdata('is_kaprodi');
         $kaprodi_prodi = $is_kaprodi ? $this->session->userdata('prodi') : null;
@@ -1743,6 +1755,11 @@ public function get_detail_kinerja_ajax()
     // --- FITUR BARU: UPDATE PEMBIMBING ---
     public function submit_koreksi_operator()
     {
+        // kaprodi tidak boleh mengakses fungsi koreksi melalui URL/POST
+        if ($this->session->userdata('is_kaprodi')) {
+            show_error('Anda tidak memiliki izin untuk melakukan koreksi.', 403);
+        }
+
         $id_progres = $this->input->post('id_progres');
         $komentar_dosen1 = $this->input->post('komentar_dosen1');
         $komentar_dosen2 = $this->input->post('komentar_dosen2');

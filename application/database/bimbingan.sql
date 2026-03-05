@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Waktu pembuatan: 28 Jan 2026 pada 19.40
--- Versi server: 10.4.32-MariaDB
--- Versi PHP: 8.0.30
+-- Generation Time: Mar 05, 2026 at 01:09 AM
+-- Server version: 10.4.32-MariaDB
+-- PHP Version: 8.0.30
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -24,7 +24,7 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `apresiasi_ujian_skripsi`
+-- Table structure for table `apresiasi_ujian_skripsi`
 --
 
 CREATE TABLE `apresiasi_ujian_skripsi` (
@@ -37,7 +37,7 @@ CREATE TABLE `apresiasi_ujian_skripsi` (
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `data_dosen`
+-- Table structure for table `data_dosen`
 --
 
 CREATE TABLE `data_dosen` (
@@ -51,7 +51,7 @@ CREATE TABLE `data_dosen` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data untuk tabel `data_dosen`
+-- Dumping data for table `data_dosen`
 --
 
 INSERT INTO `data_dosen` (`id`, `nidk`, `prodi`, `ttd`, `is_kaprodi`, `is_praktisi`, `telepon`) VALUES
@@ -80,7 +80,7 @@ INSERT INTO `data_dosen` (`id`, `nidk`, `prodi`, `ttd`, `is_kaprodi`, `is_prakti
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `data_mahasiswa`
+-- Table structure for table `data_mahasiswa`
 --
 
 CREATE TABLE `data_mahasiswa` (
@@ -111,7 +111,7 @@ CREATE TABLE `data_mahasiswa` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data untuk tabel `data_mahasiswa`
+-- Dumping data for table `data_mahasiswa`
 --
 
 INSERT INTO `data_mahasiswa` (`id`, `npm`, `jenis_kelamin`, `email`, `telepon`, `angkatan`, `prodi`, `is_skripsi`, `alamat`, `status_beasiswa`, `status_mahasiswa`, `ttd`, `nik`, `tempat_tgl_lahir`, `nama_ortu_dengan_gelar`, `kelas`, `dokumen_identitas`, `sertifikat_toefl_niit`, `sertifikat_office_puskom`, `sertifikat_btq_ibadah`, `sertifikat_bahasa`, `sertifikat_kompetensi_ujian_komprehensif`, `sertifikat_semaba_ppk_masta`, `sertifikat_kkn`) VALUES
@@ -119,12 +119,14 @@ INSERT INTO `data_mahasiswa` (`id`, `npm`, `jenis_kelamin`, `email`, `telepon`, 
 (9011, '2305040037', '', 'rizqy@gmail.com', '08139100522000', '2023', 'Teknik Informatika S1', 0, 'magelang', 'Tidak Aktif', 'Murni', 'ttd_9011_1769394164.png', NULL, 'magelang 19198', NULL, NULL, 'dummy_doc.pdf', NULL, 'dummy_cert.pdf', 'dummy_cert.pdf', 'dummy_cert.pdf', 'dummy_cert.pdf', 'dummy_cert.pdf', 'dummy_cert.pdf'),
 (10001, '098765', 'Laki-laki', 'rizqy4@gmail.com', '091', '2026', 'Teknologi Informasi D3', 0, 'magelang', 'Tidak Aktif', 'Murni', 'ttd_10001_1769395507.png', NULL, 'magelang 19198', NULL, NULL, 'dummy_doc.pdf', NULL, 'dummy_cert.pdf', 'dummy_cert.pdf', 'dummy_cert.pdf', 'dummy_cert.pdf', 'dummy_cert.pdf', 'dummy_cert.pdf'),
 (10002, '123456790A', 'Laki-laki', 'rizqymubarok9@gmail.com', '081229099996', '2025', 'Teknik Informatika S1', 0, 'Magelang', 'Tidak Aktif', 'Murni', 'ttd_10002_1769497080.png', NULL, 'jakarta 23 agustus 2010', NULL, NULL, 'dummy_doc.pdf', NULL, 'dummy_cert.pdf', 'dummy_cert.pdf', 'dummy_cert.pdf', 'dummy_cert.pdf', 'dummy_cert.pdf', 'dummy_cert.pdf'),
-(10003, '123456', NULL, NULL, NULL, '2026', 'Teknik Informatika S1', 0, NULL, 'Tidak Aktif', 'Murni', 'dummy_ttd.png', NULL, NULL, NULL, NULL, 'dummy_doc.pdf', NULL, 'dummy_cert.pdf', 'dummy_cert.pdf', 'dummy_cert.pdf', 'dummy_cert.pdf', 'dummy_cert.pdf', 'dummy_cert.pdf');
+(10003, '123456', NULL, NULL, NULL, '2026', 'Teknik Informatika S1', 0, NULL, 'Tidak Aktif', 'Murni', 'dummy_ttd.png', NULL, NULL, NULL, NULL, 'dummy_doc.pdf', NULL, 'dummy_cert.pdf', 'dummy_cert.pdf', 'dummy_cert.pdf', 'dummy_cert.pdf', 'dummy_cert.pdf', 'dummy_cert.pdf'),
+(10006, '2305040009', 'Perempuan', 'haryaoctyagad001@gmail.com', '082286965684', '2026', 'Teknik Informatika S1', 0, 'Kab. Temanggung', 'Tidak Aktif', 'Murni', 'ttd_10006_1772028431.png', NULL, 'Batam, 29 Oktober 2005', NULL, NULL, 'dummy_doc.pdf', NULL, 'dummy_cert.pdf', 'dummy_cert.pdf', 'dummy_cert.pdf', 'dummy_cert.pdf', 'dummy_cert.pdf', 'dummy_cert.pdf'),
+(10007, '2305040', NULL, NULL, NULL, '2026', 'Teknik Informatika S1', 0, NULL, 'Tidak Aktif', 'Murni', 'dummy_ttd.png', NULL, NULL, NULL, NULL, 'dummy_doc.pdf', NULL, 'dummy_cert.pdf', 'dummy_cert.pdf', 'dummy_cert.pdf', 'dummy_cert.pdf', 'dummy_cert.pdf', 'dummy_cert.pdf');
 
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `hasil_plagiarisme`
+-- Table structure for table `hasil_plagiarisme`
 --
 
 CREATE TABLE `hasil_plagiarisme` (
@@ -137,7 +139,7 @@ CREATE TABLE `hasil_plagiarisme` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data untuk tabel `hasil_plagiarisme`
+-- Dumping data for table `hasil_plagiarisme`
 --
 
 INSERT INTO `hasil_plagiarisme` (`id`, `id_progres`, `tanggal_cek`, `persentase_kemiripan`, `status`, `dokumen_laporan`) VALUES
@@ -152,7 +154,22 @@ INSERT INTO `hasil_plagiarisme` (`id`, `id_progres`, `tanggal_cek`, `persentase_
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `jenis_ujian_skripsi`
+-- Table structure for table `histori_judul_skripsi`
+--
+
+CREATE TABLE `histori_judul_skripsi` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `id_skripsi` bigint(20) UNSIGNED NOT NULL,
+  `judul` text NOT NULL,
+  `tema` enum('Software Engineering','Networking','Artificial Intelligence') NOT NULL,
+  `tgl_pengajuan_judul` date NOT NULL,
+  `dibuat_pada` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `jenis_ujian_skripsi`
 --
 
 CREATE TABLE `jenis_ujian_skripsi` (
@@ -162,7 +179,7 @@ CREATE TABLE `jenis_ujian_skripsi` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data untuk tabel `jenis_ujian_skripsi`
+-- Dumping data for table `jenis_ujian_skripsi`
 --
 
 INSERT INTO `jenis_ujian_skripsi` (`id`, `nama`, `rumus`) VALUES
@@ -178,7 +195,7 @@ INSERT INTO `jenis_ujian_skripsi` (`id`, `nama`, `rumus`) VALUES
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `log_aktivitas`
+-- Table structure for table `log_aktivitas`
 --
 
 CREATE TABLE `log_aktivitas` (
@@ -192,7 +209,7 @@ CREATE TABLE `log_aktivitas` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data untuk tabel `log_aktivitas`
+-- Dumping data for table `log_aktivitas`
 --
 
 INSERT INTO `log_aktivitas` (`id`, `id_user`, `user_role`, `kategori`, `deskripsi`, `id_data_terkait`, `timestamp`) VALUES
@@ -249,12 +266,39 @@ INSERT INTO `log_aktivitas` (`id`, `id_user`, `user_role`, `kategori`, `deskrips
 (51, 9004, 'mahasiswa', 'Progres', 'Unggah Revisi BAB 1', 34, '2026-01-27 17:27:23'),
 (52, 9004, 'mahasiswa', 'Progres', 'Unggah Progres Revisi BAB 1', 35, '2026-01-28 18:35:26'),
 (53, 9004, 'mahasiswa', 'Progres', 'Unggah Progres Revisi BAB 1', 36, '2026-01-28 18:35:40'),
-(54, 9004, 'mahasiswa', 'Progres', 'Unggah Progres Revisi BAB 1', 37, '2026-01-28 18:38:32');
+(54, 9004, 'mahasiswa', 'Progres', 'Unggah Progres Revisi BAB 1', 37, '2026-01-28 18:38:32'),
+(55, 1, 'operator', 'Akun', 'Menambahkan akun baru: mahasiswa (Harya Octyaga Dzaky)', NULL, '2026-02-25 14:05:33'),
+(56, 10006, 'mahasiswa', 'Judul', 'Mengajukan judul baru: Judul 1', NULL, '2026-02-25 14:07:39'),
+(57, 1, 'operator', 'ACC Judul', 'Operator menyetujui judul skripsi ID: 4', NULL, '2026-02-25 14:10:39'),
+(58, 10006, 'mahasiswa', 'Progres', 'Unggah Progres Baru BAB 1', 38, '2026-02-25 15:43:55'),
+(59, 1, 'operator', 'Akun', 'Menambahkan akun baru: mahasiswa (mhs10)', NULL, '2026-03-02 06:53:49'),
+(60, 10007, 'mahasiswa', 'Judul', 'Mengajukan judul baru: judul1', NULL, '2026-03-02 06:54:25'),
+(61, 9011, 'mahasiswa', 'Progres', 'Unggah Progres Baru BAB 1', 39, '2026-03-02 06:55:45'),
+(62, 1, 'operator', 'Plagiarisme', 'Verifikasi ID: 39 Status: Lulus', 39, '2026-03-02 06:56:07'),
+(63, 1, 'operator', 'Koreksi Operator', 'Operator memberikan koreksi BAB untuk ID: 39', NULL, '2026-03-02 06:56:28'),
+(64, 9011, 'mahasiswa', 'Progres', 'Unggah Progres Baru BAB 2', 40, '2026-03-02 06:56:43'),
+(65, 1, 'operator', 'Koreksi Operator', 'Operator memberikan koreksi BAB untuk ID: 40', NULL, '2026-03-02 06:57:09'),
+(66, 9011, 'mahasiswa', 'Progres', 'Unggah Progres Baru BAB 3', 41, '2026-03-02 06:57:22'),
+(67, 1, 'operator', 'Koreksi Operator', 'Operator memberikan koreksi BAB untuk ID: 41', NULL, '2026-03-02 06:57:39'),
+(68, 9011, 'mahasiswa', 'Judul', 'Mengubah judul skripsi via Bimbingan: Mengadili Jokowi secara ', NULL, '2026-03-02 06:59:31'),
+(69, 1, 'operator', 'ACC Judul', 'Operator menyetujui judul skripsi ID: 6', NULL, '2026-03-02 06:59:54'),
+(70, 1, 'operator', 'ACC Judul', 'Operator menyetujui judul skripsi ID: 5', NULL, '2026-03-02 07:04:34'),
+(71, 9011, 'mahasiswa', 'Progres', 'Unggah Progres Baru BAB 1', 42, '2026-03-02 07:09:55'),
+(72, 1, 'operator', 'Koreksi Operator', 'Operator memberikan koreksi BAB untuk ID: 42', NULL, '2026-03-02 07:10:21'),
+(73, 9011, 'mahasiswa', 'Progres', 'Unggah Progres Revisi BAB 1', 43, '2026-03-02 07:10:32'),
+(74, 1, 'operator', 'Plagiarisme', 'Verifikasi ID: 43 Status: Lulus', 43, '2026-03-02 07:11:39'),
+(75, 9011, 'mahasiswa', 'Judul', 'Mengubah judul skripsi via Bimbingan: judul baru', NULL, '2026-03-02 07:27:10'),
+(76, 1, 'operator', 'ACC Judul', 'Operator menyetujui judul skripsi ID: 7', NULL, '2026-03-02 07:27:38'),
+(77, 10007, 'mahasiswa', 'Progres', 'Unggah Progres Baru BAB 1', 44, '2026-03-02 07:48:49'),
+(78, 1, 'operator', 'Plagiarisme', 'Verifikasi ID: 44 Status: Lulus', 44, '2026-03-02 07:49:17'),
+(79, 1, 'operator', 'Koreksi Operator', 'Operator memberikan koreksi BAB untuk ID: 44', NULL, '2026-03-02 07:49:40'),
+(80, 10007, 'mahasiswa', 'Judul', 'Mengubah judul skripsi via Bimbingan: judul2', NULL, '2026-03-02 07:49:58'),
+(81, 1, 'operator', 'ACC Judul', 'Operator menyetujui judul skripsi ID: 8', NULL, '2026-03-02 07:56:38');
 
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `mahasiswa_skripsi`
+-- Table structure for table `mahasiswa_skripsi`
 --
 
 CREATE TABLE `mahasiswa_skripsi` (
@@ -266,7 +310,7 @@ CREATE TABLE `mahasiswa_skripsi` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data untuk tabel `mahasiswa_skripsi`
+-- Dumping data for table `mahasiswa_skripsi`
 --
 
 INSERT INTO `mahasiswa_skripsi` (`npm`, `nama`, `prodi`, `semester`, `periode`) VALUES
@@ -275,7 +319,7 @@ INSERT INTO `mahasiswa_skripsi` (`npm`, `nama`, `prodi`, `semester`, `periode`) 
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `mstr_akun`
+-- Table structure for table `mstr_akun`
 --
 
 CREATE TABLE `mstr_akun` (
@@ -288,7 +332,7 @@ CREATE TABLE `mstr_akun` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data untuk tabel `mstr_akun`
+-- Dumping data for table `mstr_akun`
 --
 
 INSERT INTO `mstr_akun` (`id`, `username`, `password`, `nama`, `foto`, `role`) VALUES
@@ -296,7 +340,7 @@ INSERT INTO `mstr_akun` (`id`, `username`, `password`, `nama`, `foto`, `role`) V
 (2, 'tatausahaft', 'tatausahaft', 'Tata Usaha FT', NULL, 'tata_usaha'),
 (3, '0602047502', '$2y$10$/zQ7QgWuDxEuJP9yXNPz7eH58otjA3BW3I2Shd5TL9H0bgdKhicPu', 'Mukhtar Hanafi, ST., MCs.', '0ac2ec8183d84c2880f3cc0896ad1abc.JPG', 'dosen'),
 (4, '0616127102', '$2y$10$6V6jrZa26PuYXS2jWa19EuradXrZc5DnalE6evJCA.bX0BxfBnNUq', 'R. Arri Widyanto, S.Kom.,MT', 'bd10699e06a0baf6d58bb681be27248d.JPG', 'dosen'),
-(5, '0623087901', '$2y$10$6udEasoJ4Cmv0qbBwi5skueggdGS.rrSIvx4ALslFWMw41pcqrMbO', 'Andi Widiyanto, M.Kom', 'f7c9a5c3a7678e1ac07a8e94405d7606.JPG', 'dosen'),
+(5, 'andi', '123456', 'Andi Widiyanto, M.Kom', 'f7c9a5c3a7678e1ac07a8e94405d7606.JPG', 'dosen'),
 (6, '0623107802', '$2y$10$Jz9Bt9XeFz0eR54eC2OC7uhNanUF9epzRUcEZJAOGkfEpr3ih/3dq', 'Bambang Pujiarto, M.Kom', 'e83601a799be5dbb5b55af9605e8d551.JPG', 'dosen'),
 (7, '0624077302', '$2y$10$nka/8mzzBv45hDq14bhq1uZl3WLG3gYAOaB9FtTT.itJpY4pOggE.', 'Nugroho Agung Prabowo, M.Kom., Ph.D', '4db64be85fa33ff0511a7389d595daf8.JPG', 'dosen'),
 (8, '0605037002', '$2y$10$C3W08YomI/9pgHBvfEKizuz2az.xtPgtItVbozL9LuytXFOZabFq2', 'Nuryanto, ST., M. Kom', 'f308d09c239581637fe3b861c2c91d9d.JPG', 'dosen'),
@@ -306,7 +350,7 @@ INSERT INTO `mstr_akun` (`id`, `username`, `password`, `nama`, `foto`, `role`) V
 (12, '0617088801', '$2y$10$dotVs8atHlu/0tYrpNvav.mALStuF9M3Ss5lz38wk8YbPE9EPf032', 'Agus Setiawan, M.Eng.', '952f061697f17ae5ad90ccd13c378c7d.JPG', 'dosen'),
 (13, '0512128101', '$2y$10$e26kRA97YMg69/SJYrdgOeqE550UjVv7mJYp21bznhdnmrg/WCK7q', 'Emilya Ully Artha, M.Kom.', '7b5e103e1e60fd28a1d5a352e96b393e.JPG', 'dosen'),
 (14, '0619048501', '$2y$10$paQuGQRtnv1h2wjTA.UEm.7OfIpHbEXlzJk22VZEWFPdGA9V1z6wK', 'Ardhin Primadewi, S.Si, M.TI.', '02b2b610202babfe1a7c1deb3f483ad0.JPG', 'dosen'),
-(15, '0631088203', '$2y$10$9jIcrIboHUhnm.eP/H490e2puHKqLwW3cqy0zfAnBdZX7z3CSWN9C', 'Setiya Nugroho, ST., M.Eng.', '637a5e5aafcfd08bd5c8a68819da332c.JPG', 'dosen'),
+(15, 'setiya', '123456', 'Setiya Nugroho, ST., M.Eng.', '637a5e5aafcfd08bd5c8a68819da332c.JPG', 'dosen'),
 (16, '0602058502', '$2y$10$/EHCjpyqmT7QeY/1bvaFXe5B69je2tHihyqn4Xp3w7BmbCMCl07Fm', 'Dimas Sasongko, S. Kom., M. Eng', 'e54a12ea5349fbc20c176f1515b44e4f.JPG', 'dosen'),
 (17, '0612117702', '$2y$10$XsS5v74UlxjHyby7toOWqOjEK/Xzc1EdGS.2ZBulayP7lyR8dVRRa', 'Maimunah, S. Si., M. Kom', '43972ba885d631f3bd6c9bcd31565846.JPG', 'dosen'),
 (18, '0618129201', '$2y$10$6MiM9I4uYacfsmGLAj1VNeONmAG4cVjvJ3/jbFZE3oGDzGydZZU.G', 'Pristi Sukmasetya, S.Komp., M.Kom', 'a01222aca189c5939dbdc5ddb406e2be.JPG', 'dosen'),
@@ -323,12 +367,14 @@ INSERT INTO `mstr_akun` (`id`, `username`, `password`, `nama`, `foto`, `role`) V
 (10001, 'wahyu', '$2y$10$xUKxm.c6sLY7edxdYFOFiOyr4ALTkAxpkhtjl8sl2s836Y24JWARW', 'wahyu', 'profile_10001_1769395507.jpg', 'mahasiswa'),
 (10002, 'mhs2', '$2y$10$rk58VTfi4kQw18K38DVKeu4KIinoKflxJGnWe7k/c8.N1u9kQu7Wa', 'mhs2', 'profile_10002_1769496805.jpg', 'mahasiswa'),
 (10003, 'mhs3', '$2y$10$ZmhkzpCgj4VuHGZIfuZVnukwLmznS2WY1w0pTjbbqXYKFuOKoDSLa', 'mhs3', NULL, 'mahasiswa'),
-(10005, 'wahyu2', '$2y$10$cC.hiJkQz945qgPLyLh5E.89.kqRJVzp3bSlvHmz.dNlPU8oFWFKe', 'pak wahyu', NULL, 'dosen');
+(10005, 'wahyu2', '$2y$10$cC.hiJkQz945qgPLyLh5E.89.kqRJVzp3bSlvHmz.dNlPU8oFWFKe', 'pak wahyu', NULL, 'dosen'),
+(10006, 'harya', '$2y$10$h4odQAj4gSNfK6LAXLKZleNX35Y3KPU03cphpCZ3Bhqhl2FyyBw5y', 'Harya Octyaga Dzaky', 'profile_10006_1772028418.png', 'mahasiswa'),
+(10007, 'mhs10', '$2y$10$SLcgYP/q31ndBoTsc4N50OA2zdQq3L.I9f/BXIYmNonRztDxPlxhS', 'mhs10', NULL, 'mahasiswa');
 
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `mstr_komponen_nilai_ujian_skripsi`
+-- Table structure for table `mstr_komponen_nilai_ujian_skripsi`
 --
 
 CREATE TABLE `mstr_komponen_nilai_ujian_skripsi` (
@@ -346,7 +392,7 @@ CREATE TABLE `mstr_komponen_nilai_ujian_skripsi` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data untuk tabel `mstr_komponen_nilai_ujian_skripsi`
+-- Dumping data for table `mstr_komponen_nilai_ujian_skripsi`
 --
 
 INSERT INTO `mstr_komponen_nilai_ujian_skripsi` (`id`, `keterangan`, `keterangan_berita_acara`, `gambar`, `bobot`, `bobot_berita_acara`, `jenis_nilai`, `status`, `id_jenis_ujian_skripsi`, `jenis_indikator`, `urutan`) VALUES
@@ -376,12 +422,13 @@ INSERT INTO `mstr_komponen_nilai_ujian_skripsi` (`id`, `keterangan`, `keterangan
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `progres_skripsi`
+-- Table structure for table `progres_skripsi`
 --
 
 CREATE TABLE `progres_skripsi` (
   `id` int(11) NOT NULL,
   `npm` varchar(20) DEFAULT NULL,
+  `id_skripsi` int(11) NOT NULL,
   `bab` int(11) DEFAULT NULL,
   `file` varchar(255) DEFAULT NULL,
   `komentar_dosen1` text DEFAULT NULL,
@@ -402,26 +449,33 @@ CREATE TABLE `progres_skripsi` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data untuk tabel `progres_skripsi`
+-- Dumping data for table `progres_skripsi`
 --
 
-INSERT INTO `progres_skripsi` (`id`, `npm`, `bab`, `file`, `komentar_dosen1`, `komentar_dosen2`, `created_at`, `nilai_dosen1`, `nilai_dosen2`, `progres_dosen1`, `progres_dosen2`, `is_published_to_sita`, `published_at`, `tgl_upload`, `status_plagiasi`, `persentase_kemiripan`, `tgl_verifikasi`, `tgl_koreksi_d1`, `tgl_koreksi_d2`) VALUES
-(23, '123', 1, 'Progres_Mahasiswa_Dummy_123_BAB1_1767252030.pdf', NULL, NULL, '2026-01-01 08:20:30', 'Menunggu', 'Menunggu', 0, 0, 0, NULL, '2026-01-01 08:20:30', 'Menunggu', 0, NULL, NULL, NULL),
-(24, '123456790', 1, 'Progres_mhs2_123456790_BAB1_1769444498.pdf', 'lanjut bosssBab ini sudah baik, segera lanjutkan ke Bab berikutnya (ACC).\r\n\r\n', 'gass bossBab ini sudah baik, segera lanjutkan ke Bab berikutnya (ACC).\r\n\r\n', '2026-01-26 17:21:38', 'ACC', 'ACC', 100, 100, 0, NULL, '2026-01-26 17:21:38', 'Menunggu', 0, NULL, NULL, NULL),
-(25, '123456790', 2, 'Progres_mhs2_123456790_BAB2_1769444726.pdf', 'lanjut Bab ini sudah baik, segera lanjutkan ke Bab berikutnya (ACC).\r\n\r\n', 'lanjut Bab ini sudah baik, segera lanjutkan ke Bab berikutnya (ACC).\r\n\r\n', '2026-01-26 17:25:26', 'ACC', 'ACC', 100, 100, 0, NULL, '2026-01-26 17:25:26', 'Menunggu', 0, NULL, NULL, NULL),
-(26, '123456790', 3, 'Progres_mhs2_123456790_BAB3_1769444869.pdf', 'Bab ini sudah baik, segera lanjutkan ke Bab berikutnya (ACC).\r\n\r\n', 'Bab ini sudah baik, segera lanjutkan ke Bab berikutnya (ACC).\r\n\r\n', '2026-01-26 17:27:49', 'ACC', 'ACC', 100, 100, 0, NULL, '2026-01-26 17:27:49', 'Menunggu', 0, NULL, NULL, NULL),
-(27, '123456790A', 1, 'Progres_mhs2_123456790A_BAB1_1769497227.pdf', 'Revisi Bab Pendahuluan: Fokus pada gap penelitian.\r\n\r\n', 'lanjut Revisi Bab Pendahuluan: Fokus pada gap penelitian.\r\n\r\n', '2026-01-27 08:00:27', 'ACC', 'ACC', 100, 100, 0, NULL, '2026-01-27 08:00:27', 'Tolak', 45, '2026-01-27 17:40:57', NULL, NULL),
-(32, '1234567896', 1, 'Progres_Mahasiswa_Dummy__1234567896_BAB1_1769531127.pdf', 'Bab ini sudah baik, segera lanjutkan ke Bab berikutnya (ACC).\r\n\r\n', NULL, '2026-01-27 17:25:27', 'ACC', 'Menunggu', 100, 0, 0, NULL, '2026-01-27 17:25:27', 'Lulus', 7, '2026-01-27 17:54:00', '2026-01-27 18:10:45', NULL),
-(33, '1234567896', 1, 'Progres_Mahasiswa_Dummy__1234567896_BAB1_1769532920.pdf', NULL, NULL, '2026-01-27 17:55:20', 'Menunggu', 'Menunggu', 0, 0, 0, NULL, '2026-01-27 17:55:20', 'Menunggu', 0, NULL, NULL, NULL),
-(34, '1234567896', 1, 'Progres_Mahasiswa_Dummy__1234567896_BAB1_REVISI_1769534843.pdf', NULL, NULL, '2026-01-27 18:27:23', 'Menunggu', 'Menunggu', 0, 0, 0, NULL, '2026-01-27 18:27:23', 'Menunggu', 0, NULL, NULL, NULL),
-(35, '1234567896', 1, 'Progres_Mahasiswa_Dummy__1234567896_BAB1_REVISI_1769625326.pdf', NULL, NULL, '2026-01-28 19:35:26', 'Menunggu', 'Menunggu', 0, 0, 0, NULL, '2026-01-28 19:35:26', 'Menunggu', 0, NULL, NULL, NULL),
-(36, '1234567896', 1, 'Progres_Mahasiswa_Dummy__1234567896_BAB1_REVISI_1769625340.pdf', NULL, NULL, '2026-01-28 19:35:40', 'Menunggu', 'Menunggu', 0, 0, 0, NULL, '2026-01-28 19:35:40', 'Menunggu', 0, NULL, NULL, NULL),
-(37, '1234567896', 1, 'Progres_Mahasiswa_Dummy__1234567896_BAB1_REVISI_1769625512.pdf', NULL, NULL, '2026-01-28 19:38:32', 'Menunggu', 'Menunggu', 0, 0, 0, NULL, '2026-01-28 19:38:32', 'Menunggu', 0, NULL, NULL, NULL);
+INSERT INTO `progres_skripsi` (`id`, `npm`, `id_skripsi`, `bab`, `file`, `komentar_dosen1`, `komentar_dosen2`, `created_at`, `nilai_dosen1`, `nilai_dosen2`, `progres_dosen1`, `progres_dosen2`, `is_published_to_sita`, `published_at`, `tgl_upload`, `status_plagiasi`, `persentase_kemiripan`, `tgl_verifikasi`, `tgl_koreksi_d1`, `tgl_koreksi_d2`) VALUES
+(23, '123', 0, 1, 'Progres_Mahasiswa_Dummy_123_BAB1_1767252030.pdf', NULL, NULL, '2026-01-01 08:20:30', 'Menunggu', 'Menunggu', 0, 0, 0, NULL, '2026-01-01 08:20:30', 'Menunggu', 0, NULL, NULL, NULL),
+(24, '123456790', 0, 1, 'Progres_mhs2_123456790_BAB1_1769444498.pdf', 'lanjut bosssBab ini sudah baik, segera lanjutkan ke Bab berikutnya (ACC).\r\n\r\n', 'gass bossBab ini sudah baik, segera lanjutkan ke Bab berikutnya (ACC).\r\n\r\n', '2026-01-26 17:21:38', 'ACC', 'ACC', 100, 100, 0, NULL, '2026-01-26 17:21:38', 'Menunggu', 0, NULL, NULL, NULL),
+(25, '123456790', 0, 2, 'Progres_mhs2_123456790_BAB2_1769444726.pdf', 'lanjut Bab ini sudah baik, segera lanjutkan ke Bab berikutnya (ACC).\r\n\r\n', 'lanjut Bab ini sudah baik, segera lanjutkan ke Bab berikutnya (ACC).\r\n\r\n', '2026-01-26 17:25:26', 'ACC', 'ACC', 100, 100, 0, NULL, '2026-01-26 17:25:26', 'Menunggu', 0, NULL, NULL, NULL),
+(26, '123456790', 0, 3, 'Progres_mhs2_123456790_BAB3_1769444869.pdf', 'Bab ini sudah baik, segera lanjutkan ke Bab berikutnya (ACC).\r\n\r\n', 'Bab ini sudah baik, segera lanjutkan ke Bab berikutnya (ACC).\r\n\r\n', '2026-01-26 17:27:49', 'ACC', 'ACC', 100, 100, 0, NULL, '2026-01-26 17:27:49', 'Menunggu', 0, NULL, NULL, NULL),
+(27, '123456790A', 0, 1, 'Progres_mhs2_123456790A_BAB1_1769497227.pdf', 'Revisi Bab Pendahuluan: Fokus pada gap penelitian.\r\n\r\n', 'lanjut Revisi Bab Pendahuluan: Fokus pada gap penelitian.\r\n\r\n', '2026-01-27 08:00:27', 'ACC', 'ACC', 100, 100, 0, NULL, '2026-01-27 08:00:27', 'Tolak', 45, '2026-01-27 17:40:57', NULL, NULL),
+(32, '1234567896', 0, 1, 'Progres_Mahasiswa_Dummy__1234567896_BAB1_1769531127.pdf', 'Bab ini sudah baik, segera lanjutkan ke Bab berikutnya (ACC).\r\n\r\n', NULL, '2026-01-27 17:25:27', 'ACC', 'Menunggu', 100, 0, 0, NULL, '2026-01-27 17:25:27', 'Lulus', 7, '2026-01-27 17:54:00', '2026-01-27 18:10:45', NULL),
+(33, '1234567896', 0, 1, 'Progres_Mahasiswa_Dummy__1234567896_BAB1_1769532920.pdf', NULL, NULL, '2026-01-27 17:55:20', 'Menunggu', 'Menunggu', 0, 0, 0, NULL, '2026-01-27 17:55:20', 'Menunggu', 0, NULL, NULL, NULL),
+(34, '1234567896', 0, 1, 'Progres_Mahasiswa_Dummy__1234567896_BAB1_REVISI_1769534843.pdf', NULL, NULL, '2026-01-27 18:27:23', 'Menunggu', 'Menunggu', 0, 0, 0, NULL, '2026-01-27 18:27:23', 'Menunggu', 0, NULL, NULL, NULL),
+(35, '1234567896', 0, 1, 'Progres_Mahasiswa_Dummy__1234567896_BAB1_REVISI_1769625326.pdf', NULL, NULL, '2026-01-28 19:35:26', 'Menunggu', 'Menunggu', 0, 0, 0, NULL, '2026-01-28 19:35:26', 'Menunggu', 0, NULL, NULL, NULL),
+(36, '1234567896', 0, 1, 'Progres_Mahasiswa_Dummy__1234567896_BAB1_REVISI_1769625340.pdf', NULL, NULL, '2026-01-28 19:35:40', 'Menunggu', 'Menunggu', 0, 0, 0, NULL, '2026-01-28 19:35:40', 'Menunggu', 0, NULL, NULL, NULL),
+(37, '1234567896', 0, 1, 'Progres_Mahasiswa_Dummy__1234567896_BAB1_REVISI_1769625512.pdf', NULL, NULL, '2026-01-28 19:38:32', 'Menunggu', 'Menunggu', 0, 0, 0, NULL, '2026-01-28 19:38:32', 'Menunggu', 0, NULL, NULL, NULL),
+(38, '2305040009', 0, 1, 'Progres_Harya_Octyaga_Dzaky_2305040009_BAB1_1772034235.pdf', NULL, NULL, '2026-02-25 16:43:55', 'Menunggu', 'Menunggu', 0, 0, 0, NULL, '2026-02-25 16:43:55', 'Menunggu', 0, NULL, NULL, NULL),
+(39, '2305040037', 2, 1, 'Progres_Ahmad_Abdillah_Indragiri_2_2305040037_BAB1_1772434545.pdf', 'Bab ini sudah baik, segera lanjutkan ke Bab berikutnya (ACC).\r\n\r\n', 'Bab ini sudah baik, segera lanjutkan ke Bab berikutnya (ACC).\r\n\r\n', '2026-03-02 07:55:45', 'ACC', 'ACC', 100, 100, 0, NULL, '2026-03-02 07:55:45', 'Lulus', 9, '2026-03-02 07:56:28', NULL, NULL),
+(40, '2305040037', 2, 2, 'Progres_Ahmad_Abdillah_Indragiri_2_2305040037_BAB2_1772434603.pdf', 'Bab ini sudah baik, segera lanjutkan ke Bab berikutnya (ACC).\r\n\r\n', 'Bab ini sudah baik, segera lanjutkan ke Bab berikutnya (ACC).\r\n\r\n', '2026-03-02 07:56:43', 'ACC', 'ACC', 100, 100, 0, NULL, '2026-03-02 07:56:43', '-', 0, '2026-03-02 07:57:09', NULL, NULL),
+(41, '2305040037', 2, 3, 'Progres_Ahmad_Abdillah_Indragiri_2_2305040037_BAB3_1772434642.pdf', 'Bab ini sudah baik, segera lanjutkan ke Bab berikutnya (ACC).\r\n\r\n', 'Bab ini sudah baik, segera lanjutkan ke Bab berikutnya (ACC).\r\n\r\n', '2026-03-02 07:57:22', 'ACC', 'ACC', 100, 100, 0, NULL, '2026-03-02 07:57:22', '-', 0, '2026-03-02 07:57:39', NULL, NULL),
+(42, '2305040037', 6, 1, 'Progres_Ahmad_Abdillah_Indragiri_2_2305040037_BAB1_1772435395.pdf', 'Bab ini sudah baik, segera lanjutkan ke Bab berikutnya (ACC).\r\n\r\n', 'Bab ini sudah baik, segera lanjutkan ke Bab berikutnya (ACC).\r\n\r\n', '2026-03-02 08:09:55', 'ACC', 'ACC', 100, 100, 0, NULL, '2026-03-02 08:09:55', 'Menunggu', 0, '2026-03-02 08:10:21', NULL, NULL),
+(43, '2305040037', 6, 1, 'Progres_Ahmad_Abdillah_Indragiri_2_2305040037_BAB1_REVISI_1772435432.pdf', NULL, NULL, '2026-03-02 08:10:32', 'Menunggu', 'Menunggu', 0, 0, 0, NULL, '2026-03-02 08:10:32', 'Lulus', 2, '2026-03-02 08:11:39', NULL, NULL),
+(44, '2305040', 5, 1, 'Progres_mhs10_2305040_BAB1_1772437729.pdf', 'Bab ini sudah baik, segera lanjutkan ke Bab berikutnya (ACC).\r\n\r\n', 'Bab ini sudah baik, segera lanjutkan ke Bab berikutnya (ACC).\r\n\r\n', '2026-03-02 08:48:49', 'ACC', 'ACC', 100, 100, 0, NULL, '2026-03-02 08:48:49', 'Lulus', 8, '2026-03-02 08:49:39', NULL, NULL);
 
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `saran_ujian_skripsi`
+-- Table structure for table `saran_ujian_skripsi`
 --
 
 CREATE TABLE `saran_ujian_skripsi` (
@@ -434,7 +488,7 @@ CREATE TABLE `saran_ujian_skripsi` (
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `skripsi`
+-- Table structure for table `skripsi`
 --
 
 CREATE TABLE `skripsi` (
@@ -453,33 +507,23 @@ CREATE TABLE `skripsi` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data untuk tabel `skripsi`
+-- Dumping data for table `skripsi`
 --
 
 INSERT INTO `skripsi` (`id`, `id_mahasiswa`, `tema`, `judul`, `pembimbing1`, `pembimbing2`, `status_acc_kaprodi`, `tgl_pengajuan_judul`, `skema`, `naskah`, `nilai_akhir`, `status_sempro`) VALUES
 (1, 9004, 'Software Engineering', 'NGGAK TAHU NJIR, KOK TANYA SAYAjjj', 9003, 9005, 'diterima', '2025-11-19', 'Reguler', NULL, NULL, 'Menunggu Syarat'),
 (2, 9011, 'Software Engineering', 'Mengadili Jokowi secara Sistematis', 9003, 9005, 'diterima', '2025-11-22', 'Reguler', NULL, NULL, 'Menunggu Syarat'),
-(3, 10002, 'Software Engineering', 'ini judul', 9005, 9003, 'diterima', '2026-01-26', 'Reguler', NULL, NULL, 'Menunggu Syarat');
+(3, 10002, 'Software Engineering', 'ini judul', 9005, 9003, 'diterima', '2026-01-26', 'Reguler', NULL, NULL, 'Menunggu Syarat'),
+(4, 10006, 'Artificial Intelligence', 'Judul 1', 15, 5, 'diterima', '2026-02-25', 'Reguler', NULL, NULL, 'Menunggu Syarat'),
+(5, 10007, 'Software Engineering', 'judul1', 15, 12, 'diterima', '2026-03-02', 'Reguler', NULL, NULL, 'Menunggu Syarat'),
+(6, 9011, 'Software Engineering', 'Mengadili Jokowi secara ', 9003, 9005, 'diterima', '2026-03-02', 'Reguler', NULL, NULL, 'Menunggu Syarat'),
+(7, 9011, 'Software Engineering', 'judul baru', 9003, 9005, 'diterima', '2026-03-02', 'Reguler', NULL, NULL, 'Menunggu Syarat'),
+(8, 10007, 'Software Engineering', 'judul2', 15, 12, 'diterima', '2026-03-02', 'Reguler', NULL, NULL, 'Menunggu Syarat');
 
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `histori_judul_skripsi`
---
-
-CREATE TABLE `histori_judul_skripsi` (
-  `id` bigint(20) UNSIGNED NOT NULL,
-  `id_skripsi` bigint(20) UNSIGNED NOT NULL,
-  `judul` text NOT NULL,
-  `tema` enum('Software Engineering','Networking','Artificial Intelligence') NOT NULL,
-  `tgl_pengajuan_judul` date NOT NULL,
-  `dibuat_pada` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Struktur dari tabel `syarat_pendadaran`
+-- Table structure for table `syarat_pendadaran`
 --
 
 CREATE TABLE `syarat_pendadaran` (
@@ -507,7 +551,7 @@ CREATE TABLE `syarat_pendadaran` (
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `syarat_sempro`
+-- Table structure for table `syarat_sempro`
 --
 
 CREATE TABLE `syarat_sempro` (
@@ -524,7 +568,7 @@ CREATE TABLE `syarat_sempro` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data untuk tabel `syarat_sempro`
+-- Dumping data for table `syarat_sempro`
 --
 
 INSERT INTO `syarat_sempro` (`id`, `naskah`, `id_ujian_skripsi`, `fotokopi_daftar_nilai`, `fotokopi_krs`, `buku_kendali_bimbingan`, `lembar_revisi_ba_dan_tanda_terima_laporan_kp`, `bukti_seminar_teman`, `status`, `catatan`) VALUES
@@ -533,7 +577,7 @@ INSERT INTO `syarat_sempro` (`id`, `naskah`, `id_ujian_skripsi`, `fotokopi_dafta
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `tbl_nilai_ujian_skripsi`
+-- Table structure for table `tbl_nilai_ujian_skripsi`
 --
 
 CREATE TABLE `tbl_nilai_ujian_skripsi` (
@@ -547,7 +591,7 @@ CREATE TABLE `tbl_nilai_ujian_skripsi` (
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `tbl_pesan`
+-- Table structure for table `tbl_pesan`
 --
 
 CREATE TABLE `tbl_pesan` (
@@ -561,7 +605,7 @@ CREATE TABLE `tbl_pesan` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data untuk tabel `tbl_pesan`
+-- Dumping data for table `tbl_pesan`
 --
 
 INSERT INTO `tbl_pesan` (`id`, `id_pengirim`, `id_penerima`, `pesan`, `gambar`, `waktu`, `is_read`) VALUES
@@ -584,7 +628,7 @@ INSERT INTO `tbl_pesan` (`id`, `id_pengirim`, `id_penerima`, `pesan`, `gambar`, 
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `ujian_skripsi`
+-- Table structure for table `ujian_skripsi`
 --
 
 CREATE TABLE `ujian_skripsi` (
@@ -603,16 +647,22 @@ CREATE TABLE `ujian_skripsi` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data untuk tabel `ujian_skripsi`
+-- Dumping data for table `ujian_skripsi`
 --
 
 INSERT INTO `ujian_skripsi` (`id`, `id_skripsi`, `tanggal`, `tanggal_daftar`, `ruang`, `penguji1`, `penguji2`, `penguji3`, `id_jenis_ujian_skripsi`, `persetujuan_pembimbing1`, `persetujuan_pembimbing2`, `status`) VALUES
-(1, 1, NULL, '2025-11-20', NULL, NULL, NULL, NULL, 5, 0, 0, 'Berlangsung');
+(1, 1, NULL, '2025-11-20', NULL, NULL, NULL, NULL, 5, 0, 0, 'Berlangsung'),
+(2, 1, NULL, '2025-11-20', NULL, NULL, NULL, NULL, 6, 0, 0, 'Berlangsung'),
+(3, 2, NULL, '2026-03-02', NULL, NULL, NULL, NULL, 5, 0, 0, 'Diterima'),
+(4, 6, NULL, '2026-03-02', NULL, NULL, NULL, NULL, 5, 0, 0, 'Berlangsung'),
+(5, 5, NULL, '2026-03-02', NULL, NULL, NULL, NULL, 5, 0, 0, 'Berlangsung'),
+(6, 7, NULL, '2026-03-02', NULL, NULL, NULL, NULL, 5, 0, 0, 'Berlangsung'),
+(7, 8, NULL, '2026-03-02', NULL, NULL, NULL, NULL, 5, 0, 0, 'Berlangsung');
 
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `validasi_syarat_pendadaran`
+-- Table structure for table `validasi_syarat_pendadaran`
 --
 
 CREATE TABLE `validasi_syarat_pendadaran` (
@@ -628,7 +678,7 @@ CREATE TABLE `validasi_syarat_pendadaran` (
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `validasi_syarat_sempro`
+-- Table structure for table `validasi_syarat_sempro`
 --
 
 CREATE TABLE `validasi_syarat_sempro` (
@@ -646,7 +696,7 @@ CREATE TABLE `validasi_syarat_sempro` (
 --
 
 --
--- Indeks untuk tabel `apresiasi_ujian_skripsi`
+-- Indexes for table `apresiasi_ujian_skripsi`
 --
 ALTER TABLE `apresiasi_ujian_skripsi`
   ADD PRIMARY KEY (`id`),
@@ -654,14 +704,14 @@ ALTER TABLE `apresiasi_ujian_skripsi`
   ADD KEY `fk_apresisasi_ujian_skripsi` (`id_ujian_skripsi`);
 
 --
--- Indeks untuk tabel `data_dosen`
+-- Indexes for table `data_dosen`
 --
 ALTER TABLE `data_dosen`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `nidk` (`nidk`);
 
 --
--- Indeks untuk tabel `data_mahasiswa`
+-- Indexes for table `data_mahasiswa`
 --
 ALTER TABLE `data_mahasiswa`
   ADD PRIMARY KEY (`id`),
@@ -670,53 +720,61 @@ ALTER TABLE `data_mahasiswa`
   ADD KEY `npm` (`npm`);
 
 --
--- Indeks untuk tabel `hasil_plagiarisme`
+-- Indexes for table `hasil_plagiarisme`
 --
 ALTER TABLE `hasil_plagiarisme`
   ADD PRIMARY KEY (`id`),
   ADD KEY `fk_plagiarisme_progres` (`id_progres`);
 
 --
--- Indeks untuk tabel `jenis_ujian_skripsi`
+-- Indexes for table `histori_judul_skripsi`
+--
+ALTER TABLE `histori_judul_skripsi`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `id_skripsi` (`id_skripsi`);
+
+--
+-- Indexes for table `jenis_ujian_skripsi`
 --
 ALTER TABLE `jenis_ujian_skripsi`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indeks untuk tabel `log_aktivitas`
+-- Indexes for table `log_aktivitas`
 --
 ALTER TABLE `log_aktivitas`
   ADD PRIMARY KEY (`id`),
   ADD KEY `fk_log_user` (`id_user`);
 
 --
--- Indeks untuk tabel `mahasiswa_skripsi`
+-- Indexes for table `mahasiswa_skripsi`
 --
 ALTER TABLE `mahasiswa_skripsi`
   ADD PRIMARY KEY (`npm`);
 
 --
--- Indeks untuk tabel `mstr_akun`
+-- Indexes for table `mstr_akun`
 --
 ALTER TABLE `mstr_akun`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `username` (`username`);
 
 --
--- Indeks untuk tabel `mstr_komponen_nilai_ujian_skripsi`
+-- Indexes for table `mstr_komponen_nilai_ujian_skripsi`
 --
 ALTER TABLE `mstr_komponen_nilai_ujian_skripsi`
   ADD PRIMARY KEY (`id`),
   ADD KEY `fk_mst_komponen_jenis_skripsi` (`id_jenis_ujian_skripsi`);
 
 --
--- Indeks untuk tabel `progres_skripsi`
+-- Indexes for table `progres_skripsi`
 --
 ALTER TABLE `progres_skripsi`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `id_skripsi` (`id_skripsi`);
 
 --
--- Indeks untuk tabel `saran_ujian_skripsi`
+-- Indexes for table `saran_ujian_skripsi`
 --
 ALTER TABLE `saran_ujian_skripsi`
   ADD PRIMARY KEY (`id`),
@@ -724,7 +782,7 @@ ALTER TABLE `saran_ujian_skripsi`
   ADD KEY `fk_saran_ujian_skripsi` (`id_ujian_skripsi`);
 
 --
--- Indeks untuk tabel `skripsi`
+-- Indexes for table `skripsi`
 --
 ALTER TABLE `skripsi`
   ADD PRIMARY KEY (`id`),
@@ -733,21 +791,21 @@ ALTER TABLE `skripsi`
   ADD KEY `pembimbing2` (`pembimbing2`);
 
 --
--- Indeks untuk tabel `syarat_pendadaran`
+-- Indexes for table `syarat_pendadaran`
 --
 ALTER TABLE `syarat_pendadaran`
   ADD PRIMARY KEY (`id`),
   ADD KEY `id_ujian_skripsi` (`id_ujian_skripsi`);
 
 --
--- Indeks untuk tabel `syarat_sempro`
+-- Indexes for table `syarat_sempro`
 --
 ALTER TABLE `syarat_sempro`
   ADD PRIMARY KEY (`id`),
   ADD KEY `id_ujian_skripsi` (`id_ujian_skripsi`);
 
 --
--- Indeks untuk tabel `tbl_nilai_ujian_skripsi`
+-- Indexes for table `tbl_nilai_ujian_skripsi`
 --
 ALTER TABLE `tbl_nilai_ujian_skripsi`
   ADD PRIMARY KEY (`id`),
@@ -756,13 +814,13 @@ ALTER TABLE `tbl_nilai_ujian_skripsi`
   ADD KEY `tbl_nilai_sempro_ibfk_4` (`id_komponen_nilai`);
 
 --
--- Indeks untuk tabel `tbl_pesan`
+-- Indexes for table `tbl_pesan`
 --
 ALTER TABLE `tbl_pesan`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indeks untuk tabel `ujian_skripsi`
+-- Indexes for table `ujian_skripsi`
 --
 ALTER TABLE `ujian_skripsi`
   ADD PRIMARY KEY (`id`),
@@ -773,183 +831,181 @@ ALTER TABLE `ujian_skripsi`
   ADD KEY `penguji3` (`penguji3`);
 
 --
--- Indeks untuk tabel `validasi_syarat_pendadaran`
+-- Indexes for table `validasi_syarat_pendadaran`
 --
 ALTER TABLE `validasi_syarat_pendadaran`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `unique_syarat_field` (`id_syarat_pendadaran`,`nama_field_syarat`);
 
 --
--- Indeks untuk tabel `validasi_syarat_sempro`
+-- Indexes for table `validasi_syarat_sempro`
 --
 ALTER TABLE `validasi_syarat_sempro`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `unique_syarat_field` (`id_syarat_sempro`,`nama_field_syarat`);
 
 --
--- AUTO_INCREMENT untuk tabel yang dibuang
+-- AUTO_INCREMENT for dumped tables
 --
 
 --
--- AUTO_INCREMENT untuk tabel `apresiasi_ujian_skripsi`
+-- AUTO_INCREMENT for table `apresiasi_ujian_skripsi`
 --
 ALTER TABLE `apresiasi_ujian_skripsi`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT untuk tabel `hasil_plagiarisme`
+-- AUTO_INCREMENT for table `hasil_plagiarisme`
 --
 ALTER TABLE `hasil_plagiarisme`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
--- AUTO_INCREMENT untuk tabel `jenis_ujian_skripsi`
+-- AUTO_INCREMENT for table `histori_judul_skripsi`
+--
+ALTER TABLE `histori_judul_skripsi`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `jenis_ujian_skripsi`
 --
 ALTER TABLE `jenis_ujian_skripsi`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
--- AUTO_INCREMENT untuk tabel `log_aktivitas`
+-- AUTO_INCREMENT for table `log_aktivitas`
 --
 ALTER TABLE `log_aktivitas`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=55;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=82;
 
 --
--- AUTO_INCREMENT untuk tabel `mstr_akun`
+-- AUTO_INCREMENT for table `mstr_akun`
 --
 ALTER TABLE `mstr_akun`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10006;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10008;
 
 --
--- AUTO_INCREMENT untuk tabel `mstr_komponen_nilai_ujian_skripsi`
+-- AUTO_INCREMENT for table `mstr_komponen_nilai_ujian_skripsi`
 --
 ALTER TABLE `mstr_komponen_nilai_ujian_skripsi`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
--- AUTO_INCREMENT untuk tabel `progres_skripsi`
+-- AUTO_INCREMENT for table `progres_skripsi`
 --
 ALTER TABLE `progres_skripsi`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=38;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
 
 --
--- AUTO_INCREMENT untuk tabel `saran_ujian_skripsi`
+-- AUTO_INCREMENT for table `saran_ujian_skripsi`
 --
 ALTER TABLE `saran_ujian_skripsi`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT untuk tabel `skripsi`
+-- AUTO_INCREMENT for table `skripsi`
 --
 ALTER TABLE `skripsi`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
--- AUTO_INCREMENT untuk tabel `histori_judul_skripsi`
---
-ALTER TABLE `histori_judul_skripsi`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT untuk tabel `syarat_pendadaran`
+-- AUTO_INCREMENT for table `syarat_pendadaran`
 --
 ALTER TABLE `syarat_pendadaran`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT untuk tabel `syarat_sempro`
+-- AUTO_INCREMENT for table `syarat_sempro`
 --
 ALTER TABLE `syarat_sempro`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
--- AUTO_INCREMENT untuk tabel `tbl_nilai_ujian_skripsi`
+-- AUTO_INCREMENT for table `tbl_nilai_ujian_skripsi`
 --
 ALTER TABLE `tbl_nilai_ujian_skripsi`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT untuk tabel `tbl_pesan`
+-- AUTO_INCREMENT for table `tbl_pesan`
 --
 ALTER TABLE `tbl_pesan`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
--- AUTO_INCREMENT untuk tabel `ujian_skripsi`
+-- AUTO_INCREMENT for table `ujian_skripsi`
 --
 ALTER TABLE `ujian_skripsi`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
--- AUTO_INCREMENT untuk tabel `validasi_syarat_pendadaran`
+-- AUTO_INCREMENT for table `validasi_syarat_pendadaran`
 --
 ALTER TABLE `validasi_syarat_pendadaran`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT untuk tabel `validasi_syarat_sempro`
+-- AUTO_INCREMENT for table `validasi_syarat_sempro`
 --
 ALTER TABLE `validasi_syarat_sempro`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- Ketidakleluasaan untuk tabel pelimpahan (Dumped Tables)
+-- Constraints for dumped tables
 --
 
 --
--- Ketidakleluasaan untuk tabel `apresiasi_ujian_skripsi`
+-- Constraints for table `apresiasi_ujian_skripsi`
 --
 ALTER TABLE `apresiasi_ujian_skripsi`
-  ADD PRIMARY KEY (`id`),
   ADD CONSTRAINT `fk_apresisasi_penguji` FOREIGN KEY (`id_penguji`) REFERENCES `data_dosen` (`id`) ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_apresisasi_ujian_skripsi` FOREIGN KEY (`id_ujian_skripsi`) REFERENCES `ujian_skripsi` (`id`) ON UPDATE CASCADE;
 
 --
--- Ketidakleluasaan untuk tabel `histori_judul_skripsi`
---
-ALTER TABLE `histori_judul_skripsi`
-  ADD PRIMARY KEY (`id`),
-  ADD CONSTRAINT `histori_judul_skripsi_ibfk_1` FOREIGN KEY (`id_skripsi`) REFERENCES `skripsi` (`id`) ON DELETE CASCADE;
-
---
--- Ketidakleluasaan untuk tabel `data_dosen`
+-- Constraints for table `data_dosen`
 --
 ALTER TABLE `data_dosen`
   ADD CONSTRAINT `data_dosen_ibfk_1` FOREIGN KEY (`id`) REFERENCES `mstr_akun` (`id`);
 
 --
--- Ketidakleluasaan untuk tabel `data_mahasiswa`
+-- Constraints for table `data_mahasiswa`
 --
 ALTER TABLE `data_mahasiswa`
   ADD CONSTRAINT `data_mahasiswa_ibfk_1` FOREIGN KEY (`id`) REFERENCES `mstr_akun` (`id`);
 
 --
--- Ketidakleluasaan untuk tabel `hasil_plagiarisme`
+-- Constraints for table `hasil_plagiarisme`
 --
 ALTER TABLE `hasil_plagiarisme`
   ADD CONSTRAINT `fk_plagiarisme_progres` FOREIGN KEY (`id_progres`) REFERENCES `progres_skripsi` (`id`) ON DELETE CASCADE;
 
 --
--- Ketidakleluasaan untuk tabel `log_aktivitas`
+-- Constraints for table `histori_judul_skripsi`
+--
+ALTER TABLE `histori_judul_skripsi`
+  ADD CONSTRAINT `fk_histori_skripsi` FOREIGN KEY (`id_skripsi`) REFERENCES `skripsi` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `log_aktivitas`
 --
 ALTER TABLE `log_aktivitas`
   ADD CONSTRAINT `fk_log_user` FOREIGN KEY (`id_user`) REFERENCES `mstr_akun` (`id`) ON DELETE CASCADE;
 
 --
--- Ketidakleluasaan untuk tabel `mstr_komponen_nilai_ujian_skripsi`
+-- Constraints for table `mstr_komponen_nilai_ujian_skripsi`
 --
 ALTER TABLE `mstr_komponen_nilai_ujian_skripsi`
   ADD CONSTRAINT `fk_mst_komponen_jenis_skripsi` FOREIGN KEY (`id_jenis_ujian_skripsi`) REFERENCES `jenis_ujian_skripsi` (`id`) ON UPDATE CASCADE;
 
 --
--- Ketidakleluasaan untuk tabel `saran_ujian_skripsi`
+-- Constraints for table `saran_ujian_skripsi`
 --
 ALTER TABLE `saran_ujian_skripsi`
   ADD CONSTRAINT `fk_saran_penguji` FOREIGN KEY (`id_penguji`) REFERENCES `data_dosen` (`id`) ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_saran_ujian_skripsi` FOREIGN KEY (`id_ujian_skripsi`) REFERENCES `ujian_skripsi` (`id`) ON UPDATE CASCADE;
 
 --
--- Ketidakleluasaan untuk tabel `skripsi`
+-- Constraints for table `skripsi`
 --
 ALTER TABLE `skripsi`
   ADD CONSTRAINT `skripsi_ibfk_1` FOREIGN KEY (`id_mahasiswa`) REFERENCES `data_mahasiswa` (`id`),
@@ -957,19 +1013,19 @@ ALTER TABLE `skripsi`
   ADD CONSTRAINT `skripsi_ibfk_3` FOREIGN KEY (`pembimbing2`) REFERENCES `data_dosen` (`id`);
 
 --
--- Ketidakleluasaan untuk tabel `syarat_pendadaran`
+-- Constraints for table `syarat_pendadaran`
 --
 ALTER TABLE `syarat_pendadaran`
   ADD CONSTRAINT `syarat_pendadaran_ibfk_1` FOREIGN KEY (`id_ujian_skripsi`) REFERENCES `ujian_skripsi` (`id`);
 
 --
--- Ketidakleluasaan untuk tabel `syarat_sempro`
+-- Constraints for table `syarat_sempro`
 --
 ALTER TABLE `syarat_sempro`
   ADD CONSTRAINT `syarat_sempro_ibfk_1` FOREIGN KEY (`id_ujian_skripsi`) REFERENCES `ujian_skripsi` (`id`);
 
 --
--- Ketidakleluasaan untuk tabel `tbl_nilai_ujian_skripsi`
+-- Constraints for table `tbl_nilai_ujian_skripsi`
 --
 ALTER TABLE `tbl_nilai_ujian_skripsi`
   ADD CONSTRAINT `tbl_nilai_ujian_skripsi_ibfk_2` FOREIGN KEY (`id_ujian_skripsi`) REFERENCES `ujian_skripsi` (`id`) ON UPDATE CASCADE,
@@ -977,7 +1033,7 @@ ALTER TABLE `tbl_nilai_ujian_skripsi`
   ADD CONSTRAINT `tbl_nilai_ujian_skripsi_ibfk_4` FOREIGN KEY (`id_komponen_nilai`) REFERENCES `mstr_komponen_nilai_ujian_skripsi` (`id`) ON UPDATE CASCADE;
 
 --
--- Ketidakleluasaan untuk tabel `ujian_skripsi`
+-- Constraints for table `ujian_skripsi`
 --
 ALTER TABLE `ujian_skripsi`
   ADD CONSTRAINT `fk_ujian_jenis` FOREIGN KEY (`id_jenis_ujian_skripsi`) REFERENCES `jenis_ujian_skripsi` (`id`) ON UPDATE CASCADE,
@@ -987,13 +1043,13 @@ ALTER TABLE `ujian_skripsi`
   ADD CONSTRAINT `ujian_skripsi_ibfk_3` FOREIGN KEY (`penguji2`) REFERENCES `data_dosen` (`id`);
 
 --
--- Ketidakleluasaan untuk tabel `validasi_syarat_pendadaran`
+-- Constraints for table `validasi_syarat_pendadaran`
 --
 ALTER TABLE `validasi_syarat_pendadaran`
   ADD CONSTRAINT `validasi_syarat_pendadaran_ibfk_1` FOREIGN KEY (`id_syarat_pendadaran`) REFERENCES `syarat_pendadaran` (`id`) ON DELETE CASCADE;
 
 --
--- Ketidakleluasaan untuk tabel `validasi_syarat_sempro`
+-- Constraints for table `validasi_syarat_sempro`
 --
 ALTER TABLE `validasi_syarat_sempro`
   ADD CONSTRAINT `validasi_syarat_sempro_ibfk_1` FOREIGN KEY (`id_syarat_sempro`) REFERENCES `syarat_sempro` (`id`) ON DELETE CASCADE;

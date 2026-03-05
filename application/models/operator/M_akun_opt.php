@@ -47,6 +47,18 @@ class M_akun_opt extends CI_Model {
             }
 
             if ($table != '') {
+                // Cek duplikasi email jika ada di detail_data
+                if (isset($detail_data['email']) && !empty($detail_data['email'])) {
+                    $this->db->where('email', $detail_data['email']);
+                    $this->db->where('id !=', $id); // Exclude current user
+                    $duplicate = $this->db->count_all_results($table);
+                    if ($duplicate > 0) {
+                        // Rollback transaksi dan return false
+                        $this->db->trans_rollback();
+                        return false; // Indicate duplicate email
+                    }
+                }
+
                 // Cek apakah data detail untuk ID ini sudah ada?
                 $this->db->where('id', $id);
                 $exists = $this->db->count_all_results($table);
@@ -64,8 +76,18 @@ class M_akun_opt extends CI_Model {
                     if ($role == 'mahasiswa') {
                        // Isi default dummy agar insert tidak gagal karena constraint DB
                        $defaults = [
-                           'status_mahasiswa' => 'Aktif', // Sesuaikan default DB
-                           // Tambahkan kolom lain jika error "Field 'x' doesn't have a default value"
+                           'status_mahasiswa' => 'Murni', // Sesuaikan default DB
+                           'status_beasiswa' => 'Tidak Aktif',
+                           'angkatan' => date('Y'),
+                           'prodi' => 'Teknik Informatika S1', // Default
+                           'ttd' => '',
+                           'dokumen_identitas' => 'dummy_doc.pdf',
+                           'sertifikat_office_puskom' => 'dummy_cert.pdf',
+                           'sertifikat_btq_ibadah' => 'dummy_cert.pdf',
+                           'sertifikat_bahasa' => 'dummy_cert.pdf',
+                           'sertifikat_kompetensi_ujian_komprehensif' => 'dummy_cert.pdf',
+                           'sertifikat_semaba_ppk_masta' => 'dummy_cert.pdf',
+                           'sertifikat_kkn' => 'dummy_cert.pdf'
                        ];
                        $detail_data = array_merge($defaults, $detail_data);
                     }
@@ -145,6 +167,17 @@ class M_akun_opt extends CI_Model {
         $id = $this->db->insert_id();
 
         if ($detail_data) {
+            // Cek duplikasi email jika ada
+            if (isset($detail_data['email']) && !empty($detail_data['email'])) {
+                $table = ($role == 'dosen') ? 'data_dosen' : 'data_mahasiswa';
+                $this->db->where('email', $detail_data['email']);
+                $duplicate = $this->db->count_all_results($table);
+                if ($duplicate > 0) {
+                    $this->db->trans_rollback();
+                    return false; // Duplicate email
+                }
+            }
+
             $detail_data['id'] = $id;
             if ($role == 'dosen') $this->db->insert('data_dosen', $detail_data);
             elseif ($role == 'mahasiswa') $this->db->insert('data_mahasiswa', $detail_data);
@@ -155,35 +188,19 @@ class M_akun_opt extends CI_Model {
 
     public function delete_user($id)
     {
-        // Check: jika user adalah mahasiswa dan memiliki data terkait (skripsi/progres/ujian), jangan hapus
-        $mahasiswa = $this->db->get_where('data_mahasiswa', ['id' => $id])->row_array();
-        if ($mahasiswa) {
-            $npm = $mahasiswa['npm'] ?? null;
+        // Langsung hapus tanpa blokir
 
-            // Jika ada skripsi terkait -> jangan hapus
-            $has_skripsi = $this->db->get_where('skripsi', ['id_mahasiswa' => $id])->num_rows() > 0;
-            // Jika ada progres terkait -> jangan hapus
-            $has_progres = (!empty($npm)) && ($this->db->get_where('progres_skripsi', ['npm' => $npm])->num_rows() > 0);
-            // Jika ada ujian_skripsi terkait -> jangan hapus
-            $has_ujian = $this->db->where('id_skripsi IN (SELECT id FROM skripsi WHERE id_mahasiswa = ' . $id . ')', null, false)->get('ujian_skripsi')->num_rows() > 0;
-
-            if ($has_skripsi || $has_progres || $has_ujian) {
-                // Block deletion to preserve historical records
-                // Return a distinct value so controllers can show a specific message
-                return 'blocked';
-            }
-        }
-
-        // Jika lulus pengecekan, lakukan penghapusan (transaksional)
-        $this->db->trans_start();
-
-        // STEP 1: Get mahasiswa npm jika ada (lagi)
+        // STEP 1: Get mahasiswa npm jika ada
         $mahasiswa = $this->db->get_where('data_mahasiswa', ['id' => $id])->row_array();
         $npm = $mahasiswa ? $mahasiswa['npm'] : null;
 
         // Delete related records first to avoid foreign key errors
         // Delete ujian_skripsi related to user's skripsi
-        $this->db->where('id_skripsi IN (SELECT id FROM skripsi WHERE id_mahasiswa = ' . $id . ')')->delete('ujian_skripsi');
+        $skripsi_ids = $this->db->select('id')->where('id_mahasiswa', $id)->get('skripsi')->result_array();
+        $skripsi_id_list = array_column($skripsi_ids, 'id');
+        if (!empty($skripsi_id_list)) {
+            $this->db->where_in('id_skripsi', $skripsi_id_list)->delete('ujian_skripsi');
+        }
         
         // Delete skripsi
         $this->db->where('id_mahasiswa', $id)->delete('skripsi');
@@ -198,7 +215,7 @@ class M_akun_opt extends CI_Model {
         
         // Delete log_aktivitas
         $this->db->where('id_user', $id)->delete('log_aktivitas');
-
+        
         // Delete detail tables
         $this->db->where('id', $id)->delete('data_dosen');
         $this->db->where('id', $id)->delete('data_mahasiswa');
@@ -206,8 +223,7 @@ class M_akun_opt extends CI_Model {
         // Finally delete master account
         $this->db->where('id', $id)->delete('mstr_akun');
 
-        $this->db->trans_complete();
-        return $this->db->trans_status();
+        return true; // Assume success
     }
 
     // --- Pagination Dosen ---

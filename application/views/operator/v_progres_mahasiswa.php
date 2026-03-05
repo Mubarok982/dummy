@@ -18,13 +18,17 @@
     <section class="content">
         <div class="container-fluid">
             
+            <?php // kaprodi tidak boleh melakukan koreksi, jadi teks petunjuk diedit accordingly ?>
             <div class="alert alert-info shadow-sm">
                 <div class="d-flex align-items-center">
                     <i class="fas fa-info-circle fa-2x mr-3"></i>
                     <div>
                         <h5 class="mb-1 font-weight-bold">Informasi Riwayat Progres</h5>
                         <p class="mb-0">
-                            Halaman ini menampilkan seluruh riwayat progres bimbingan skripsi mahasiswa beserta status koreksi dari dosen pembimbing. Anda juga dapat melihat detail komentar atau melakukan koreksi manual jika diperlukan.
+                            Halaman ini menampilkan seluruh riwayat progres bimbingan skripsi mahasiswa beserta status koreksi dari dosen pembimbing.
+                            <?php if (empty($is_kaprodi)): ?>
+                                Anda juga dapat melihat detail komentar atau melakukan koreksi manual jika diperlukan.
+                            <?php endif; ?>
                         </p>
                     </div>
                 </div>
@@ -135,9 +139,13 @@
                                                     <button type="button" class="btn btn-sm btn-info font-weight-bold" data-toggle="modal" data-target="#modalDetail<?php echo $revisi['id']; ?>">
                                                         <i class="fas fa-search mr-1"></i> Detail
                                                     </button>
+                                                    <?php if (empty($is_kaprodi)): ?>
+                                                    <?php if(empty($is_kaprodi)): ?>
                                                     <button type="button" class="btn btn-sm btn-warning font-weight-bold text-dark" data-toggle="modal" data-target="#modalKoreksi<?php echo $revisi['id']; ?>">
                                                         <i class="fas fa-edit mr-1"></i> Koreksi
                                                     </button>
+                                                    <?php endif; ?>
+                                                    <?php endif; ?>
                                                 </div>
                                             </td>
                                         </tr>
@@ -242,6 +250,7 @@
             </div>
         </div>
 
+        <?php if(empty($is_kaprodi)): ?>
         <div class="modal fade" id="modalKoreksi<?php echo $revisi['id']; ?>" tabindex="-1" role="dialog" aria-hidden="true">
             <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
                 <div class="modal-content text-left shadow-lg border-0">
@@ -351,7 +360,7 @@
                 </div>
             </div>
         </div>
-
+        <?php endif; ?>
     <?php endforeach; ?>
 <?php endif; ?>
 
