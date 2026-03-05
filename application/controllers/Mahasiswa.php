@@ -356,6 +356,7 @@ public function upload_progres_bab()
                 // Gunakan fungsi histori agar ID tidak berubah dan histori otomatis tersimpan
                 $data_update = [
                     'judul' => $judul_baru,
+                    'tgl_pengajuan_judul' => date('Y-m-d H:i:s'),
                     'tema' => $tema_baru
                 ];
                 
@@ -632,6 +633,7 @@ public function upload_progres_bab()
                 'judul'               => $this->input->post('judul'),
                 'pembimbing1'         => $this->input->post('pembimbing1'),
                 'pembimbing2'         => $this->input->post('pembimbing2'),
+                'tgl_pengajuan_judul' => date('Y-m-d H:i:s'),
                 'tgl_pengajuan_judul' => $this->input->post('tgl_pengajuan_judul') ? $this->input->post('tgl_pengajuan_judul') : date('Y-m-d H:i:s'),
                 'status_acc_kaprodi'  => 'menunggu' // Wajib reset ke menunggu jika ganti judul
             ];
