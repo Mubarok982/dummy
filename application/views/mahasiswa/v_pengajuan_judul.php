@@ -194,12 +194,12 @@
                         <?php echo form_close(); ?>
                     </div>
 
-                    <!-- BAGIAN HISTORI PERUBAHAN JUDUL -->
-                    <?php if ($is_exist && !empty($histori_judul)): ?>
+                    <!-- BAGIAN RIWAYAT PENGAJUAN JUDUL -->
+                    <?php if (!empty($riwayat_judul)): ?>
                     <div class="card card-outline mt-4 shadow-sm">
                         <div class="card-header bg-info">
                             <h3 class="card-title font-weight-bold">
-                                <i class="fas fa-history mr-1"></i> Riwayat Perubahan Judul
+                                <i class="fas fa-history mr-1"></i> Riwayat Pengajuan Judul
                             </h3>
                         </div>
                         <div class="card-body">
@@ -208,31 +208,52 @@
                                     <thead class="bg-light">
                                         <tr>
                                             <th>No</th>
-                                            <th>Judul Lama</th>
-                                            <th>Tema</th>
-                                            <th>Tanggal Pengajuan</th>
-                                            <th>Diubah Pada</th>
+                                            <th>Tgl Pengajuan</th>
+                                            <th>Judul & Tema</th>
+                                            <th>Usulan Pembimbing</th>
+                                            <th>Skema</th>
+                                            <th>Status</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php $no = 1; foreach ($histori_judul as $h): ?>
-                                        <tr>
-                                            <td><?php echo $no++; ?></td>
-                                            <td>
-                                                <small class="text-muted">
-                                                    <?php echo substr($h['judul'], 0, 60) . (strlen($h['judul']) > 60 ? '...' : ''); ?>
-                                                </small>
-                                            </td>
-                                            <td>
-                                                <span class="badge badge-success"><?php echo $h['tema']; ?></span>
-                                            </td>
-                                            <td><?php echo date('d-m-Y', strtotime($h['tgl_pengajuan_judul'])); ?></td>
-                                            <td>
-                                                <small class="text-muted">
-                                                    <?php echo date('d-m-Y H:i', strtotime($h['dibuat_pada'])); ?>
-                                                </small>
-                                            </td>
-                                        </tr>
+                                        <?php $no = 1; foreach ($riwayat_judul as $index => $row): 
+                                            // Data dengan Index 0 otomatis adalah data PALING BARU
+                                            $is_old = ($index > 0); 
+                                            $row_class = $is_old ? 'bg-light text-muted' : '';
+                                        ?>
+                                            <tr class="<?php echo $row_class; ?>">
+                                                <td><?php echo $no++; ?></td>
+                                                <td><?php echo date('d M Y', strtotime($row['tgl_pengajuan_judul'])); ?></td>
+                                                <td>
+                                                    <span class="font-weight-bold d-block <?php echo $is_old ? 'text-secondary' : 'text-dark'; ?>"><?php echo $row['judul']; ?></span>
+                                                    <small class="<?php echo $is_old ? 'text-muted' : 'text-secondary'; ?>"><i class="fas fa-tag mr-1"></i> <?php echo $row['tema']; ?></small>
+                                                </td>
+                                                <td>
+                                                    <small class="d-block text-truncate" style="max-width: 200px;"><i class="fas fa-user-tie <?php echo $is_old ? 'text-secondary' : 'text-primary'; ?> mr-1"></i> P1: <?php echo $row['nama_p1'] ?: '-'; ?></small>
+                                                    <small class="d-block text-truncate" style="max-width: 200px;"><i class="fas fa-user-tie text-secondary mr-1"></i> P2: <?php echo $row['nama_p2'] ?: '-'; ?></small>
+                                                </td>
+                                                <td>
+                                                    <span class="badge badge-light border"><?php echo $row['skema']; ?></span>
+                                                </td>
+                                                <td>
+                                                    <?php 
+                                                    $status = strtolower($row['status_acc_kaprodi']);
+                                                    
+                                                    // Jika judul lama, paksa warna badgenya abu-abu agar tidak memecah fokus
+                                                    if($is_old) {
+                                                        $badge = 'secondary';
+                                                    } else {
+                                                        $badge = 'secondary';
+                                                        if($status == 'diterima') $badge = 'success';
+                                                        elseif($status == 'ditolak') $badge = 'danger';
+                                                        elseif($status == 'menunggu') $badge = 'warning';
+                                                    }
+                                                    ?>
+                                                    <span class="badge badge-<?php echo $badge; ?> px-3 py-2 shadow-sm">
+                                                        <?php echo strtoupper($status); ?>
+                                                    </span>
+                                                </td>
+                                            </tr>
                                         <?php endforeach; ?>
                                     </tbody>
                                 </table>

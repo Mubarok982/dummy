@@ -109,6 +109,15 @@ class M_Mahasiswa extends CI_Model {
     
     public function insert_progres($data)
     {
+        // Pastikan data snapshot judul/tema terisi
+        if (!isset($data['judul_saat_upload']) || !isset($data['tema_saat_upload'])) {
+            // Ambil data skripsi terkait untuk snapshot
+            $skripsi = $this->db->get_where('skripsi', ['id' => $data['id_skripsi']])->row();
+            if ($skripsi) {
+                $data['judul_saat_upload'] = $skripsi->judul;
+                $data['tema_saat_upload'] = $skripsi->tema;
+            }
+        }
         return $this->db->insert('progres_skripsi', $data);
     }
     
@@ -276,5 +285,57 @@ class M_Mahasiswa extends CI_Model {
         $this->db->where('id_skripsi', $id_skripsi);
         $this->db->order_by('dibuat_pada', 'DESC');
         return $this->db->get('histori_judul_skripsi')->result_array(); // Pastikan result_array agar cocok dengan view
+    }
+    
+    // Fungsi untuk mengambil status bimbingan terbaru berdasarkan ID Skripsi
+    public function get_status_bimbingan_terbaru($id_skripsi)
+    {
+        // Ambil status ujian terakhir
+        $ujian = $this->get_status_ujian_terakhir($id_skripsi);
+        $status_ujian = $ujian ? $ujian['status'] : null;
+        
+        // Ambil progres terakhir
+        $this->db->select('bab, progres_dosen1, progres_dosen2');
+        $this->db->from('progres_skripsi');
+        $this->db->where('id_skripsi', $id_skripsi);
+        $this->db->order_by('bab', 'DESC');
+        $this->db->order_by('tgl_upload', 'DESC');
+        $last_progres = $this->db->get()->row();
+        
+        // Ambil data mahasiswa untuk prodi (prodi ada di data_mahasiswa, bukan di skripsi)
+        $this->db->select('M.prodi');
+        $this->db->from('skripsi S');
+        $this->db->join('data_mahasiswa M', 'S.id_mahasiswa = M.id');
+        $this->db->where('S.id', $id_skripsi);
+        $mhs = $this->db->get()->row();
+        $prodi = $mhs ? $mhs->prodi : null;
+        
+        // Tentukan max_bab berdasarkan prodi
+        $max_bab = 6;
+        if (stripos($prodi, 'D3') !== false || stripos($prodi, 'Diploma 3') !== false) {
+            $max_bab = 5;
+        }
+        
+        // Tentukan status bimbingan
+        $label = "DALAM BIMBINGAN";
+        
+        if ($status_ujian) {
+            $status_ujian_lower = strtolower($status_ujian);
+            if ($status_ujian_lower == 'mengulang') {
+                $label = "MENGULANG";
+            } elseif ($status_ujian_lower == 'diterima' || $status_ujian_lower == 'lulus' || $status_ujian_lower == 'selesai') {
+                $label = "LULUS SKRIPSI";
+            } elseif ($status_ujian_lower == 'perbaikan') {
+                if ($last_progres) {
+                    if ($last_progres->bab == 3 && $last_progres->progres_dosen1 == 100 && $last_progres->progres_dosen2 == 100) {
+                        $label = "SIAP SEMPRO";
+                    } elseif ($last_progres->bab >= $max_bab && $last_progres->progres_dosen1 == 100 && $last_progres->progres_dosen2 == 100) {
+                        $label = "SIAP PENDADARAN";
+                    }
+                }
+            }
+        }
+        
+        return $label;
     }
 }

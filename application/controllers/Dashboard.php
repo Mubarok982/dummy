@@ -65,6 +65,14 @@ class Dashboard extends CI_Controller {
                 $data['statistik']['last_bab'] = 0;
             }
 
+            // Ambil status bimbingan terbaru untuk ditampilkan di dashboard
+            // Jika belum ada skripsi, tampilkan "DALAM BIMBINGAN" sebagai default
+            if ($skripsi) {
+                $data['status_bimbingan'] = $this->M_Mahasiswa->get_status_bimbingan_terbaru($skripsi['id']);
+            } else {
+                $data['status_bimbingan'] = "DALAM BIMBINGAN";
+            }
+
             // Ambil Riwayat Pengajuan Judul Lengkap
             $this->db->select('s.*, d1.nama as nama_p1, d2.nama as nama_p2');
             $this->db->from('skripsi s');

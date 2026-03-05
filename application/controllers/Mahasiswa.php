@@ -57,14 +57,9 @@ public function pengajuan_judul()
         $data['status_ujian'] = $status_ujian;
         // ---------------------------------
 
-        // --- TAMBAHAN FITUR HISTORI ---
-        // Ambil histori perubahan judul jika skripsi sudah ada
-        if ($data['skripsi']) {
-            // GANTI $this->M_Dosen menjadi $this->M_Mahasiswa
-            $data['histori_judul'] = $this->M_Mahasiswa->get_histori_judul($data['skripsi']['id']);
-        } else {
-            $data['histori_judul'] = [];
-        }
+        // --- TAMBAHAN FITUR RIWAYAT PENGJUAN JUDUL ---
+        // Ambil semua riwayat pengajuan judul mahasiswa
+        $data['riwayat_judul'] = $this->M_Mahasiswa->get_all_skripsi_by_mhs($id_mahasiswa);
         // -------------------------------
 
         $this->load->view('template/header', $data);
@@ -142,6 +137,9 @@ public function bimbingan()
         $data['max_bab'] = $max_bab; 
         
         $data['status_acc'] = $data['skripsi']['status_acc_kaprodi'] ?? 'menunggu';
+        
+        // Ambil status bimbingan terbaru
+        $data['status_bimbingan'] = $this->M_Mahasiswa->get_status_bimbingan_terbaru($id_skripsi);
         
         $recipients = $this->M_Chat->get_valid_chat_recipients_mhs($npm_mhs);
         $data['valid_recipients'] = $recipients ? $recipients : [
@@ -366,9 +364,8 @@ public function upload_progres_bab()
                 $this->session->set_flashdata('pesan_sukses', 'Judul/Tema berhasil diubah. Data lama tersimpan di riwayat. Perubahan berlaku untuk upload progres berikutnya.');
                 $this->M_Log->record('Judul', 'Mengubah judul skripsi via Bimbingan: ' . $judul_baru . ' - Tema: ' . $tema_baru);
                 
-                // Kembali ke form bimbingan
-                redirect('mahasiswa/bimbingan');
-                return;
+                // Ambil data skripsi terbaru setelah update
+                $skripsi = $this->M_Mahasiswa->get_skripsi_by_mhs($id_mahasiswa);
             }
         }
         // =================================================
@@ -402,7 +399,7 @@ public function upload_progres_bab()
         } else {
             $file_data = $this->upload->data();
             
-            $status_plagiasi_awal = ($bab == 1) ? 'Menunggu' : '-';
+                            $status_plagiasi_awal = ($bab == 1) ? 'Menunggu' : '-';
 
             // Masukkan ke ID Skripsi yang aktif (lama)
             $progres_data = [

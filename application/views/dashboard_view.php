@@ -126,7 +126,7 @@
                         </div>
                     <?php endif; ?>
 
-                <?php elseif ($role == 'mahasiswa'): ?>
+                    <?php elseif ($role == 'mahasiswa'): ?>
 
                     <?php
                     $current_bab = isset($stats['last_bab']) ? $stats['last_bab'] : 0;
@@ -138,21 +138,86 @@
                     if($progress_percent >= 80) $bg_class = 'bg-success';
                     ?>
 
-                    </div> 
-                    
                     <div class="row">
-                        <div class="col-md-4">
+                    <div class="col-md-4">
                             <div class="info-box mb-3 bg-white shadow-sm">
                                 <span class="info-box-icon bg-info elevation-1"><i class="fas fa-file-signature"></i></span>
                                 <div class="info-box-content">
-                                    <span class="info-box-text">Status Judul Aktif</span>
-                                    <span class="info-box-number text-lg"><?php echo isset($stats['judul_status']) ? $stats['judul_status'] : '-'; ?></span>
+                                    <span class="info-box-text">Status Bimbingan</span>
+                                    <span class="info-box-number text-lg">
+                                        <?php 
+                                        // Gunakan status bimbingan terbaru dari controller jika tersedia
+                                        if (isset($status_bimbingan)) {
+                                            echo $status_bimbingan;
+                                        } else {
+                                            // Fallback ke logika lama jika controller belum mengirimkan status_bimbingan
+                                            $label = "DALAM BIMBINGAN"; 
+                                            if (isset($stats['judul_status']) && strtolower($stats['judul_status']) == 'ditolak') {
+                                                $label = "DITOLAK";
+                                            } else {
+                                                // Cek status ujian terakhir jika ada skripsi
+                                                if (isset($skripsi) && $skripsi) {
+                                                    $ujian = $this->M_Mahasiswa->get_status_ujian_terakhir($skripsi['id']);
+                                                    $status_ujian = $ujian ? $ujian['status'] : null;
+                                                    
+                                                    if ($status_ujian) {
+                                                        $status_ujian_lower = strtolower($status_ujian);
+                                                        if ($status_ujian_lower == 'mengulang') {
+                                                            $label = "MENGULANG";
+                                                        } elseif ($status_ujian_lower == 'diterima' || $status_ujian_lower == 'lulus' || $status_ujian_lower == 'selesai') {
+                                                            $label = "LULUS SKRIPSI";
+                                                        } elseif ($status_ujian_lower == 'perbaikan') {
+                                                            // Cek apakah ini perbaikan sempro atau pendadaran
+                                                            $this->db->select('id_jenis_ujian_skripsi');
+                                                            $this->db->from('ujian_skripsi');
+                                                            $this->db->where('id_skripsi', $skripsi['id']);
+                                                            $this->db->where('status', $status_ujian);
+                                                            $this->db->order_by('id', 'DESC');
+                                                            $this->db->limit(1);
+                                                            $ujian_data = $this->db->get()->row();
+                                                            
+                                                            if ($ujian_data) {
+                                                                // Tentukan prodi untuk menentukan ID jenis ujian
+                                                                $prodi = $this->session->userdata('prodi');
+                                                                if(empty($prodi) && isset($skripsi['prodi'])) {
+                                                                    $prodi = $skripsi['prodi'];
+                                                                }
+                                                                
+                                                                $max_bab = 6;
+                                                                if (stripos($prodi, 'D3') !== false || stripos($prodi, 'Diploma 3') !== false) {
+                                                                    $max_bab = 5;
+                                                                }
+                                                                
+                                                                // Cek progres terakhir
+                                                                $this->db->select('bab, progres_dosen1, progres_dosen2');
+                                                                $this->db->from('progres_skripsi');
+                                                                $this->db->where('id_skripsi', $skripsi['id']);
+                                                                $this->db->order_by('bab', 'DESC');
+                                                                $this->db->order_by('tgl_upload', 'DESC');
+                                                                $last_progres = $this->db->get()->row();
+                                                                
+                                                                if ($last_progres) {
+                                                                    if ($last_progres->bab == 3 && $last_progres->progres_dosen1 == 100 && $last_progres->progres_dosen2 == 100) {
+                                                                        $label = "SIAP SEMPRO";
+                                                                    } elseif ($last_progres->bab >= $max_bab && $last_progres->progres_dosen1 == 100 && $last_progres->progres_dosen2 == 100) {
+                                                                        $label = "SIAP PENDADARAN";
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            echo $label;
+                                        }
+                                        ?>
+                                    </span>
                                     <?php if(isset($skripsi) && $skripsi): ?>
                                         <small class="d-block text-truncate" style="max-width:200px;">
-                                            <strong>Judul:</strong> <?php echo $skripsi['judul']; ?>
+                                            <strong>Pembimbing 1:</strong> <?php echo $skripsi['nama_p1']; ?>
                                         </small>
                                         <small class="d-block text-truncate" style="max-width:200px;">
-                                            <strong>Tema:</strong> <?php echo $skripsi['tema']; ?>
+                                            <strong>Pembimbing 2:</strong> <?php echo $skripsi['nama_p2']; ?>
                                         </small>
                                     <?php endif; ?>
                                     <a href="<?php echo base_url('mahasiswa/pengajuan_judul'); ?>" class="small-box-footer text-muted text-sm mt-2 d-block">
@@ -205,45 +270,11 @@
                                             </thead>
                                             <tbody>
                                                 <?php 
-                                                // ============================================================
-                                                // LOGIKA PENGURUTAN & ANTI-DUPLIKAT
-                                                // ============================================================
-                                                $filtered_riwayat = [];
-                                                $seen_ids = [];
-
-                                                if (!empty($riwayat_judul)) {
-                                                    // 1. Urutkan riwayat dari yang paling BARU ke LAMA
-                                                    usort($riwayat_judul, function($a, $b) {
-                                                        $id_a = isset($a['id']) ? $a['id'] : 0;
-                                                        $id_b = isset($b['id']) ? $b['id'] : 0;
-                                                        
-                                                        // Jika punya ID, urutkan ID secara Descending (ID lebih besar = lebih baru)
-                                                        if ($id_a && $id_b) {
-                                                            return $id_b - $id_a;
-                                                        }
-                                                        // Fallback jika tidak ada ID, pakai tanggal
-                                                        return strtotime($b['tgl_pengajuan_judul']) - strtotime($a['tgl_pengajuan_judul']);
-                                                    });
-
-                                                    // 2. Buang baris duplikat jika ada yang terekam dua kali
-                                                    foreach ($riwayat_judul as $row) {
-                                                        $unique_id = isset($row['id']) ? $row['id'] : $row['judul'];
-                                                        if (!in_array($unique_id, $seen_ids)) {
-                                                            $seen_ids[] = $unique_id;
-                                                            $filtered_riwayat[] = $row;
-                                                        }
-                                                    }
-                                                }
-                                                ?>
-
-                                                <?php if (empty($filtered_riwayat)): ?>
-                                                    <tr>
-                                                        <td colspan="6" class="text-center py-4 text-muted">
-                                                            <i class="fas fa-info-circle mr-1"></i> Belum ada riwayat pengajuan judul.
-                                                        </td>
-                                                    </tr>
-                                                <?php else: ?>
-                                                    <?php $no = 1; foreach ($filtered_riwayat as $index => $row): 
+                                                // Ambil data riwayat pengajuan judul dari controller
+                                                $riwayat_judul = isset($riwayat_judul) ? $riwayat_judul : [];
+                                                
+                                                if (!empty($riwayat_judul)): ?>
+                                                    <?php $no = 1; foreach ($riwayat_judul as $index => $row): 
                                                         // Data dengan Index 0 otomatis adalah data PALING BARU
                                                         $is_old = ($index > 0); 
                                                         $row_class = $is_old ? 'bg-light text-muted' : '';
@@ -290,6 +321,12 @@
                                                             </td>
                                                         </tr>
                                                     <?php endforeach; ?>
+                                                <?php else: ?>
+                                                    <tr>
+                                                        <td colspan="6" class="text-center py-4 text-muted">
+                                                            <i class="fas fa-info-circle mr-1"></i> Belum ada riwayat pengajuan judul.
+                                                        </td>
+                                                    </tr>
                                                 <?php endif; ?>
                                             </tbody>
                                         </table>
@@ -299,7 +336,10 @@
                         </div>
                     </div>
 
-                <?php endif; ?> </div> <?php if ($role == 'dosen' && $this->session->userdata('is_kaprodi') == 1): ?>
+                <?php endif; ?>
+            </div>
+
+            <?php if ($role == 'dosen' && $this->session->userdata('is_kaprodi') == 1): ?>
                 
                 <div class="row mt-4">
                     <div class="col-md-8">

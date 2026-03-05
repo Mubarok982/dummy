@@ -298,7 +298,7 @@
                                     <thead class="bg-light sticky-top">
                                         <tr>
                                             <th style="width: 25%;">Tanggal Upload</th>
-                                            <th style="width: 20%;">Judul & Tema Saat Itu</th>
+                                            <th style="width: 20%;">Judul & Tema</th>
                                             <th style="width: 10%;">Bab</th>
                                             <th style="width: 15%;">Status ACC</th>
                                             <th style="width: 20%;">Catatan Dosen</th>
@@ -347,7 +347,7 @@
                                                     </td>
                                                     <td>
                                                         <small class="d-block text-dark font-weight-bold">
-                                                            <?= isset($pr->judul_saat_upload) ? substr($pr->judul_saat_upload, 0, 50) . (strlen($pr->judul_saat_upload) > 50 ? '...' : '') : 'N/A'; ?>
+                                                            <?= isset($pr->judul_saat_upload) ? $pr->judul_saat_upload : 'N/A'; ?>
                                                         </small>
                                                         <small class="text-muted d-block">
                                                             <i class="fas fa-tag mr-1"></i><?= isset($pr->tema_saat_upload) ? $pr->tema_saat_upload : 'N/A'; ?>
