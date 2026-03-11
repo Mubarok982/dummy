@@ -18,7 +18,6 @@
     <section class="content">
         <div class="container-fluid">
             
-            <?php // kaprodi tidak boleh melakukan koreksi, jadi teks petunjuk diedit accordingly ?>
             <div class="alert alert-info shadow-sm">
                 <div class="d-flex align-items-center">
                     <i class="fas fa-info-circle fa-2x mr-3"></i>
@@ -87,7 +86,6 @@
                             <tbody>
                                 <?php if (!empty($list_revisi)): ?>
                                     <?php 
-                                    // Start index dari controller agar penomoran lanjut ke halaman berikutnya (tidak reset ke 1)
                                     $no = isset($start_index) ? $start_index + 1 : 1; 
                                     foreach ($list_revisi as $revisi): 
                                     ?>
@@ -103,7 +101,20 @@
                                             </td>
 
                                             <td class="align-middle text-wrap">
-                                                <span class="text-muted text-sm font-italic"><?php echo !empty($revisi['judul']) ? $revisi['judul'] : '- Belum ada judul -'; ?></span>
+                                                <span class="text-dark font-weight-bold d-block" style="line-height:1.2;">
+                                                    <?php 
+                                                    // FIX: Utamakan judul saat file diupload. Jika tidak ada, pakai judul aktif/terbaru.
+                                                    if (!empty($revisi['judul_saat_upload'])) {
+                                                        echo $revisi['judul_saat_upload'];
+                                                    } else if (!empty($revisi['judul_skripsi_aktif'])) {
+                                                        echo $revisi['judul_skripsi_aktif'];
+                                                    } else if (!empty($revisi['judul'])) {
+                                                        echo $revisi['judul'];
+                                                    } else {
+                                                        echo '<span class="text-muted font-italic">- Belum ada judul -</span>';
+                                                    }
+                                                    ?>
+                                                </span>
                                             </td>
                                             
                                             <td class="text-center align-middle">
@@ -140,11 +151,9 @@
                                                         <i class="fas fa-search mr-1"></i> Detail
                                                     </button>
                                                     <?php if (empty($is_kaprodi)): ?>
-                                                    <?php if(empty($is_kaprodi)): ?>
                                                     <button type="button" class="btn btn-sm btn-warning font-weight-bold text-dark" data-toggle="modal" data-target="#modalKoreksi<?php echo $revisi['id']; ?>">
                                                         <i class="fas fa-edit mr-1"></i> Koreksi
                                                     </button>
-                                                    <?php endif; ?>
                                                     <?php endif; ?>
                                                 </div>
                                             </td>
@@ -191,7 +200,6 @@
                         <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
                     </div>
                     <div class="modal-body bg-light p-4">
-                        
                         <div class="row">
                             <div class="col-md-6 mb-3 mb-md-0">
                                 <div class="card h-100 border-primary shadow-sm">
@@ -216,7 +224,6 @@
                                     </div>
                                 </div>
                             </div>
-
                             <div class="col-md-6">
                                 <div class="card h-100 border-info shadow-sm">
                                     <div class="card-header bg-white border-bottom-info">
@@ -241,7 +248,6 @@
                                 </div>
                             </div>
                         </div>
-
                     </div>
                     <div class="modal-footer bg-white">
                         <button type="button" class="btn btn-secondary px-4" data-dismiss="modal">Tutup</button>
@@ -255,7 +261,7 @@
             <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
                 <div class="modal-content text-left shadow-lg border-0">
                     <div class="modal-header bg-warning">
-                        <h5 class="modal-title text-dark font-weight-bold"><i class="fas fa-edit mr-1"></i> Koreksi Bimbingan: BAB <?php echo $revisi['bab']; ?> - <?php echo $revisi['nama_mhs']; ?> (<?php echo $revisi['npm']; ?>)</h5>
+                        <h5 class="modal-title text-dark font-weight-bold"><i class="fas fa-edit mr-1"></i> Koreksi Bimbingan: BAB <?php echo $revisi['bab']; ?> - <?php echo $revisi['nama_mhs']; ?></h5>
                         <button type="button" class="close text-dark" data-dismiss="modal">&times;</button>
                     </div>
 
@@ -278,31 +284,27 @@
                                     <select class="form-control form-control-sm shadow-sm border-primary" onchange="document.getElementById('komentar_dosen1_<?php echo $revisi['id']; ?>').value += this.value + '\n\n'">
                                         <option value="">-- Pilih Template --</option>
                                         <option value="Revisi Bab Pendahuluan: Fokus pada gap penelitian.">Revisi Pendahuluan</option>
-                                        <option value="Tinjauan Pustaka: Tambahkan 5 referensi terbaru (5 tahun terakhir).">Refrensi Kurang</option>
-                                        <option value="Metode Penelitian: Jelaskan langkah pengujian data lebih rinci.">Metode Kurang Jelas</option>
-                                        <option value="Hasil dan Pembahasan: Perlu interpretasi hasil yang lebih mendalam.">Pembahasan Dangkal</option>
-                                        <option value="Perbaiki tata bahasa dan format penulisan (Typo).">Banyak Typo</option>
-                                        <option value="Bab ini sudah baik, segera lanjutkan ke Bab berikutnya (ACC).">ACC Lanjut</option>
+                                        <option value="Tinjauan Pustaka: Tambahkan referensi terbaru.">Refrensi Kurang</option>
+                                        <option value="Metode Penelitian: Jelaskan langkah pengujian lebih rinci.">Metode Kurang Jelas</option>
+                                        <option value="Hasil dan Pembahasan: Perlu interpretasi hasil lebih mendalam.">Pembahasan Dangkal</option>
+                                        <option value="Perbaiki tata bahasa dan format penulisan.">Banyak Typo</option>
+                                        <option value="Bab ini sudah baik, segera lanjutkan ke Bab berikutnya.">ACC Lanjut</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
                                     <label class="font-weight-bold">Komentar Detail / Revisi:</label>
-                                    <textarea name="komentar_dosen1" id="komentar_dosen1_<?php echo $revisi['id']; ?>" class="form-control shadow-sm border-primary" rows="6" placeholder="Tuliskan revisi..." required><?php echo $revisi['komentar_dosen1']; ?></textarea>
+                                    <textarea name="komentar_dosen1" id="komentar_dosen1_<?php echo $revisi['id']; ?>" class="form-control shadow-sm border-primary" rows="6" required><?php echo $revisi['komentar_dosen1']; ?></textarea>
                                 </div>
                                 <div class="form-group mb-0 p-3 bg-white rounded shadow-sm border-left-primary" style="border-left: 4px solid #007bff;">
                                     <label class="font-weight-bold mb-2 d-block">Status Keputusan (P1):</label>
                                     <div class="d-flex justify-content-start">
                                         <div class="custom-control custom-radio mr-4">
                                             <input class="custom-control-input custom-control-input-danger" type="radio" id="st0_<?php echo $revisi['id']; ?>_1" name="status_progres1" value="0" <?php echo ($revisi['progres_dosen1'] == 0) ? 'checked' : ''; ?>>
-                                            <label for="st0_<?php echo $revisi['id']; ?>_1" class="custom-control-label text-danger font-weight-bold">
-                                                Revisi (0%)
-                                            </label>
+                                            <label for="st0_<?php echo $revisi['id']; ?>_1" class="custom-control-label text-danger font-weight-bold">Revisi (0%)</label>
                                         </div>
                                         <div class="custom-control custom-radio">
                                             <input class="custom-control-input custom-control-input-success" type="radio" id="st100_<?php echo $revisi['id']; ?>_1" name="status_progres1" value="100" <?php echo ($revisi['progres_dosen1'] == 100) ? 'checked' : ''; ?>>
-                                            <label for="st100_<?php echo $revisi['id']; ?>_1" class="custom-control-label text-success font-weight-bold">
-                                                ACC Penuh (100%)
-                                            </label>
+                                            <label for="st100_<?php echo $revisi['id']; ?>_1" class="custom-control-label text-success font-weight-bold">ACC Penuh (100%)</label>
                                         </div>
                                     </div>
                                 </div>
@@ -321,31 +323,27 @@
                                     <select class="form-control form-control-sm shadow-sm border-info" onchange="document.getElementById('komentar_dosen2_<?php echo $revisi['id']; ?>').value += this.value + '\n\n'">
                                         <option value="">-- Pilih Template --</option>
                                         <option value="Revisi Bab Pendahuluan: Fokus pada gap penelitian.">Revisi Pendahuluan</option>
-                                        <option value="Tinjauan Pustaka: Tambahkan 5 referensi terbaru (5 tahun terakhir).">Refrensi Kurang</option>
-                                        <option value="Metode Penelitian: Jelaskan langkah pengujian data lebih rinci.">Metode Kurang Jelas</option>
-                                        <option value="Hasil dan Pembahasan: Perlu interpretasi hasil yang lebih mendalam.">Pembahasan Dangkal</option>
-                                        <option value="Perbaiki tata bahasa dan format penulisan (Typo).">Banyak Typo</option>
-                                        <option value="Bab ini sudah baik, segera lanjutkan ke Bab berikutnya (ACC).">ACC Lanjut</option>
+                                        <option value="Tinjauan Pustaka: Tambahkan referensi terbaru.">Refrensi Kurang</option>
+                                        <option value="Metode Penelitian: Jelaskan langkah pengujian lebih rinci.">Metode Kurang Jelas</option>
+                                        <option value="Hasil dan Pembahasan: Perlu interpretasi hasil lebih mendalam.">Pembahasan Dangkal</option>
+                                        <option value="Perbaiki tata bahasa dan format penulisan.">Banyak Typo</option>
+                                        <option value="Bab ini sudah baik, segera lanjutkan ke Bab berikutnya.">ACC Lanjut</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
                                     <label class="font-weight-bold">Komentar Detail / Revisi:</label>
-                                    <textarea name="komentar_dosen2" id="komentar_dosen2_<?php echo $revisi['id']; ?>" class="form-control shadow-sm border-info" rows="6" placeholder="Tuliskan revisi..." required><?php echo $revisi['komentar_dosen2']; ?></textarea>
+                                    <textarea name="komentar_dosen2" id="komentar_dosen2_<?php echo $revisi['id']; ?>" class="form-control shadow-sm border-info" rows="6" required><?php echo $revisi['komentar_dosen2']; ?></textarea>
                                 </div>
                                 <div class="form-group mb-0 p-3 bg-white rounded shadow-sm border-left-info" style="border-left: 4px solid #17a2b8;">
                                     <label class="font-weight-bold mb-2 d-block">Status Keputusan (P2):</label>
                                     <div class="d-flex justify-content-start">
                                         <div class="custom-control custom-radio mr-4">
                                             <input class="custom-control-input custom-control-input-danger" type="radio" id="st0_<?php echo $revisi['id']; ?>_2" name="status_progres2" value="0" <?php echo ($revisi['progres_dosen2'] == 0) ? 'checked' : ''; ?>>
-                                            <label for="st0_<?php echo $revisi['id']; ?>_2" class="custom-control-label text-danger font-weight-bold">
-                                                Revisi (0%)
-                                            </label>
+                                            <label for="st0_<?php echo $revisi['id']; ?>_2" class="custom-control-label text-danger font-weight-bold">Revisi (0%)</label>
                                         </div>
                                         <div class="custom-control custom-radio">
                                             <input class="custom-control-input custom-control-input-success" type="radio" id="st100_<?php echo $revisi['id']; ?>_2" name="status_progres2" value="100" <?php echo ($revisi['progres_dosen2'] == 100) ? 'checked' : ''; ?>>
-                                            <label for="st100_<?php echo $revisi['id']; ?>_2" class="custom-control-label text-success font-weight-bold">
-                                                ACC Penuh (100%)
-                                            </label>
+                                            <label for="st100_<?php echo $revisi['id']; ?>_2" class="custom-control-label text-success font-weight-bold">ACC Penuh (100%)</label>
                                         </div>
                                     </div>
                                 </div>

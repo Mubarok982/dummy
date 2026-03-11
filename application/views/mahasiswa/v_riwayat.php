@@ -63,9 +63,17 @@
                                                 </td>
 
                                                 <td class="align-top pt-3">
-                                                    <strong><?php echo $p['judul']; ?></strong>
+                                                    <strong class="d-block mb-1 text-dark" style="line-height: 1.3;">
+                                                        <?php 
+                                                        // FIX: Pemanggilan judul_saat_upload
+                                                        echo !empty($p['judul_saat_upload']) ? $p['judul_saat_upload'] : (!empty($p['judul']) ? $p['judul'] : '-'); 
+                                                        ?>
+                                                    </strong>
+                                                    <small class="text-muted d-block">
+                                                        <i class="fas fa-tag mr-1"></i> <?php echo !empty($p['tema_saat_upload']) ? $p['tema_saat_upload'] : (!empty($p['tema']) ? $p['tema'] : '-'); ?>
+                                                    </small>
                                                 </td>
-
+                                                
                                                 <td class="align-top pt-3">
                                                     <div class="mb-2">
                                                         <small class="text-muted font-weight-bold d-block mb-1">Pembimbing 1</small>
@@ -75,7 +83,7 @@
                                                         if ($p['nilai_dosen1'] == 'Menunggu' || $p['nilai_dosen1'] == '') { $badge1 = 'secondary'; $icon1 = 'clock'; }
                                                         ?>
                                                         <span class="badge badge-<?php echo $badge1; ?> px-2 py-1">
-                                                            <i class="fas fa-<?php echo $icon1; ?> mr-1"></i> <?php echo $p['nilai_dosen1'] ?: 'Menunggu'; ?>
+                                                            <i class="fas fa-<?php echo $icon1; ?> mr-1"></i> <?php echo !empty($p['nilai_dosen1']) ? $p['nilai_dosen1'] : 'Menunggu'; ?>
                                                         </span>
                                                     </div>
                                                     
@@ -87,7 +95,7 @@
                                                         if ($p['nilai_dosen2'] == 'Menunggu' || $p['nilai_dosen2'] == '') { $badge2 = 'secondary'; $icon2 = 'clock'; }
                                                         ?>
                                                         <span class="badge badge-<?php echo $badge2; ?> px-2 py-1">
-                                                            <i class="fas fa-<?php echo $icon2; ?> mr-1"></i> <?php echo $p['nilai_dosen2'] ?: 'Menunggu'; ?>
+                                                            <i class="fas fa-<?php echo $icon2; ?> mr-1"></i> <?php echo !empty($p['nilai_dosen2']) ? $p['nilai_dosen2'] : 'Menunggu'; ?>
                                                         </span>
                                                     </div>
                                                 </td>
@@ -121,10 +129,10 @@
                                                         </a>
                                                     </div>
                                                     <small class="text-muted d-block mt-1">
-                                                        <i class="far fa-calendar-alt mr-1"></i> <?php echo date('d/m/Y', strtotime($p['created_at'])); ?>
+                                                        <i class="far fa-calendar-alt mr-1"></i> <?php echo date('d/m/Y', strtotime($p['tgl_upload'])); ?>
                                                     </small>
                                                     <small class="text-muted">
-                                                        <i class="far fa-clock mr-1"></i> <?php echo date('H:i', strtotime($p['created_at'])); ?>
+                                                        <i class="far fa-clock mr-1"></i> <?php echo date('H:i', strtotime($p['tgl_upload'])); ?>
                                                     </small>
                                                 </td>
                                             </tr>

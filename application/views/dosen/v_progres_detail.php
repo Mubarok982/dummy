@@ -41,7 +41,7 @@
                     <div class="callout callout-info shadow-sm bg-white border-left-info">
                         <div class="row">
                             <div class="col-md-8">
-                                <h5 class="text-primary font-weight-bold"><i class="fas fa-book-reader mr-1"></i> <?php echo $skripsi['judul']; ?></h5>
+                                <h5 class="text-primary font-weight-bold"><i class="fas fa-book-reader mr-1"></i> <?php echo !empty($progres['judul_saat_upload']) ? $progres['judul_saat_upload'] : $skripsi['judul']; ?></h5>
                                 <p class="mb-0 text-muted">
                                     <strong>Mahasiswa:</strong> <?php echo $skripsi['nama_mhs']; ?> <span class="badge badge-light border ml-1"><?php echo $skripsi['npm']; ?></span>
                                 </p>
@@ -116,7 +116,7 @@
                                                 <?php endif; ?>
                                             </td>
                                             <td class="align-middle">
-                                                <strong><?php echo $skripsi['judul']; ?></strong>
+                                                <strong><?php echo !empty($progres['judul_saat_upload']) ? $progres['judul_saat_upload'] : $skripsi['judul'];?></strong>
                                             </td>
                                             
                                             <td class="align-middle text-center text-muted small">

@@ -82,19 +82,105 @@ class Dosen extends CI_Controller
         $this->load->view('template/footer');
     }
 
-    public function progres_detail($id_skripsi)
+public function progres_detail($id_skripsi)
     {
         $id_dosen = $this->session->userdata('id');
         $data['title'] = 'Detail Progres Bimbingan';
+        
+        // 1. Ambil Data Skripsi & Validasi Dosen
         $data['skripsi'] = $this->M_Dosen->get_skripsi_details($id_skripsi);
+
+        if (empty($data['skripsi'])) {
+            $this->session->set_flashdata('pesan_error', 'Data skripsi tidak ditemukan.');
+            redirect('dosen/bimbingan_list');
+        }
 
         if ($data['skripsi']['pembimbing1'] != $id_dosen && $data['skripsi']['pembimbing2'] != $id_dosen) {
             $this->session->set_flashdata('pesan_error', 'Anda bukan dosen pembimbing untuk skripsi ini.');
             redirect('dosen/bimbingan_list');
         }
 
-        $data['progres'] = $this->M_Dosen->get_all_progres_skripsi($data['skripsi']['npm']);
+        $npm = $data['skripsi']['npm'];
         $data['is_p1'] = ($data['skripsi']['pembimbing1'] == $id_dosen);
+
+        // --- TENTUKAN BATAS MAKSIMAL BAB BERDASARKAN PRODI ---
+        $prodi = $data['skripsi']['prodi'] ?? '';
+        $max_bab = (stripos($prodi, 'D3') !== false || stripos($prodi, 'Diploma 3') !== false) ? 5 : 6;
+        $data['max_bab'] = $max_bab;
+
+        // =================================================================
+        // 2. QUERY SPESIFIK: AMBIL PROGRES, HILANGKAN DUPLIKAT, KUNCI JUDUL
+        // =================================================================
+        $this->db->select('p.*, s.judul as judul_skripsi_aktif, s.tema as tema_skripsi_aktif');
+        $this->db->from('progres_skripsi p');
+        $this->db->join('skripsi s', 'p.id_skripsi = s.id', 'left');
+        $this->db->where('p.npm', $npm);
+        $this->db->order_by('p.bab', 'ASC'); 
+        $this->db->order_by('p.tgl_upload', 'DESC'); // Yang terbaru di atas untuk tiap bab
+        $progres_raw = $this->db->get()->result_array();
+
+        $progres_bersih = [];
+        $seen_ids = []; 
+        $highest_acc_bab = 0;
+        $is_revisi = false;
+
+        foreach ($progres_raw as $p) {
+            if (!in_array($p['id'], $seen_ids)) {
+                $seen_ids[] = $p['id'];
+
+                // KUNCI JUDUL: Gunakan judul_saat_upload jika ada
+                $p['judul'] = !empty($p['judul_saat_upload']) ? $p['judul_saat_upload'] : $p['judul_skripsi_aktif'];
+                $p['tema']  = !empty($p['tema_saat_upload']) ? $p['tema_saat_upload'] : $p['tema_skripsi_aktif'];
+
+                // LOGIKA ANALISA BAB (Sama persis seperti di controller mahasiswa)
+                if ($p['progres_dosen1'] == 100 && $p['progres_dosen2'] == 100) {
+                    if ($p['bab'] > $highest_acc_bab) {
+                        $highest_acc_bab = $p['bab'];
+                    }
+                }
+
+                $progres_bersih[] = $p;
+            }
+        }
+
+        // =================================================================
+        // 3. TENTUKAN TARGET BAB & LOGIKA STATUS UI (Untuk tampilan Info Box)
+        // =================================================================
+        $target_bab = 1;
+        if (!empty($progres_bersih)) {
+            // Ambil data progres paling akhir (terbaru)
+            $last_progres = end($progres_bersih); 
+            
+            if ($last_progres['progres_dosen1'] < 100 || $last_progres['progres_dosen2'] < 100) {
+                $target_bab = $last_progres['bab'];
+                $is_revisi = true;
+            } else {
+                $target_bab = $highest_acc_bab + 1;
+                $is_revisi = false;
+            }
+        }
+        
+        // Mencegah target melebihi batas prodi
+        if ($target_bab > $max_bab) $target_bab = $max_bab;
+
+        // UI Styling persis seperti Mahasiswa
+        $status_card = 'card-primary';
+        $text_header = 'Sedang Mengerjakan BAB ' . $target_bab;
+        $pesan_info = 'Mahasiswa saat ini berada di tahap penulisan normal.';
+
+        if ($is_revisi) {
+            $status_card = 'card-warning';
+            $text_header = 'Perbaikan / Revisi BAB ' . $target_bab;
+            $pesan_info = 'Menunggu mahasiswa mengunggah file revisi terbaru.';
+        }
+
+        // Kirim semua variabel matang ke View
+        $data['progres'] = $progres_bersih;
+        $data['target_bab'] = $target_bab;
+        $data['is_revisi'] = $is_revisi;
+        $data['status_card'] = $status_card;
+        $data['text_header'] = $text_header;
+        $data['pesan_info'] = $pesan_info;
 
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);

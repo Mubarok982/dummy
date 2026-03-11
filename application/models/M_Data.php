@@ -550,10 +550,11 @@ class M_Data extends CI_Model
     // --- FITUR BARU: Riwayat Progress Mahasiswa ---
     public function get_riwayat_progress($keyword = NULL)
     {
+        // KOREKSI: Tambahkan p.judul_saat_upload
         $this->db->select('
-            p.id, p.npm, p.bab, p.file, p.komentar_dosen1, p.komentar_dosen2, p.nilai_dosen1, p.nilai_dosen2, p.progres_dosen1, p.progres_dosen2, p.tgl_upload, p.tgl_verifikasi,
+            p.id, p.npm, p.bab, p.file, p.komentar_dosen1, p.komentar_dosen2, p.nilai_dosen1, p.nilai_dosen2, p.progres_dosen1, p.progres_dosen2, p.tgl_upload, p.tgl_verifikasi, p.judul_saat_upload,
             a.nama as nama_mhs, m.prodi,
-            s.id as id_skripsi, s.judul,
+            s.id as id_skripsi, s.judul as judul_skripsi_aktif,
             d1.nama as nama_p1,
             d2.nama as nama_p2
         ');
@@ -569,7 +570,8 @@ class M_Data extends CI_Model
             $this->db->group_start();
                 $this->db->like('a.nama', $keyword);
                 $this->db->or_like('p.npm', $keyword);
-                $this->db->or_like('s.judul', $keyword);
+                // Bisa mencari berdasarkan judul historinya juga
+                $this->db->or_like('p.judul_saat_upload', $keyword); 
             $this->db->group_end();
         }
 
@@ -1391,12 +1393,13 @@ class M_Data extends CI_Model
     }
 
     // Get Riwayat Progress dengan Limit & Offset
-    public function get_riwayat_progress_paginated($keyword = null, $limit = null, $offset = null)
+   public function get_riwayat_progress_paginated($keyword = null, $limit = null, $offset = null)
     {
+        // KOREKSI: Tambahkan p.judul_saat_upload
         $this->db->select('
-            p.id, p.npm, p.bab, p.file, p.komentar_dosen1, p.komentar_dosen2, p.nilai_dosen1, p.nilai_dosen2, p.progres_dosen1, p.progres_dosen2, p.tgl_upload, p.tgl_verifikasi,
+            p.id, p.npm, p.bab, p.file, p.komentar_dosen1, p.komentar_dosen2, p.nilai_dosen1, p.nilai_dosen2, p.progres_dosen1, p.progres_dosen2, p.tgl_upload, p.tgl_verifikasi, p.judul_saat_upload,
             a.nama as nama_mhs, m.prodi,
-            s.id as id_skripsi, s.judul,
+            s.id as id_skripsi, s.judul as judul_skripsi_aktif,
             d1.nama as nama_p1,
             d2.nama as nama_p2
         ');
@@ -1412,7 +1415,7 @@ class M_Data extends CI_Model
             $this->db->group_start();
             $this->db->like('a.nama', $keyword);
             $this->db->or_like('p.npm', $keyword);
-            $this->db->or_like('s.judul', $keyword);
+            $this->db->or_like('p.judul_saat_upload', $keyword);
             $this->db->group_end();
         }
 

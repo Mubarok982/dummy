@@ -684,18 +684,47 @@ public function upload_progres_bab()
         redirect('mahasiswa/pengajuan_judul');
     }
 
-    public function riwayat_progres()
+  public function riwayat_progres()
     {
         $id_mahasiswa = $this->session->userdata('id');
         $data['title'] = 'Riwayat Progres';
         
-        $data['skripsi'] = $this->M_Mahasiswa->get_skripsi_by_mhs($id_mahasiswa);
+        // 1. CARI SKRIPSI AKTIF (TERBARU)
+        // Lakukan query langsung dengan DESC agar data yang ditarik PASTI judul terbaru
+        $this->db->select('*');
+        $this->db->from('skripsi');
+        $this->db->where('id_mahasiswa', $id_mahasiswa);
+        $this->db->order_by('id', 'DESC');
+        $data['skripsi'] = $this->db->get()->row_array();
         
         if (!$data['skripsi']) {
             redirect('mahasiswa/pengajuan_judul');
         }
 
-        $data['progres'] = $this->M_Mahasiswa->get_progres_by_skripsi($data['skripsi']['id']);
+        // 2. AMBIL NPM MAHASISWA
+        $npm = $this->session->userdata('npm');
+        if (empty($npm)) {
+            $mhs = $this->db->get_where('data_mahasiswa', ['id' => $id_mahasiswa])->row_array();
+            $npm = $mhs ? $mhs['npm'] : '';
+        }
+
+        // 3. AMBIL SEMUA RIWAYAT BERDASARKAN NPM
+        // Ini memastikan semua bab (1 sampai selesai) tampil, tidak terpotong oleh pergantian ID Skripsi
+        $this->db->select('p.*, s.judul as judul_skripsi_aktif, s.tema as tema_skripsi_aktif');
+        $this->db->from('progres_skripsi p');
+        $this->db->join('skripsi s', 'p.id_skripsi = s.id', 'left');
+        $this->db->where('p.npm', $npm);
+        $this->db->order_by('p.tgl_upload', 'DESC');
+        $progres_raw = $this->db->get()->result_array();
+
+        // 4. KUNCI JUDUL RIWAYAT
+        // Format array agar selalu menampilkan judul asli saat dokumen tersebut diupload
+        foreach ($progres_raw as &$p) {
+            $p['judul'] = !empty($p['judul_saat_upload']) ? $p['judul_saat_upload'] : $p['judul_skripsi_aktif'];
+            $p['tema']  = !empty($p['tema_saat_upload']) ? $p['tema_saat_upload'] : $p['tema_skripsi_aktif'];
+        }
+        
+        $data['progres'] = $progres_raw;
 
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);

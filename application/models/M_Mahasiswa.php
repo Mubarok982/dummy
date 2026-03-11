@@ -86,12 +86,11 @@ class M_Mahasiswa extends CI_Model {
         }
 
         $npm_mahasiswa = $data_mhs['npm'];
-        $judul_skripsi = $data_mhs['judul'];
+        $judul_skripsi_terbaru = $data_mhs['judul'];
 
-        // Langkah 2: Ambil progres berdasarkan NPM (Perbaikan: dan ID Skripsi)
+        // Langkah 2: Ambil progres berdasarkan NPM dan ID Skripsi
         $this->db->where('npm', $npm_mahasiswa);
         
-        // PENTING: Hanya ambil file dari id_skripsi spesifik ini agar tidak bercampur
         if ($this->db->field_exists('id_skripsi', 'progres_skripsi')) {
             $this->db->where('id_skripsi', $id_skripsi);
         }
@@ -99,9 +98,10 @@ class M_Mahasiswa extends CI_Model {
         $this->db->order_by('bab', 'ASC');
         $progres = $this->db->get('progres_skripsi')->result_array();
 
-        // Tambahkan judul ke setiap row progres
+        // KOREKSI UTAMA: Gunakan judul_saat_upload (Snapshot Histori)
         foreach ($progres as &$p) {
-            $p['judul'] = $judul_skripsi;
+            // Jika judul_saat_upload ada isinya, pakai itu. Jika kosong (data lama sebelum fitur ini ada), pakai judul terbaru.
+            $p['judul'] = !empty($p['judul_saat_upload']) ? $p['judul_saat_upload'] : $judul_skripsi_terbaru;
         }
 
         return $progres;
