@@ -60,14 +60,33 @@ class Operator extends CI_Controller {
         $this->load->view('template/footer');
     }
     
-    public function tambah_akun()
+  public function tambah_akun()
     {
         $data['title'] = 'Tambah Akun Baru';
         
-        $this->form_validation->set_rules('username', 'Username', 'required|is_unique[mstr_akun.username]|trim');
+        // 1. Validasi Username (Anti Duplikat)
+        $this->form_validation->set_rules('username', 'Username', 'required|is_unique[mstr_akun.username]|trim', [
+            'is_unique' => 'Username telah digunakan akun lain!'
+        ]);
         $this->form_validation->set_rules('password', 'Password', 'required|min_length[3]');
         $this->form_validation->set_rules('nama', 'Nama', 'required');
         $this->form_validation->set_rules('role', 'Role', 'required');
+
+        // =====================================================================
+        // 2. VALIDASI DINAMIS ANTI DUPLIKAT (NIDK & NPM) SAAT TAMBAH
+        // =====================================================================
+        $role = $this->input->post('role');
+        
+        if ($role == 'dosen') {
+            $this->form_validation->set_rules('nidk', 'NIDN/NIDK', 'required|is_unique[data_dosen.nidk]|trim', [
+                'is_unique' => 'NIDN/NIDK telah digunakan  dosen lain!'
+            ]);
+        } elseif ($role == 'mahasiswa') {
+            $this->form_validation->set_rules('npm', 'NPM', 'required|is_unique[data_mahasiswa.npm]|trim', [
+                'is_unique' => 'NPM telah digunakan  mahasiswa lain!'
+            ]);
+        }
+        // =====================================================================
 
         if ($this->form_validation->run() == FALSE) {
             $this->load->view('template/header', $data);
@@ -75,8 +94,6 @@ class Operator extends CI_Controller {
             $this->load->view('operator/v_tambah_edit_akun', $data);
             $this->load->view('template/footer');
         } else {
-            $role = $this->input->post('role');
-            
             $akun_data = [
                 'username' => $this->input->post('username'),
                 'password' => password_hash($this->input->post('password'), PASSWORD_DEFAULT), 
@@ -134,11 +151,45 @@ class Operator extends CI_Controller {
 
         $data['source'] = $this->input->get('source'); 
         $data['title'] = 'Edit Akun: ' . $data['user']['nama'];
+        $role = $data['user']['role']; 
         
         $this->form_validation->set_rules('nama', 'Nama', 'required');
         if ($this->input->post('password')) {
             $this->form_validation->set_rules('password', 'Password', 'min_length[3]');
         }
+
+        // =====================================================================
+        // VALIDASI DINAMIS ANTI DUPLIKAT (NIDK & NPM) SAAT EDIT
+        // =====================================================================
+        if ($role == 'dosen') {
+            $current_nidk = $this->db->get_where('data_dosen', ['id' => $id])->row('nidk');
+            $post_nidk = $this->input->post('nidk');
+            
+            // Aturan is_unique HANYA berjalan jika NIDK diubah ke nomor lain (bukan nomor lamanya)
+            $rule_nidk = 'required|trim';
+            if ($post_nidk != $current_nidk) {
+                $rule_nidk .= '|is_unique[data_dosen.nidk]';
+            }
+            
+            $this->form_validation->set_rules('nidk', 'NIDN/NIDK', $rule_nidk, [
+                'is_unique' => 'NIDN/NIDK telah digunakan akun dosen lain!'
+            ]);
+
+        } elseif ($role == 'mahasiswa') {
+            $current_npm = $this->db->get_where('data_mahasiswa', ['id' => $id])->row('npm');
+            $post_npm = $this->input->post('npm');
+            
+            // Aturan is_unique HANYA berjalan jika NPM diubah ke nomor lain (bukan nomor lamanya)
+            $rule_npm = 'required|trim';
+            if ($post_npm != $current_npm) {
+                $rule_npm .= '|is_unique[data_mahasiswa.npm]';
+            }
+
+            $this->form_validation->set_rules('npm', 'NPM', $rule_npm, [
+                'is_unique' => 'NPM telah digunakan akun mahasiswa lain!'
+            ]);
+        }
+        // =====================================================================
 
         if ($this->form_validation->run() == FALSE) {
             $this->load->view('template/header', $data);
@@ -146,8 +197,6 @@ class Operator extends CI_Controller {
             $this->load->view('operator/v_tambah_edit_akun', $data);
             $this->load->view('template/footer');
         } else {
-            $role = $data['user']['role']; 
-            
             $akun_data = ['nama' => $this->input->post('nama')];
             if ($this->input->post('password')) {
                 $akun_data['password'] = password_hash($this->input->post('password'), PASSWORD_DEFAULT);

@@ -361,8 +361,22 @@ public function monitoring_prodi()
         $id_user = $this->session->userdata('id');
         $data['title'] = 'Profil Dosen';
         
-        $this->load->model('M_Data');
-        $data['user'] = $this->M_Data->get_user_by_id($id_user);
+        // Lakukan Query JOIN manual agar semua kolom spesifik dosen (telepon & ttd) pasti terbawa
+        $this->db->select('
+            a.id, 
+            a.nama, 
+            a.foto, 
+            a.role, 
+            d.nidk, 
+            d.prodi as prodi_dsn, 
+            d.telepon, 
+            d.ttd, 
+            d.is_kaprodi
+        ');
+        $this->db->from('mstr_akun a');
+        $this->db->join('data_dosen d', 'a.id = d.id', 'left');
+        $this->db->where('a.id', $id_user);
+        $data['user'] = $this->db->get()->row_array();
 
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
@@ -370,7 +384,7 @@ public function monitoring_prodi()
         $this->load->view('template/footer');
     }
 
-   public function update_profil()
+  public function update_profil()
     {
         $id_user = $this->session->userdata('id');
         $this->load->model('M_Data');
@@ -384,12 +398,31 @@ public function monitoring_prodi()
             redirect('dosen/profil');
         }
 
+        $telepon_input = $this->input->post('telepon', true);
+
+        // =====================================================================
+        // 1. ERROR HANDLING ANTI-DUPLIKASI (NO WA DOSEN)
+        // =====================================================================
+        if (!empty($telepon_input)) {
+            // Cek apakah No WA sudah dipakai oleh Dosen LAIN
+            $this->db->where('telepon', $telepon_input);
+            $this->db->where('id !=', $id_user);
+            $cek_wa = $this->db->get('data_dosen')->num_rows();
+
+            if ($cek_wa > 0) {
+                $this->session->set_flashdata('pesan_error', '<b>Gagal Update:</b> Nomor WhatsApp ('.$telepon_input.') sudah terdaftar pada akun dosen lain! Silakan gunakan nomor yang berbeda.');
+                redirect('dosen/profil');
+                return; // Hentikan eksekusi kode di bawahnya
+            }
+        }
+        // =====================================================================
+
         $akun_data = [
             'nama' => $this->input->post('nama', true)
         ];
 
         $detail_data = [
-            'telepon' => $this->input->post('telepon', true)
+            'telepon' => $telepon_input
         ];
 
         if (!empty($_FILES['foto']['name'])) {

@@ -111,7 +111,7 @@
                                 <div class="form-group row">
                                     <label class="col-sm-3 col-form-label">Nomor WhatsApp (HP)</label>
                                     <div class="col-sm-9">
-                                        <input type="number" class="form-control" name="telepon" value="<?php echo isset($user['telepon']) ? $user['telepon'] : ''; ?>" placeholder="Contoh: 08123456789">
+                                        <input type="text" class="form-control" name="telepon" value="<?php echo isset($user['telepon']) ? $user['telepon'] : ''; ?>" placeholder="Masukkan Nomor WhatsApp">
                                         <small class="text-muted">Nomor ini akan digunakan untuk notifikasi sistem.</small>
                                     </div>
                                 </div>

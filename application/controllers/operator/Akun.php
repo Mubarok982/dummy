@@ -67,10 +67,28 @@ class Akun extends CI_Controller {
     {
         $data['title'] = 'Tambah Akun Baru';
         
-        $this->form_validation->set_rules('username', 'Username', 'required|is_unique[mstr_akun.username]|trim');
+        // Aturan validasi username dengan pesan bahasa Indonesia
+        $this->form_validation->set_rules('username', 'Username', 'required|is_unique[mstr_akun.username]|trim', [
+            'is_unique' => 'Username telah digunakan user lain!'
+        ]);
         $this->form_validation->set_rules('password', 'Password', 'required|min_length[3]');
         $this->form_validation->set_rules('nama', 'Nama', 'required');
         $this->form_validation->set_rules('role', 'Role', 'required');
+
+        // =====================================================================
+        // VALIDASI DINAMIS ANTI DUPLIKAT (NIDK & NPM) SAAT TAMBAH
+        // =====================================================================
+        $role = $this->input->post('role');
+        if ($role == 'dosen') {
+            $this->form_validation->set_rules('nidk', 'NIDN/NIDK', 'required|is_unique[data_dosen.nidk]|trim', [
+                'is_unique' => 'NIDN/NIDK telah digunakan user lain!'
+            ]);
+        } elseif ($role == 'mahasiswa') {
+            $this->form_validation->set_rules('npm', 'NPM', 'required|is_unique[data_mahasiswa.npm]|trim', [
+                'is_unique' => 'NPM telah digunakan user lain!'
+            ]);
+        }
+        // =====================================================================
 
         if ($this->form_validation->run() == FALSE) {
             $this->load->view('template/header', $data);
@@ -78,15 +96,14 @@ class Akun extends CI_Controller {
             $this->load->view('operator/v_tambah_edit_akun', $data);
             $this->load->view('template/footer');
         } else {
-            $this->_proses_tambah();
+            $this->_proses_tambah($role);
         }
     }
 
-    private function _proses_tambah() {
-        $role = $this->input->post('role');
+    private function _proses_tambah($role) 
+    {
         $akun_data = [
             'username' => $this->input->post('username'),
-            // FIX: Hash password saat tambah
             'password' => password_hash($this->input->post('password'), PASSWORD_DEFAULT), 
             'nama'     => $this->input->post('nama'),
             'role'     => $role,
@@ -104,7 +121,6 @@ class Akun extends CI_Controller {
                 'npm' => $this->input->post('npm'),
                 'prodi' => $this->input->post('prodi_mhs'),
                 'angkatan' => $this->input->post('angkatan'),
-                // Default value untuk field wajib lainnya
                 'status_beasiswa' => 'Tidak Aktif',
                 'status_mahasiswa' => 'Murni',
                 'ttd' => 'dummy_ttd.png',
@@ -133,58 +149,82 @@ class Akun extends CI_Controller {
         if (!$data['user']) redirect('operator/akun');
 
         $data['title'] = 'Edit Akun: ' . $data['user']['nama'];
+        $role = $data['user']['role'];
         
         $this->form_validation->set_rules('nama', 'Nama', 'required');
-        // Validasi role dihapus karena role diambil dari DB, bukan input form
         
         if ($this->input->post('password')) {
             $this->form_validation->set_rules('password', 'Password', 'min_length[3]');
         }
 
+        // =====================================================================
+        // VALIDASI DINAMIS ANTI DUPLIKAT (NIDK & NPM) SAAT EDIT
+        // =====================================================================
+        if ($role == 'dosen') {
+            $current_nidk = $this->db->get_where('data_dosen', ['id' => $id])->row('nidk');
+            $post_nidk = $this->input->post('nidk');
+            
+            // Aturan: Hanya jalankan is_unique jika admin MENGUBAH NIDK ke nomor lain
+            $rule_nidk = 'required|trim';
+            if ($post_nidk != $current_nidk) {
+                $rule_nidk .= '|is_unique[data_dosen.nidk]';
+            }
+            
+            $this->form_validation->set_rules('nidk', 'NIDN/NIDK', $rule_nidk, [
+                'is_unique' => 'NIDN/NIDK telah digunakan user lain!'
+            ]);
+
+        } elseif ($role == 'mahasiswa') {
+            $current_npm = $this->db->get_where('data_mahasiswa', ['id' => $id])->row('npm');
+            $post_npm = $this->input->post('npm');
+            
+            // Aturan: Hanya jalankan is_unique jika admin MENGUBAH NPM ke nomor lain
+            $rule_npm = 'required|trim';
+            if ($post_npm != $current_npm) {
+                $rule_npm .= '|is_unique[data_mahasiswa.npm]';
+            }
+
+            $this->form_validation->set_rules('npm', 'NPM', $rule_npm, [
+                'is_unique' => 'NPM telah digunakan user lain!'
+            ]);
+        }
+        // =====================================================================
+
         if ($this->form_validation->run() == FALSE) {
+            // Jika gagal (ada yg duplikat), kembalikan langsung ke form edit tanpa reload halaman index
             $this->load->view('template/header', $data);
             $this->load->view('template/sidebar', $data);
             $this->load->view('operator/v_tambah_edit_akun', $data);
             $this->load->view('template/footer');
         } else {
-            $this->_proses_edit($id);
+            $this->_proses_edit($id, $role);
         }
     }
 
-    private function _proses_edit($id) {
-        // FIX: Ambil role ASLI dari database agar validasi if-else berjalan benar
-        // Input form 'role' seringkali disabled sehingga tidak terkirim via POST
-        $existing_user = $this->M_akun_opt->get_user_by_id($id);
-        $role = $existing_user['role']; 
-
-        // Data utama (mstr_akun)
-        // Kita tidak update 'role' karena role tidak boleh berubah
+    private function _proses_edit($id, $role) 
+    {
         $akun_data = ['nama' => $this->input->post('nama')];
         
         if ($this->input->post('password')) {
-            // FIX: Hash password saat edit
             $akun_data['password'] = password_hash($this->input->post('password'), PASSWORD_DEFAULT);
         }
 
-        // Data detail (data_mahasiswa / data_dosen)
         $detail_data = [];
         
-        // Logika ini sekarang pasti jalan karena $role diambil dari DB
         if ($role == 'dosen') {
             $detail_data = [
                 'nidk' => $this->input->post('nidk'),
-                'prodi' => $this->input->post('prodi_dosen'), // Sesuai name di view
+                'prodi' => $this->input->post('prodi_dosen'), 
                 'is_kaprodi' => $this->input->post('is_kaprodi') ? 1 : 0
             ];
         } elseif ($role == 'mahasiswa') {
             $detail_data = [
                 'npm' => $this->input->post('npm'),
-                'prodi' => $this->input->post('prodi_mhs'), // Sesuai name di view
+                'prodi' => $this->input->post('prodi_mhs'), 
                 'angkatan' => $this->input->post('angkatan'),
             ];
         }
 
-        // Panggil Model dengan Role yang BENAR dari database
         if ($this->M_akun_opt->update_user($id, $akun_data, $detail_data, $role)) {
             $this->session->set_flashdata('pesan_sukses', 'Akun berhasil diperbarui!');
         } else {
@@ -197,7 +237,7 @@ class Akun extends CI_Controller {
     {
         $res = $this->M_akun_opt->delete_user($id);
         if ($res === 'blocked') {
-            $this->session->set_flashdata('pesan_error', 'Penghapusan diblokir: mahasiswa ini memiliki riwayat skripsi/progres/ujian.');
+            $this->session->set_flashdata('pesan_error', 'Penghapusan diblokir: pengguna ini memiliki riwayat skripsi/progres/ujian.');
         } elseif ($res) {
             $this->session->set_flashdata('pesan_sukses', 'Akun berhasil dihapus!');
         } else {

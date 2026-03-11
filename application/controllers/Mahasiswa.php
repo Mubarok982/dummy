@@ -511,7 +511,7 @@ public function upload_progres_bab()
         $this->load->view('template/footer');
     }
 
-    public function update_biodata()
+   public function update_biodata()
     {
         $this->load->library('upload');
         $id_mahasiswa = $this->session->userdata('id');
@@ -525,6 +525,39 @@ public function upload_progres_bab()
             $this->biodata();
         } else {
             
+            $telepon_input = $this->input->post('telepon', true);
+            $email_input   = $this->input->post('email', true);
+
+            // =====================================================================
+            // 1. ERROR HANDLING ANTI-DUPLIKASI (NO WA & EMAIL)
+            // =====================================================================
+            
+            // Cek Duplikasi No WhatsApp (Kecuali milik user ini sendiri)
+            $this->db->where('telepon', $telepon_input);
+            $this->db->where('id !=', $id_mahasiswa);
+            $cek_wa = $this->db->get('data_mahasiswa')->num_rows();
+
+            if ($cek_wa > 0) {
+                $this->session->set_flashdata('pesan_error', '<b>Gagal Update:</b> Nomor WhatsApp ('.$telepon_input.') sudah terdaftar pada akun mahasiswa lain! Silakan gunakan nomor yang berbeda.');
+                redirect('mahasiswa/biodata');
+                return; // Hentikan eksekusi kode di bawahnya
+            }
+
+            // Cek Duplikasi Email (Kecuali milik user ini sendiri)
+            if (!empty($email_input)) {
+                $this->db->where('email', $email_input);
+                $this->db->where('id !=', $id_mahasiswa);
+                $cek_email = $this->db->get('data_mahasiswa')->num_rows();
+
+                if ($cek_email > 0) {
+                    $this->session->set_flashdata('pesan_error', '<b>Gagal Update:</b> Email ('.$email_input.') sudah terdaftar pada akun mahasiswa lain! Silakan gunakan email yang berbeda.');
+                    redirect('mahasiswa/biodata');
+                    return; // Hentikan eksekusi kode di bawahnya
+                }
+            }
+            // =====================================================================
+
+            // Jika lolos pengecekan duplikat, lanjutkan proses update
             $akun_data = [
                 'nama' => $this->input->post('nama', true),
             ];
@@ -532,8 +565,8 @@ public function upload_progres_bab()
             $detail_data = [
                 'jenis_kelamin'    => $this->input->post('jenis_kelamin', true),
                 'tempat_tgl_lahir' => $this->input->post('tempat_tgl_lahir', true),
-                'telepon'          => $this->input->post('telepon', true),
-                'email'            => $this->input->post('email', true),
+                'telepon'          => $telepon_input,
+                'email'            => $email_input,
                 'alamat'           => $this->input->post('alamat', true),
             ];
 
