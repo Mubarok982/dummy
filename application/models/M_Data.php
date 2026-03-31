@@ -492,41 +492,55 @@ class M_Data extends CI_Model
     public function get_mahasiswa_siap_sempro()
     {
         // Pertama: temukan mahasiswa yang memenuhi syarat (BAB 3 ACC penuh)
-        $sql = "SELECT DISTINCT m.id AS id_mahasiswa, s.id AS id_skripsi, m.prodi
+        $sql = "SELECT DISTINCT 
+                    m.id AS id_mahasiswa, 
+                    s.id AS id_skripsi, 
+                    s.judul,
+                    m.prodi
                 FROM progres_skripsi p
                 JOIN data_mahasiswa m ON p.npm = m.npm
                 JOIN skripsi s ON s.id_mahasiswa = m.id
-                WHERE p.bab = 3 AND p.progres_dosen1 = 100 AND p.progres_dosen2 = 100";
+                WHERE p.bab = 3 
+                AND p.progres_dosen1 = 100 
+                AND p.progres_dosen2 = 100";
 
         $rows = $this->db->query($sql)->result_array();
 
-        // Pastikan ada entri ujian_skripsi untuk sempro dengan jenis yang sesuai prodi
+        // Pastikan ada entri ujian_skripsi untuk sempro
         foreach ($rows as $r) {
+
             $id_skripsi = $r['id_skripsi'];
             $prodi = $r['prodi'];
+            $judul = $r['judul'];
+
             $id_jenis_sempro = $this->get_sempro_jenis_by_prodi($prodi);
 
             $this->db->from('ujian_skripsi');
             $this->db->where('id_skripsi', $id_skripsi);
-            $this->db->where_in('id_jenis_ujian_skripsi', [3, 5, 7]); // Check all possible sempro jenis
+            $this->db->where_in('id_jenis_ujian_skripsi', [3,5,7]);
+
             $exists = $this->db->get()->num_rows();
 
             if (!$exists) {
+
                 $insert = [
                     'id_skripsi' => $id_skripsi,
+                    'judul_sidang' => $judul, // SIMPAN SNAPSHOT JUDUL
                     'tanggal_daftar' => date('Y-m-d'),
                     'id_jenis_ujian_skripsi' => $id_jenis_sempro,
                     'status' => 'Berlangsung'
                 ];
+
                 $this->db->insert('ujian_skripsi', $insert);
             }
         }
 
-        // Sekarang ambil data dari tabel ujian_skripsi untuk ditampilkan
+        // Ambil data dari tabel ujian_skripsi
         $this->db->select('
             a.nama, a.foto,
             m.npm, m.prodi, m.angkatan,
-            s.tema, s.judul,
+            s.tema,
+            u.judul_sidang as judul,
             d1.nama as nama_p1,
             d2.nama as nama_p2,
             u.tanggal_daftar as tgl_daftar_sempro,
@@ -540,8 +554,9 @@ class M_Data extends CI_Model
         $this->db->join('mstr_akun d1', 's.pembimbing1 = d1.id', 'left');
         $this->db->join('mstr_akun d2', 's.pembimbing2 = d2.id', 'left');
 
-        $this->db->where_in('u.id_jenis_ujian_skripsi', [1, 5]);
-        $this->db->where_in('u.status', ['Berlangsung', 'Diterima']);
+        $this->db->where_in('u.id_jenis_ujian_skripsi', [1,5]);
+        $this->db->where_in('u.status', ['Berlangsung','Diterima']);
+
         $this->db->order_by('u.tanggal_daftar', 'DESC');
 
         return $this->db->get()->result_array();
@@ -637,54 +652,79 @@ class M_Data extends CI_Model
     public function get_mahasiswa_siap_pendadaran()
     {
         // Cari mahasiswa yang sudah ACC di bab terakhirnya tergantung prodi (max_bab)
-        $sql_last = "SELECT m.id AS id_mahasiswa, s.id AS id_skripsi, m.prodi, p.bab, p.tgl_upload
-                     FROM (
+        $sql_last = "SELECT 
+                        m.id AS id_mahasiswa, 
+                        s.id AS id_skripsi, 
+                        s.judul,
+                        m.prodi, 
+                        p.bab, 
+                        p.tgl_upload
+                    FROM (
                         SELECT npm, MAX(CONCAT(LPAD(bab,3,'0'), '::', tgl_upload)) as last_key
                         FROM progres_skripsi
                         GROUP BY npm
-                     ) as last
-                     JOIN progres_skripsi p ON CONCAT(LPAD(p.bab,3,'0'), '::', p.tgl_upload) = last.last_key
-                     JOIN data_mahasiswa m ON p.npm = m.npm
-                     JOIN skripsi s ON s.id_mahasiswa = m.id";
+                    ) as last
+                    JOIN progres_skripsi p ON CONCAT(LPAD(p.bab,3,'0'), '::', p.tgl_upload) = last.last_key
+                    JOIN data_mahasiswa m ON p.npm = m.npm
+                    JOIN skripsi s ON s.id_mahasiswa = m.id";
 
         $rows = $this->db->query($sql_last)->result_array();
 
         foreach ($rows as $r) {
+
             $prodi = $r['prodi'] ?? '';
             $max_bab = 6;
+
             if (stripos($prodi, 'D3') !== false || stripos($prodi, 'Diploma 3') !== false) {
                 $max_bab = 5;
             }
 
-            // Ambil data progres terakhir untuk npm tersebut
-            $npm_row = $this->db->select('npm')->from('data_mahasiswa')->where('id', $r['id_mahasiswa'])->get()->row_array();
+            // ambil npm
+            $npm_row = $this->db->select('npm')
+                ->from('data_mahasiswa')
+                ->where('id', $r['id_mahasiswa'])
+                ->get()
+                ->row_array();
+
             if (!$npm_row) continue;
+
             $npm = $npm_row['npm'];
 
             $this->db->order_by('bab', 'DESC');
             $this->db->order_by('tgl_upload', 'DESC');
+
             $last_progres = $this->db->get_where('progres_skripsi', ['npm' => $npm])->row_array();
 
             if (!$last_progres) continue;
 
-            if ((int)$last_progres['progres_dosen1'] === 100 && (int)$last_progres['progres_dosen2'] === 100 && (int)$last_progres['bab'] >= $max_bab) {
-                // pastikan ada ujian_skripsi untuk pendadaran dengan jenis yang sesuai prodi
+            if (
+                (int)$last_progres['progres_dosen1'] === 100 &&
+                (int)$last_progres['progres_dosen2'] === 100 &&
+                (int)$last_progres['bab'] >= $max_bab
+            ) {
+
                 $id_skripsi = $r['id_skripsi'];
                 $prodi = $r['prodi'];
+                $judul = $r['judul'];
+
                 $id_jenis_pendadaran = $this->get_pendadaran_jenis_by_prodi($prodi);
-                
+
                 $this->db->from('ujian_skripsi');
                 $this->db->where('id_skripsi', $id_skripsi);
-                $this->db->where_in('id_jenis_ujian_skripsi', [2, 4, 6, 8]); // Check all possible pendadaran jenis
+                $this->db->where_in('id_jenis_ujian_skripsi', [2,4,6,8]);
+
                 $exists = $this->db->get()->num_rows();
 
                 if (!$exists) {
+
                     $insert = [
                         'id_skripsi' => $id_skripsi,
+                        'judul_sidang' => $judul, // SIMPAN SNAPSHOT JUDUL
                         'tanggal_daftar' => date('Y-m-d'),
                         'id_jenis_ujian_skripsi' => $id_jenis_pendadaran,
                         'status' => 'Berlangsung'
                     ];
+
                     $this->db->insert('ujian_skripsi', $insert);
                 }
             }
@@ -694,7 +734,8 @@ class M_Data extends CI_Model
         $this->db->select('
             a.nama, a.foto,
             m.npm, m.prodi, m.angkatan,
-            s.tema, s.judul,
+            s.tema,
+            u.judul_sidang as judul,
             d1.nama as nama_p1,
             d2.nama as nama_p2,
             u.tanggal_daftar as tgl_daftar,
@@ -709,7 +750,8 @@ class M_Data extends CI_Model
         $this->db->join('mstr_akun d2', 's.pembimbing2 = d2.id', 'left');
 
         $this->db->where_in('u.id_jenis_ujian_skripsi', [2,4,6,8]);
-        $this->db->where_in('u.status', ['Berlangsung', 'Diterima']);
+        $this->db->where_in('u.status', ['Berlangsung','Diterima']);
+
         $this->db->order_by('u.tanggal_daftar', 'DESC');
 
         return $this->db->get()->result_array();
