@@ -73,7 +73,7 @@
                                     <th style="width: 5%">No</th>
                                     <th class="sortable" data-sort="nama" style="width: 20%">Mahasiswa</th>
                                     <th class="sortable" data-sort="prodi" style="width: 15%">Program Studi</th>
-                                    <th class="sortable" data-sort="judul" style="width: 25%">Judul Skripsi</th>
+                                    <th class="sortable" data-sort="judul_sidang" style="width: 25%">Judul Skripsi</th>
                                     <th class="sortable" data-sort="nama_p1" style="width: 15%">Pembimbing</th>
                                     <th class="sortable" data-sort="tgl_daftar" style="width: 10%">Tanggal Daftar</th>
                                     <th class="sortable" data-sort="status_ujian" style="width: 10%">Status</th>

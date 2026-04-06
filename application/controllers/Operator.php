@@ -833,9 +833,7 @@ class Operator extends CI_Controller {
             }
         }
 
-        // ==========================================================
         // 3. SORTING
-        // ==========================================================
         usort($filtered_data, function($a, $b) use ($sort_by, $sort_order) {
             if ($sort_by == 'tgl_upload' || $sort_by == 'created_at') {
                 $time_a = strtotime($a[$sort_by] ?? 0);

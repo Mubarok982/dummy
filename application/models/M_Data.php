@@ -489,13 +489,13 @@ class M_Data extends CI_Model
     }
 
     // Ambil data mahasiswa yang Bab 3-nya sudah ACC Penuh oleh kedua dosen
+   // --- FITUR BARU: Mahasiswa Siap Sempro (Bab 3 ACC) ---
     public function get_mahasiswa_siap_sempro()
     {
         // Pertama: temukan mahasiswa yang memenuhi syarat (BAB 3 ACC penuh)
         $sql = "SELECT DISTINCT 
                     m.id AS id_mahasiswa, 
                     s.id AS id_skripsi, 
-                    s.judul,
                     m.prodi
                 FROM progres_skripsi p
                 JOIN data_mahasiswa m ON p.npm = m.npm
@@ -511,21 +511,19 @@ class M_Data extends CI_Model
 
             $id_skripsi = $r['id_skripsi'];
             $prodi = $r['prodi'];
-            $judul = $r['judul'];
 
             $id_jenis_sempro = $this->get_sempro_jenis_by_prodi($prodi);
 
             $this->db->from('ujian_skripsi');
             $this->db->where('id_skripsi', $id_skripsi);
-            $this->db->where_in('id_jenis_ujian_skripsi', [3,5,7]);
+            $this->db->where_in('id_jenis_ujian_skripsi', [3,5,7]); // Pastikan ID ini sesuai db Anda
 
             $exists = $this->db->get()->num_rows();
 
             if (!$exists) {
-
+                // FIX: Hapus judul_sidang dari array insert
                 $insert = [
                     'id_skripsi' => $id_skripsi,
-                    'judul_sidang' => $judul, // SIMPAN SNAPSHOT JUDUL
                     'tanggal_daftar' => date('Y-m-d'),
                     'id_jenis_ujian_skripsi' => $id_jenis_sempro,
                     'status' => 'Berlangsung'
@@ -540,7 +538,7 @@ class M_Data extends CI_Model
             a.nama, a.foto,
             m.npm, m.prodi, m.angkatan,
             s.tema,
-            u.judul_sidang as judul,
+            s.judul,
             d1.nama as nama_p1,
             d2.nama as nama_p2,
             u.tanggal_daftar as tgl_daftar_sempro,
@@ -554,7 +552,9 @@ class M_Data extends CI_Model
         $this->db->join('mstr_akun d1', 's.pembimbing1 = d1.id', 'left');
         $this->db->join('mstr_akun d2', 's.pembimbing2 = d2.id', 'left');
 
-        $this->db->where_in('u.id_jenis_ujian_skripsi', [1,5]);
+        // CATATAN: Pastikan array IN() ini sesuai dengan ID jenis ujian SEMPRO di database Anda.
+        // Di atas Anda menggunakan [3,5,7], tapi di sini [1,5]. Pastikan ID-nya sinkron!
+        $this->db->where_in('u.id_jenis_ujian_skripsi', [1,5,3,7]); 
         $this->db->where_in('u.status', ['Berlangsung','Diterima']);
 
         $this->db->order_by('u.tanggal_daftar', 'DESC');
@@ -655,7 +655,6 @@ class M_Data extends CI_Model
         $sql_last = "SELECT 
                         m.id AS id_mahasiswa, 
                         s.id AS id_skripsi, 
-                        s.judul,
                         m.prodi, 
                         p.bab, 
                         p.tgl_upload
@@ -671,7 +670,6 @@ class M_Data extends CI_Model
         $rows = $this->db->query($sql_last)->result_array();
 
         foreach ($rows as $r) {
-
             $prodi = $r['prodi'] ?? '';
             $max_bab = 6;
 
@@ -705,7 +703,6 @@ class M_Data extends CI_Model
 
                 $id_skripsi = $r['id_skripsi'];
                 $prodi = $r['prodi'];
-                $judul = $r['judul'];
 
                 $id_jenis_pendadaran = $this->get_pendadaran_jenis_by_prodi($prodi);
 
@@ -716,10 +713,9 @@ class M_Data extends CI_Model
                 $exists = $this->db->get()->num_rows();
 
                 if (!$exists) {
-
+                    // FIX: Hapus judul_sidang dari array insert
                     $insert = [
                         'id_skripsi' => $id_skripsi,
-                        'judul_sidang' => $judul, // SIMPAN SNAPSHOT JUDUL
                         'tanggal_daftar' => date('Y-m-d'),
                         'id_jenis_ujian_skripsi' => $id_jenis_pendadaran,
                         'status' => 'Berlangsung'
@@ -735,7 +731,7 @@ class M_Data extends CI_Model
             a.nama, a.foto,
             m.npm, m.prodi, m.angkatan,
             s.tema,
-            u.judul_sidang as judul,
+            s.judul,
             d1.nama as nama_p1,
             d2.nama as nama_p2,
             u.tanggal_daftar as tgl_daftar,
