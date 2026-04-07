@@ -233,13 +233,47 @@ document.addEventListener("DOMContentLoaded", function() {
 
             function loadPesan(autoScroll) {
                 if(!idLawan) return;
-                $.post("<?php echo base_url('chat/load_pesan'); ?>", {id_lawan: idLawan}, function(data){
-                    $('#isiChat').html(data);
-                    if(autoScroll) {
-                        var d = document.getElementById("isiChat");
-                        d.scrollTop = d.scrollHeight;
+                $.ajax({
+                    url: "<?php echo base_url('chat/load_pesan'); ?>",
+                    type: "POST",
+                    data: {id_lawan: idLawan},
+                    dataType: "json",
+                    success: function(response) {
+                        // Handle JSON response
+                        if(response.status) {
+                            $('#isiChat').html(response.html);
+                            
+                            // Update unread dot for this contact
+                            $('#unread-dot-' + idLawan).hide();
+                            
+                            // Update header badge with new unread count
+                            updateUnreadBadge(response.unread_count);
+                        } else {
+                            $('#isiChat').html(response);
+                        }
+                        
+                        if(autoScroll) {
+                            var d = document.getElementById("isiChat");
+                            d.scrollTop = d.scrollHeight;
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error loading pesan:', error);
                     }
                 });
+            }
+
+            function updateUnreadBadge(totalUnread) {
+                // Update the navbar badge in header
+                var badge = $('.navbar-badge');
+                if(totalUnread > 0) {
+                    badge.text(totalUnread).show();
+                } else {
+                    badge.hide();
+                }
+                
+                // Also update session storage for consistency
+                sessionStorage.setItem('unread_chat_count', totalUnread);
             }
 
             // SISA SCRIPT JQUERY SAMA (Submit form, dll)...

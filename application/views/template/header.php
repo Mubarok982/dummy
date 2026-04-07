@@ -60,10 +60,26 @@
     <div class="sidebar">
       <div class="user-panel mt-3 pb-3 mb-3 d-flex">
         <div class="image">
-            <img src="https://ui-avatars.com/api/?name=<?php echo urlencode($this->session->userdata('nama')); ?>&background=random" class="img-circle elevation-2" alt="User Image">
+            <?php
+            // Fetch latest name from database to ensure it's always up-to-date
+            $user_id = $this->session->userdata('id');
+            $user_nama = $this->session->userdata('nama');
+            if ($user_id) {
+                $ci = get_instance();
+                $ci->db->select('nama');
+                $ci->db->where('id', $user_id);
+                $user_data = $ci->db->get('mstr_akun')->row();
+                if ($user_data && !empty($user_data->nama)) {
+                    $user_nama = $user_data->nama;
+                    // Update session with latest name
+                    $ci->session->set_userdata('nama', $user_nama);
+                }
+            }
+            ?>
+            <img src="https://ui-avatars.com/api/?name=<?php echo urlencode($user_nama); ?>&background=random" class="img-circle elevation-2" alt="User Image">
         </div>
         <div class="info">
-          <a href="#" class="d-block"><?php echo substr($this->session->userdata('nama'), 0, 20); ?></a>
+          <a href="#" class="d-block"><?php echo substr($user_nama, 0, 20); ?></a>
           <small class="text-muted"><?php echo ucfirst($this->session->userdata('role')); ?></small>
         </div>
       </div>

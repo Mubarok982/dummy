@@ -19,6 +19,9 @@ public function index()
 
         $data['title'] = 'Ruang Diskusi';
         
+        // Hitung total pesan yang belum dibaca untuk badge di header
+        $data['unread_chat'] = $this->M_Chat->count_unread_messages($id_user);
+        
         // LOGIKA ASLI ANDA (JANGAN DIHAPUS)
         if ($role == 'mahasiswa') {
             // Ambil hanya ID yang diizinkan (Kaprodi & Pembimbing jika sudah ACC)
@@ -90,8 +93,16 @@ public function index()
             $html .= '<div class="text-center mt-5 text-muted"><small><i class="fas fa-lock mr-1"></i> Pesan dilindungi dengan enkripsi end-to-end.</small><br><br>Belum ada percakapan. Mulai sapa sekarang!</div>';
         }
 
-        // 4. KEMBALIKAN KE AJAX
-        echo $html;
+        // 4. HITUNG ULANG PESAN YANG BELUM DIBACA
+        $this->load->model('M_Chat');
+        $unread_count = $this->M_Chat->count_unread_messages($id_saya);
+
+        // 5. KEMBALIKAN KE AJAX (HTML + unread count)
+        echo json_encode([
+            'status' => true,
+            'html' => $html,
+            'unread_count' => $unread_count
+        ]);
     }
 
     public function kirim_pesan()

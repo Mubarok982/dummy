@@ -281,7 +281,7 @@
                                 </div>
                                 <div class="form-group mb-3">
                                     <label class="text-muted font-weight-bold small text-uppercase"><i class="fas fa-magic text-info mr-1"></i> Template Komentar Cepat:</label>
-                                    <select class="form-control form-control-sm shadow-sm border-primary" onchange="document.getElementById('komentar_dosen1_<?php echo $revisi['id']; ?>').value += this.value + '\n\n'">
+                                    <select class="form-control form-control-sm shadow-sm border-primary" onchange="document.getElementById('komentar_dosen1_<?php echo $revisi['id']; ?>').value = this.value">
                                         <option value="">-- Pilih Template --</option>
                                         <option value="Revisi Bab Pendahuluan: Fokus pada gap penelitian.">Revisi Pendahuluan</option>
                                         <option value="Tinjauan Pustaka: Tambahkan referensi terbaru.">Refrensi Kurang</option>
@@ -300,11 +300,11 @@
                                     <div class="d-flex justify-content-start">
                                         <div class="custom-control custom-radio mr-4">
                                             <input class="custom-control-input custom-control-input-danger" type="radio" id="st0_<?php echo $revisi['id']; ?>_1" name="status_progres1" value="0" <?php echo ($revisi['progres_dosen1'] == 0) ? 'checked' : ''; ?>>
-                                            <label for="st0_<?php echo $revisi['id']; ?>_1" class="custom-control-label text-danger font-weight-bold">Revisi (0%)</label>
+                                            <label for="st0_<?php echo $revisi['id']; ?>_1" class="custom-control-label text-danger font-weight-bold">Revisi</label>
                                         </div>
                                         <div class="custom-control custom-radio">
                                             <input class="custom-control-input custom-control-input-success" type="radio" id="st100_<?php echo $revisi['id']; ?>_1" name="status_progres1" value="100" <?php echo ($revisi['progres_dosen1'] == 100) ? 'checked' : ''; ?>>
-                                            <label for="st100_<?php echo $revisi['id']; ?>_1" class="custom-control-label text-success font-weight-bold">ACC Penuh (100%)</label>
+                                            <label for="st100_<?php echo $revisi['id']; ?>_1" class="custom-control-label text-success font-weight-bold">ACC Penuh</label>
                                         </div>
                                     </div>
                                 </div>
@@ -320,7 +320,7 @@
                                 </div>
                                 <div class="form-group mb-3">
                                     <label class="text-muted font-weight-bold small text-uppercase"><i class="fas fa-magic text-info mr-1"></i> Template Komentar Cepat:</label>
-                                    <select class="form-control form-control-sm shadow-sm border-info" onchange="document.getElementById('komentar_dosen2_<?php echo $revisi['id']; ?>').value += this.value + '\n\n'">
+                                    <select class="form-control form-control-sm shadow-sm border-info" onchange="document.getElementById('komentar_dosen2_<?php echo $revisi['id']; ?>').value = this.value">
                                         <option value="">-- Pilih Template --</option>
                                         <option value="Revisi Bab Pendahuluan: Fokus pada gap penelitian.">Revisi Pendahuluan</option>
                                         <option value="Tinjauan Pustaka: Tambahkan referensi terbaru.">Refrensi Kurang</option>
@@ -339,11 +339,11 @@
                                     <div class="d-flex justify-content-start">
                                         <div class="custom-control custom-radio mr-4">
                                             <input class="custom-control-input custom-control-input-danger" type="radio" id="st0_<?php echo $revisi['id']; ?>_2" name="status_progres2" value="0" <?php echo ($revisi['progres_dosen2'] == 0) ? 'checked' : ''; ?>>
-                                            <label for="st0_<?php echo $revisi['id']; ?>_2" class="custom-control-label text-danger font-weight-bold">Revisi (0%)</label>
+                                            <label for="st0_<?php echo $revisi['id']; ?>_2" class="custom-control-label text-danger font-weight-bold">Revisi</label>
                                         </div>
                                         <div class="custom-control custom-radio">
                                             <input class="custom-control-input custom-control-input-success" type="radio" id="st100_<?php echo $revisi['id']; ?>_2" name="status_progres2" value="100" <?php echo ($revisi['progres_dosen2'] == 100) ? 'checked' : ''; ?>>
-                                            <label for="st100_<?php echo $revisi['id']; ?>_2" class="custom-control-label text-success font-weight-bold">ACC Penuh (100%)</label>
+                                            <label for="st100_<?php echo $revisi['id']; ?>_2" class="custom-control-label text-success font-weight-bold">ACC Penuh</label>
                                         </div>
                                     </div>
                                 </div>

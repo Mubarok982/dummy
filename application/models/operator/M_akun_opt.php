@@ -188,8 +188,9 @@ class M_akun_opt extends CI_Model {
 
     public function delete_user($id)
     {
-        // Langsung hapus tanpa blokir
-
+        // Disable foreign key checks temporarily to avoid constraint errors
+        $this->db->query('SET FOREIGN_KEY_CHECKS=0');
+        
         // STEP 1: Get mahasiswa npm jika ada
         $mahasiswa = $this->db->get_where('data_mahasiswa', ['id' => $id])->row_array();
         $npm = $mahasiswa ? $mahasiswa['npm'] : null;
@@ -222,6 +223,9 @@ class M_akun_opt extends CI_Model {
 
         // Finally delete master account
         $this->db->where('id', $id)->delete('mstr_akun');
+        
+        // Re-enable foreign key checks
+        $this->db->query('SET FOREIGN_KEY_CHECKS=1');
 
         return true; // Assume success
     }

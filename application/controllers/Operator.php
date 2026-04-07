@@ -231,6 +231,10 @@ class Operator extends CI_Controller {
 
             if ($this->M_akun_opt->update_user($id, $akun_data, $detail_data, $role)) {
                 $this->session->set_flashdata('pesan_sukses', 'Akun berhasil diperbarui!');
+                // Update session if user is editing their own account
+                if ($id == $this->session->userdata('id') && isset($akun_data['nama'])) {
+                    $this->session->set_userdata('nama', $akun_data['nama']);
+                }
             } else {
                 $this->session->set_flashdata('pesan_error', 'Gagal memperbarui akun.');
             }
