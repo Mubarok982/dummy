@@ -1010,4 +1010,31 @@ public function kinerja_dosen_kaprodi()
         $this->load->view('template/footer');
     }
 
+    // --- FITUR BARU: ON/OFF NOTIFIKASI WA ---
+    public function toggle_notif_wa($id_skripsi)
+    {
+        $id_dosen = $this->session->userdata('id');
+        
+        // Cek data skripsi
+        $skripsi = $this->db->get_where('skripsi', ['id' => $id_skripsi])->row_array();
+        
+        if ($skripsi) {
+            // Cek apakah dosen yang login ini adalah P1 atau P2
+            if ($skripsi['pembimbing1'] == $id_dosen) {
+                // Balikkan status (jika 1 jadi 0, jika 0 jadi 1)
+                $status_baru = $skripsi['notif_p1'] == 1 ? 0 : 1;
+                $this->db->where('id', $id_skripsi)->update('skripsi', ['notif_p1' => $status_baru]);
+                
+            } elseif ($skripsi['pembimbing2'] == $id_dosen) {
+                $status_baru = $skripsi['notif_p2'] == 1 ? 0 : 1;
+                $this->db->where('id', $id_skripsi)->update('skripsi', ['notif_p2' => $status_baru]);
+            }
+            
+            $pesan = $status_baru == 1 ? 'Notifikasi WA Dihidupkan.' : 'Notifikasi WA Dimatikan (Mute).';
+            $this->session->set_flashdata('pesan_sukses', $pesan);
+        }
+        
+        redirect('dosen/bimbingan_list');
+    }
+
 }

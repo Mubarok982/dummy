@@ -1486,12 +1486,16 @@ class M_Data extends CI_Model
     }
 
     // Fungsi untuk mengambil seluruh data skripsi dan join ke tabel terkait tanpa Limit/Paginasi database
-    public function get_all_acc_judul()
+   public function get_all_acc_judul()
     {
         $this->db->select('
             skripsi.id as id_skripsi, 
             skripsi.judul, 
+            skripsi.tema, 
+            skripsi.tgl_pengajuan_judul, 
             skripsi.status_acc_kaprodi, 
+            skripsi.alasan_p1, 
+            skripsi.alasan_p2, 
             data_mahasiswa.npm, 
             data_mahasiswa.prodi, 
             data_mahasiswa.angkatan, 
@@ -1501,17 +1505,12 @@ class M_Data extends CI_Model
         ');
         $this->db->from('skripsi');
         
-        // Join ke data mahasiswa untuk ambil NPM, Prodi, Angkatan
         $this->db->join('data_mahasiswa', 'skripsi.id_mahasiswa = data_mahasiswa.id', 'left');
-        
-        // Join ke master akun untuk ambil Nama Mahasiswa
         $this->db->join('mstr_akun', 'data_mahasiswa.id = mstr_akun.id', 'left');
         
-        // Join ke master akun untuk ambil Nama Dosen Pembimbing 1 dan 2
         $this->db->join('mstr_akun as dosen1', 'skripsi.pembimbing1 = dosen1.id', 'left');
         $this->db->join('mstr_akun as dosen2', 'skripsi.pembimbing2 = dosen2.id', 'left');
         
-        // Pastikan diurutkan dari ID terbesar (Data Terbaru) agar logika anti-duplikat di Controller sukses
         $this->db->order_by('skripsi.id', 'DESC');
         
         return $this->db->get()->result_array();

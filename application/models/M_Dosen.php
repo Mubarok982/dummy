@@ -357,65 +357,79 @@ public function get_stats_kaprodi($prodi)
     return $stats;
 }
 
-public function get_bimbingan_list($id_dosen, $keyword = null, $prodi = null, $angkatan = null, $sort_by = 'nama_mhs', $sort_order = 'asc') 
+public function get_bimbingan_list($id_dosen, $keyword = null, $prodi = null, $angkatan = null, $sort_by = 'nama_mhs', $sort_order = 'asc')
     {
-        // 1. SELECT DATA
-        // Perhatikan: Kita ambil 'ma.nama' (dari mstr_akun), bukan 'm.nama'
-        $this->db->select('
-            s.id as id_skripsi, 
-            s.judul, 
-            m.npm, 
-            ma.nama as nama_mhs, 
-            m.prodi,      
-            m.angkatan,   
-            p1.nama as nama_p1,
-            p2.nama as nama_p2
-        ');
-        
+        // SUBQUERY PENTING: Menghitung berapa file yang MASIH BUTUH KOREKSI oleh dosen yang sedang login
+        $subquery_butuh_koreksi = "
+            SELECT COUNT(id)
+            FROM progres_skripsi p 
+            WHERE p.npm = m.npm 
+            AND (
+                (s.pembimbing1 = ".$this->db->escape($id_dosen)." AND (p.nilai_dosen1 IS NULL OR p.nilai_dosen1 = '' OR p.nilai_dosen1 = 'Menunggu'))
+                OR 
+                (s.pembimbing2 = ".$this->db->escape($id_dosen)." AND (p.nilai_dosen2 IS NULL OR p.nilai_dosen2 = '' OR p.nilai_dosen2 = 'Menunggu'))
+            )
+        ";
+
+       $this->db->select("
+        s.id as id_skripsi, 
+        s.judul, 
+        m.npm, 
+        a.nama as nama_mhs, 
+        m.prodi, 
+        m.angkatan, 
+        d1.nama as nama_p1, 
+        d2.nama as nama_p2,
+        s.pembimbing1, 
+        s.pembimbing2, 
+        s.notif_p1, 
+        s.notif_p2,
+        ($subquery_butuh_koreksi) as jml_butuh_koreksi
+    ");
+
         $this->db->from('skripsi s');
-        
-        // 2. JOIN TABLE
-        // Join ke data detail mahasiswa (ambil prodi, npm, angkatan)
         $this->db->join('data_mahasiswa m', 's.id_mahasiswa = m.id');
-        
-        // JOIN WAJIB: Join ke akun mahasiswa untuk ambil NAMA (ma)
-        $this->db->join('mstr_akun ma', 'm.id = ma.id');
-        
-        // Join Pembimbing
-        $this->db->join('mstr_akun p1', 's.pembimbing1 = p1.id', 'left');
-        $this->db->join('mstr_akun p2', 's.pembimbing2 = p2.id', 'left');
-        
-        // 3. FILTER DOSEN (Apakah user ini P1 atau P2?)
+        $this->db->join('mstr_akun a', 'm.id = a.id');
+        $this->db->join('mstr_akun d1', 's.pembimbing1 = d1.id', 'left');
+        $this->db->join('mstr_akun d2', 's.pembimbing2 = d2.id', 'left');
+
+        // Filter dosen pembimbing
         $this->db->group_start();
         $this->db->where('s.pembimbing1', $id_dosen);
         $this->db->or_where('s.pembimbing2', $id_dosen);
         $this->db->group_end();
 
-        // 4. FILTER PENCARIAN & DROPDOWN
+        $this->db->where('s.status_acc_kaprodi', 'diterima');
+
+        // Filter data pencarian
         if ($keyword) {
             $this->db->group_start();
-            $this->db->like('ma.nama', $keyword); // Ganti m.nama jadi ma.nama
+            $this->db->like('a.nama', $keyword);
             $this->db->or_like('m.npm', $keyword);
             $this->db->or_like('s.judul', $keyword);
             $this->db->group_end();
         }
+
         if ($prodi && $prodi != 'all') {
             $this->db->where('m.prodi', $prodi);
         }
+
         if ($angkatan && $angkatan != 'all') {
             $this->db->where('m.angkatan', $angkatan);
         }
 
-        // 5. SORTING
-        if ($sort_by == 'nama_mhs') {
-            $this->db->order_by('ma.nama', $sort_order); // Sort berdasarkan nama di akun
-        } elseif ($sort_by == 'npm') {
-            $this->db->order_by('m.npm', $sort_order);
-        } elseif ($sort_by == 'angkatan') {
-            $this->db->order_by('m.angkatan', $sort_order);
-        } else {
-            // Default sort
-            $this->db->order_by('ma.nama', 'ASC');
+        // PENGURUTAN MUTLAK: Yang butuh koreksi ditaruh paling atas!
+        $this->db->order_by('jml_butuh_koreksi', 'DESC');
+
+        // Pengurutan kedua berdasarkan request dari form (nama_mhs, npm, dll)
+        $valid_sort_columns = ['npm', 'nama_mhs', 'prodi', 'angkatan', 'judul', 'nama_p1', 'nama_p2'];
+        if (in_array($sort_by, $valid_sort_columns)) {
+            $sort_order = strtolower($sort_order) === 'desc' ? 'DESC' : 'ASC';
+            if ($sort_by === 'nama_mhs') {
+                $this->db->order_by('a.nama', $sort_order);
+            } else {
+                $this->db->order_by($sort_by, $sort_order);
+            }
         }
 
         return $this->db->get()->result_array();

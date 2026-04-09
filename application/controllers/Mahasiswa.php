@@ -68,7 +68,7 @@ public function pengajuan_judul()
         $this->load->view('template/footer');
     }
 
-   public function submit_judul()
+  public function submit_judul()
     {
         $id_mahasiswa = $this->session->userdata('id');
         
@@ -76,22 +76,35 @@ public function pengajuan_judul()
         $this->form_validation->set_rules('judul', 'Judul Skripsi', 'required|trim');
         $this->form_validation->set_rules('pembimbing1', 'Pembimbing 1', 'required');
         $this->form_validation->set_rules('pembimbing2', 'Pembimbing 2', 'required');
+        
+        // FITUR BARU: Validasi alasan pemilihan dosen
+        $this->form_validation->set_rules('alasan_p1', 'Alasan Pilih Dospem 1', 'required|trim', [
+            'required' => 'Anda wajib memberikan alasan mengapa memilih Dosen Pembimbing 1 ini.'
+        ]);
+        $this->form_validation->set_rules('alasan_p2', 'Alasan Pilih Dospem 2', 'required|trim', [
+            'required' => 'Anda wajib memberikan alasan mengapa memilih Dosen Pembimbing 2 ini.'
+        ]);
 
         if ($this->form_validation->run() == FALSE) {
-            $this->pengajuan_judul();
+            $this->session->set_flashdata('pesan_error', validation_errors());
+            redirect('mahasiswa/pengajuan_judul');
         } else {
             // Data mutlak untuk judul baru
             $data = [
                 'id_mahasiswa' => $id_mahasiswa,
-                'tema' => $this->input->post('tema'),
-                'judul' => $this->input->post('judul'),
+                'tema' => $this->input->post('tema', true),
+                'judul' => $this->input->post('judul', true),
                 'pembimbing1' => $this->input->post('pembimbing1'),
                 'pembimbing2' => $this->input->post('pembimbing2'),
+                
+                // FITUR BARU: Masukkan alasan ke array data
+                'alasan_p1' => $this->input->post('alasan_p1', true),
+                'alasan_p2' => $this->input->post('alasan_p2', true),
+                
                 'tgl_pengajuan_judul' => date('Y-m-d H:i:s'),
                 'skema' => 'Reguler',
                 'status_acc_kaprodi' => 'menunggu'
             ];
-
 
             $this->M_Mahasiswa->insert_skripsi($data);
             

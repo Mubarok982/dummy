@@ -17,12 +17,19 @@
 
     <section class="content">
         <div class="container-fluid">
+            
+            <?php if ($this->session->flashdata('pesan_sukses')): ?>
+                <div class="alert alert-success alert-dismissible fade show shadow-sm">
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    <i class="fas fa-check mr-1"></i> <?= $this->session->flashdata('pesan_sukses'); ?>
+                </div>
+            <?php endif; ?>
+
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">Daftar Mahasiswa Bimbingan</h3>
                 </div>
                 <div class="card-body">
-                    <!-- Filter Form -->
                     <form method="GET" action="<?php echo base_url('dosen/bimbingan_list'); ?>" class="mb-3">
                         <div class="row">
                             <div class="col-md-4">
@@ -36,12 +43,10 @@
                                     <?php endforeach; ?>
                                 </select>
                             </div>
-                            <!-- Angkatan filter removed as requested -->
                             <div class="col-md-2">
                                 <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-search"></i> Filter</button>
                             </div>
                         </div>
-                        <!-- Top sort controls removed; use header-click sorting -->
                     </form>
 
                     <div class="table-responsive">
@@ -71,8 +76,26 @@
                                             <td><?php echo $mhs['judul']; ?></td>
                                             <td><?php echo $mhs['nama_p1']; ?></td>
                                             <td><?php echo $mhs['nama_p2']; ?></td>
-                                            <td>
-                                                <a href="<?php echo base_url('dosen/progres_detail/' . $mhs['id_skripsi']); ?>" class="btn btn-primary btn-sm">Detail Progres</a>
+                                            <td class="text-center align-middle">
+                                                <div class="d-flex" style="gap: 5px;">
+                                                    <?php 
+                                                        $butuh_koreksi = isset($mhs['jml_butuh_koreksi']) && $mhs['jml_butuh_koreksi'] > 0;
+                                                        $btn_color = $butuh_koreksi ? 'btn-success' : 'btn-primary';
+                                                    ?>
+                                                    <a href="<?php echo base_url('dosen/progres_detail/' . $mhs['id_skripsi']); ?>" class="btn <?php echo $btn_color; ?> btn-sm flex-grow-1">Detail Progres</a>
+                                                    
+                                                    <?php 
+                                                        $is_p1 = ($mhs['pembimbing1'] == $this->session->userdata('id'));
+                                                        $notif_aktif = $is_p1 ? $mhs['notif_p1'] : $mhs['notif_p2'];
+                                                        
+                                                        $btn_notif = $notif_aktif ? 'btn-info' : 'btn-outline-secondary text-muted';
+                                                        $icon_notif = $notif_aktif ? 'fa-bell' : 'fa-bell-slash';
+                                                        $title_notif = $notif_aktif ? 'Matikan Notif WA untuk Mahasiswa Ini' : 'Hidupkan Notif WA untuk Mahasiswa Ini';
+                                                    ?>
+                                                    <a href="<?php echo base_url('dosen/toggle_notif_wa/' . $mhs['id_skripsi']); ?>" class="btn <?php echo $btn_notif; ?> btn-sm shadow-sm" title="<?php echo $title_notif; ?>">
+                                                        <i class="fas <?php echo $icon_notif; ?>"></i>
+                                                    </a>
+                                                </div>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>

@@ -55,18 +55,6 @@
             <div class="row">
                 <div class="col-12">
                     <div class="card card-outline card-purple shadow-sm">
-                        <div class="card-header">
-                            <h3 class="card-title mt-2"><i class="fas fa-list-alt mr-1"></i> Daftar Pengajuan</h3>
-                            
-                            <div class="card-tools">
-                                <div class="input-group input-group-sm" style="width: 250px;">
-                                    <input type="text" id="searchMhs" class="form-control float-right" placeholder="Cari Nama / NPM / Judul...">
-                                    <div class="input-group-append">
-                                        <button type="submit" class="btn btn-default"><i class="fas fa-search"></i></button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                         
                         <div class="card-body">
                             <form method="GET" action="<?php echo base_url('operator/acc_judul'); ?>" class="mb-3">
@@ -105,15 +93,15 @@
                                 <thead>
                                 <tr class="text-center">
                                         <th style="width: 5%;">No</th>
-                                        <th style="width: 10%;" class="sortable" data-sort="npm">NPM</th>
-                                        <th class="text-left sortable" style="width: 20%;" data-sort="nama">Nama Mahasiswa</th>
-                                        <th class="text-left sortable" style="width: 25%;" data-sort="judul">Judul Skripsi</th>
-                                        <th class="text-left" style="width: 20%;">Pembimbing</th>
-                                        <th style="width: 10%;" class="sortable" data-sort="status_acc">Status</th>
-                                        <th style="width: 10%;">Aksi</th>
+                                        <th style="width: 8%;">NPM</th>
+                                        <th class="text-left" style="width: 15%;">Nama Mahasiswa</th>
+                                        <th class="text-left" style="width: 25%;">Judul Skripsi</th>
+                                        <th class="text-left" style="width: 25%;">Pembimbing</th>
+                                        <th style="width: 10%;">Status</th>
+                                        <th style="width: 12%;">Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                             <tbody>
                                     <?php if (empty($mahasiswa)): ?>
                                         <tr>
                                             <td colspan="7" class="text-center py-5 text-muted">
@@ -123,72 +111,142 @@
                                         </tr>
                                     <?php else: ?>
                                         <?php 
-                                        // Start index dari controller agar penomoran tidak reset ke 1
                                         $no = isset($start_index) ? $start_index + 1 : 1; 
                                         foreach ($mahasiswa as $m): 
                                         ?>
                                         <tr>
                                             <td class="align-middle text-center font-weight-bold text-muted"><?php echo $no++; ?></td>
-                                            <td class="align-middle text-center"><span class="badge badge-light border"><?php echo $m['npm']; ?></span></td>
+                                            <td class="align-middle text-center"><span class="badge badge-light border px-2 py-1"><?php echo $m['npm']; ?></span></td>
                                             <td class="align-middle">
-                                                <span class="font-weight-bold text-dark"><?php echo $m['nama']; ?></span><br>
-                                                <small class="text-muted">Angkatan: <?php echo isset($m['angkatan']) ? $m['angkatan'] : '-'; ?></small>
+                                                <span class="font-weight-bold text-dark text-sm"><?php echo $m['nama']; ?></span>
                                             </td>
                                             
-                                            <td class="align-middle text-wrap" style="min-width: 250px; max-width: 400px;">
+                                            <td class="align-middle text-wrap" style="min-width: 200px; max-width: 250px; line-height: 1.2;">
                                                 <?php if($m['judul']): ?>
-                                                    <span class="text-sm font-italic"><?php echo $m['judul']; ?></span>
+                                                    <span class="text-sm font-weight-bold text-dark"><?php echo $m['judul']; ?></span>
                                                 <?php else: ?>
                                                     <span class="badge badge-danger"><i class="fas fa-times-circle mr-1"></i> Belum Ada Judul</span>
                                                 <?php endif; ?>
                                             </td>
 
-                                            <td class="align-middle text-sm">
-                                                <div class="text-muted mb-1 d-flex justify-content-between">
-                                                    <span><i class="fas fa-user-tie text-primary mr-1"></i> P1: <?php echo $m['p1'] ?: '-'; ?></span>
+                                            <td class="align-middle text-sm" style="min-width: 200px;">
+                                                <div class="text-muted mb-1 pb-1 border-bottom text-truncate">
+                                                    <strong><i class="fas fa-user-tie text-primary mr-1"></i> P1:</strong> <?php echo $m['p1'] ?: '-'; ?>
                                                 </div>
-                                                <div class="text-muted d-flex justify-content-between">
-                                                    <span><i class="fas fa-user-tie text-secondary mr-1"></i> P2: <?php echo $m['p2'] ?: '-'; ?></span>
+                                                <div class="text-muted text-truncate">
+                                                    <strong><i class="fas fa-user-tie text-secondary mr-1"></i> P2:</strong> <?php echo $m['p2'] ?: '-'; ?>
                                                 </div>
                                             </td>
 
                                             <td class="align-middle text-center">
                                                 <?php if($m['id_skripsi']): ?>
-                                                    <div class="btn-group">
-                                                        
-                                                        <?php if($m['status_acc_kaprodi'] == 'menunggu'): ?>
-                                                            <a href="<?= base_url('operator/setuju_judul/'.$m['id_skripsi']) ?>" class="btn btn-sm btn-success shadow-sm mb-1" onclick="return confirm('Pastikan pembimbing sudah benar. Lanjutkan ACC?')" title="ACC">
-                                                                <i class="fas fa-check mr-1"></i> Setujui
+                                                    <?php if($m['status_acc_kaprodi'] == 'menunggu'): ?>
+                                                        <div class="d-flex flex-row justify-content-center" style="gap: 4px;">
+                                                            <a href="<?= base_url('operator/setuju_judul/'.$m['id_skripsi']) ?>" class="btn btn-sm btn-success px-2 py-1 shadow-sm" onclick="return confirm('Lanjutkan ACC?')" title="Setujui">
+                                                                <i class="fas fa-check"></i>
                                                             </a>
-                                                            <a href="<?= base_url('operator/tolak_judul/'.$m['id_skripsi']) ?>" class="btn btn-sm btn-danger shadow-sm" onclick="return confirm('Tolak Judul?')" title="Tolak">
-                                                                <i class="fas fa-times mr-1"></i> Tolak
+                                                            <a href="<?= base_url('operator/tolak_judul/'.$m['id_skripsi']) ?>" class="btn btn-sm btn-danger px-2 py-1 shadow-sm" onclick="return confirm('Tolak Judul?')" title="Tolak">
+                                                                <i class="fas fa-times"></i>
                                                             </a>
-                                                        <?php else: ?>
-                                                            <span class="badge badge-<?= ($m['status_acc_kaprodi'] == 'diterima') ? 'success' : 'danger' ?> p-2 mb-1">
-                                                                STATUS: <?= strtoupper($m['status_acc_kaprodi']) ?>
-                                                            </span>
-                                                        <?php endif; ?>
-                                                    </div>
+                                                        </div>
+                                                    <?php else: ?>
+                                                        <span class="badge badge-<?= ($m['status_acc_kaprodi'] == 'diterima') ? 'success' : 'danger' ?> px-2 py-1 shadow-sm" style="font-size: 0.75rem;">
+                                                            <?= strtoupper($m['status_acc_kaprodi']) ?>
+                                                        </span>
+                                                    <?php endif; ?>
                                                 <?php else: ?>
-                                                    <span class="text-muted font-italic text-sm">Menunggu Input</span>
+                                                    <span class="text-muted font-italic text-sm">Belum Input</span>
                                                 <?php endif; ?>
                                             </td>
 
                                             <td class="align-middle text-center">
                                                 <?php if($m['id_skripsi']): ?>
-                                                    <a href="#" data-toggle="modal" data-target="#modalEditPembimbing<?= $m['id_skripsi']; ?>"
-                                                       class="btn btn-warning btn-sm shadow-sm">
-                                                        <i class="fas fa-edit mr-1"></i> Edit
-                                                    </a>
+                                                    <div class="d-flex flex-row justify-content-center" style="gap: 4px;">
+                                                        <button type="button" class="btn btn-info btn-sm px-2 py-1 shadow-sm" data-toggle="modal" data-target="#modalDetail<?= $m['id_skripsi']; ?>" title="Lihat Detail & Alasan">
+                                                            <i class="fas fa-eye"></i>
+                                                        </button>
+                                                        <button type="button" class="btn btn-warning btn-sm px-2 py-1 shadow-sm" data-toggle="modal" data-target="#modalEditPembimbing<?= $m['id_skripsi']; ?>" title="Edit Pembimbing">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                    </div>
                                                 <?php else: ?>
                                                     <span class="text-muted font-italic text-sm">-</span>
                                                 <?php endif; ?>
                                             </td>
                                         </tr>
 
+                                        <div class="modal fade" id="modalDetail<?= $m['id_skripsi']; ?>" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog modal-lg modal-dialog-centered">
+                                                <div class="modal-content border-0 shadow-lg text-left">
+                                                    <div class="modal-header bg-info">
+                                                        <h5 class="modal-title text-white font-weight-bold"><i class="fas fa-info-circle mr-2"></i> Detail Pengajuan Judul</h5>
+                                                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                                                            <span aria-hidden="true">&times;</span>
+                                                        </button>
+                                                    </div>
+                                                    <div class="modal-body bg-light p-4">
+                                                        
+                                                        <div class="bg-white p-3 rounded border shadow-sm mb-3">
+                                                            <div class="row">
+                                                                <div class="col-sm-3 text-muted font-weight-bold small text-uppercase">Mahasiswa</div>
+                                                                <div class="col-sm-9 font-weight-bold text-dark"><?= $m['nama']; ?> (<?= $m['npm']; ?>)</div>
+                                                            </div>
+                                                            <hr class="my-2">
+                                                            <div class="row">
+                                                                <div class="col-sm-3 text-muted font-weight-bold small text-uppercase">Tgl Pengajuan</div>
+                                                                <div class="col-sm-9 text-dark"><?= date('d F Y - H:i', strtotime($m['tgl_pengajuan_judul'] ?? date('Y-m-d H:i'))); ?> WIB</div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="bg-white p-4 rounded border shadow-sm mb-3">
+                                                            <h6 class="text-info font-weight-bold mb-2 border-bottom pb-2"><i class="fas fa-book mr-1"></i> Data Penelitian</h6>
+                                                            <h5 class="font-weight-bold text-dark mt-3" style="line-height: 1.4;"><?= $m['judul']; ?></h5>
+                                                            <span class="badge badge-info mt-1 px-2 py-1"><i class="fas fa-tag mr-1"></i> <?= isset($m['tema']) ? $m['tema'] : '-'; ?></span>
+                                                        </div>
+
+                                                        <div class="row">
+                                                            <div class="col-md-6 mb-3 mb-md-0">
+                                                                <div class="card h-100 border-primary shadow-sm m-0">
+                                                                    <div class="card-header bg-white border-bottom-primary pb-2 pt-3">
+                                                                        <small class="text-muted font-weight-bold text-uppercase d-block mb-1">Usulan Pembimbing 1</small>
+                                                                        <h6 class="text-primary font-weight-bold m-0"><i class="fas fa-user-tie mr-1"></i> <?= $m['p1'] ?: '-'; ?></h6>
+                                                                    </div>
+                                                                    <div class="card-body bg-light p-3">
+                                                                        <small class="text-muted font-weight-bold d-block mb-1">Alasan Pemilihan:</small>
+                                                                        <div class="bg-white p-2 rounded border" style="min-height: 80px;">
+                                                                            <span class="font-italic text-sm text-dark">"<?= isset($m['alasan_p1']) && !empty($m['alasan_p1']) ? nl2br(htmlspecialchars($m['alasan_p1'])) : 'Tidak ada alasan tertulis.'; ?>"</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="col-md-6">
+                                                                <div class="card h-100 border-secondary shadow-sm m-0">
+                                                                    <div class="card-header bg-white border-bottom-secondary pb-2 pt-3">
+                                                                        <small class="text-muted font-weight-bold text-uppercase d-block mb-1">Usulan Pembimbing 2</small>
+                                                                        <h6 class="text-secondary font-weight-bold m-0"><i class="fas fa-user-tie mr-1"></i> <?= $m['p2'] ?: '-'; ?></h6>
+                                                                    </div>
+                                                                    <div class="card-body bg-light p-3">
+                                                                        <small class="text-muted font-weight-bold d-block mb-1">Alasan Pemilihan:</small>
+                                                                        <div class="bg-white p-2 rounded border" style="min-height: 80px;">
+                                                                            <span class="font-italic text-sm text-dark">"<?= isset($m['alasan_p2']) && !empty($m['alasan_p2']) ? nl2br(htmlspecialchars($m['alasan_p2'])) : 'Tidak ada alasan tertulis.'; ?>"</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                    </div>
+                                                    <div class="modal-footer bg-white border-top-0">
+                                                        <button type="button" class="btn btn-secondary px-4 font-weight-bold" data-dismiss="modal">Tutup</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         <div class="modal fade" id="modalEditPembimbing<?= $m['id_skripsi']; ?>" tabindex="-1" aria-hidden="true">
-                                            <div class="modal-dialog">
-                                                <div class="modal-content text-left">
+                                            <div class="modal-dialog modal-dialog-centered">
+                                                <div class="modal-content text-left shadow-lg border-0">
                                                     <div class="modal-header bg-warning">
                                                         <h5 class="modal-title text-dark font-weight-bold"><i class="fas fa-user-edit mr-2"></i> Ganti Pembimbing</h5>
                                                         <button type="button" class="close text-dark" data-dismiss="modal" aria-label="Close">
@@ -196,11 +254,15 @@
                                                         </button>
                                                     </div>
                                                     <form action="<?= base_url('operator/update_pembimbing'); ?>" method="POST">
-                                                        <div class="modal-body">
+                                                        <div class="modal-body bg-light p-4">
                                                             <input type="hidden" name="id_skripsi" value="<?= $m['id_skripsi']; ?>">
                                                             
-                                                            <div class="form-group">
-                                                                <label>Pembimbing 1</label>
+                                                            <div class="alert alert-info border-info shadow-sm text-sm">
+                                                                <i class="fas fa-info-circle mr-1"></i> Jika Anda merasa usulan dosen dari mahasiswa tidak relevan dengan alasannya, silakan ubah di sini sebelum melakukan ACC.
+                                                            </div>
+
+                                                            <div class="form-group bg-white p-3 rounded border shadow-sm">
+                                                                <label class="text-primary"><i class="fas fa-user mr-1"></i> Pembimbing 1 Baru</label>
                                                                 <select name="pembimbing1" class="form-control select2" style="width: 100%;" required>
                                                                     <option value="">-- Pilih Dosen --</option>
                                                                     <?php if(isset($dosen_list)): foreach($dosen_list as $d): ?>
@@ -211,8 +273,8 @@
                                                                 </select>
                                                             </div>
 
-                                                            <div class="form-group">
-                                                                <label>Pembimbing 2</label>
+                                                            <div class="form-group bg-white p-3 rounded border shadow-sm mb-0">
+                                                                <label class="text-secondary"><i class="fas fa-user mr-1"></i> Pembimbing 2 Baru</label>
                                                                 <select name="pembimbing2" class="form-control select2" style="width: 100%;" required>
                                                                     <option value="">-- Pilih Dosen --</option>
                                                                     <?php if(isset($dosen_list)): foreach($dosen_list as $d): ?>
@@ -222,28 +284,25 @@
                                                                     <?php endforeach; endif; ?>
                                                                 </select>
                                                             </div>
-                                                            
-                                                            <div class="alert alert-light text-sm border">
-                                                                <i class="fas fa-info-circle text-info"></i> Pastikan Pembimbing 1 dan 2 berbeda.
-                                                            </div>
                                                         </div>
-                                                        <div class="modal-footer justify-content-between">
-                                                            <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
-                                                            <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i> Simpan Perubahan</button>
+                                                        <div class="modal-footer bg-white justify-content-between">
+                                                            <button type="button" class="btn btn-secondary font-weight-bold" data-dismiss="modal">Batalkan</button>
+                                                            <button type="submit" class="btn btn-warning font-weight-bold px-4 shadow-sm"><i class="fas fa-save mr-1"></i> Simpan Perubahan</button>
                                                         </div>
                                                     </form>
                                                 </div>
                                             </div>
                                         </div>
+
                                         <?php endforeach; ?>
                                     <?php endif; ?>
                                 </tbody>
                             </table>
                         </div>
-                        <div class="card-footer py-2 bg-white">
+                        <div class="card-footer py-2 bg-white border-top">
                             <div class="row align-items-center">
                                 <div class="col-sm-6 text-muted small">
-                                    Total Data: <b><?php echo isset($total_rows) ? $total_rows : 0; ?></b>
+                                    Total Data Pengajuan: <b class="text-dark"><?php echo isset($total_rows) ? $total_rows : 0; ?></b>
                                 </div>
                                 <div class="col-sm-6">
                                     <div class="float-right m-0">
@@ -252,8 +311,8 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="card-footer bg-white text-muted text-sm">
-                            <i class="fas fa-info-circle mr-1"></i> Anda dapat mengganti pembimbing sebelum atau sesudah menyetujui (ACC) judul.
+                        <div class="card-footer bg-light text-muted text-sm text-center">
+                            <i class="fas fa-lightbulb text-warning mr-1"></i> <b>Tips:</b> Gunakan tombol <b>Detail</b> untuk melihat argumen mahasiswa sebelum menekan tombol ACC.
                         </div>
                     </div>
                 </div>
@@ -282,6 +341,8 @@ document.addEventListener("DOMContentLoaded", function() {
 </script>
 
 <style>
-    .border-left-info { border-left: 4px solid #6f42c1 !important; } /* Warna Purple */
+    .border-left-info { border-left: 4px solid #6f42c1 !important; }
     .table-head-fixed th { background-color: #f8f9fa; border-bottom: 2px solid #dee2e6; z-index: 10; }
+    .border-bottom-primary { border-bottom: 3px solid #007bff !important; }
+    .border-bottom-secondary { border-bottom: 3px solid #6c757d !important; }
 </style>
