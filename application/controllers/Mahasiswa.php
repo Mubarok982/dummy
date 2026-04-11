@@ -413,7 +413,7 @@ public function upload_progres_bab()
         } else {
             $file_data = $this->upload->data();
             
-                            $status_plagiasi_awal = ($bab == 1) ? 'Menunggu' : '-';
+            $status_plagiasi_awal = ($bab == 1) ? 'Menunggu' : '-';
 
             // Masukkan ke ID Skripsi yang aktif (lama)
             $progres_data = [
@@ -429,8 +429,8 @@ public function upload_progres_bab()
                 'nilai_dosen2'       => 'Menunggu', 
                 'created_at'         => date('Y-m-d H:i:s'),
                 'tgl_upload'         => date('Y-m-d H:i:s'),
-                'status_plagiasi'            => $status_plagiasi_awal, 
-                'persentase_kemiripan'      => 0
+                'status_plagiasi'    => $status_plagiasi_awal, 
+                'persentase_kemiripan'=> 0
             ];
             
             $this->M_Mahasiswa->insert_progres($progres_data);
@@ -440,6 +440,9 @@ public function upload_progres_bab()
             $keterangan_log = "Unggah Progres $jenis_upload BAB $bab";
             $this->M_Log->record('Progres', $keterangan_log, $id_baru);
             
+            // ==============================================================
+            // EKSEKUSI PENGIRIMAN WHATSAPP FONNTE DENGAN LOGIKA MUTE (ON/OFF)
+            // ==============================================================
             $this->load->helper('fonnte');
 
             $kontak = $this->M_Mahasiswa->get_kontak_pembimbing_by_skripsi($skripsi['id']);
@@ -455,11 +458,17 @@ public function upload_progres_bab()
                 $pesan_wa .= "Silakan login ke sistem WBS untuk memeriksa dan memberikan koreksi.\n";
                 $pesan_wa .= "Terima kasih.";
 
-                if (!empty($kontak['hp_p1'])) {
+                // AMBIL STATUS NOTIFIKASI DARI DATABASE (Default: 1/ON)
+                $notif_p1_aktif = isset($skripsi['notif_p1']) ? $skripsi['notif_p1'] : 1;
+                $notif_p2_aktif = isset($skripsi['notif_p2']) ? $skripsi['notif_p2'] : 1;
+
+                // CEK P1: Jika Notif Aktif (1) DAN ada nomor HP, barulah kirim
+                if ($notif_p1_aktif == 1 && !empty($kontak['hp_p1'])) {
                     kirim_wa_fonnte($kontak['hp_p1'], $pesan_wa);
                 }
 
-                if (!empty($kontak['hp_p2'])) {
+                // CEK P2: Jika Notif Aktif (1) DAN ada nomor HP, barulah kirim
+                if ($notif_p2_aktif == 1 && !empty($kontak['hp_p2'])) {
                     kirim_wa_fonnte($kontak['hp_p2'], $pesan_wa);
                 }
             }
