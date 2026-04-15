@@ -37,21 +37,8 @@ class Auth extends CI_Controller {
             $user = $this->M_Akun->cek_login($username);
 
             if ($user) {
-                // Debug: Cek format password
-                log_message('debug', 'Password from DB: ' . substr($user['password'], 0, 20) . '...');
-                log_message('debug', 'Password input: ' . $password);
-
-                // Cek Password (Hash atau Plain)
-                $password_valid = false;
+                // Cek Password menggunakan bcrypt (password_verify) secara ketat
                 if (password_verify($password, $user['password'])) {
-                    // Password sudah di-hash
-                    $password_valid = true;
-                } elseif ($password === $user['password']) {
-                    // Password plain text (untuk backward compatibility)
-                    $password_valid = true;
-                }
-
-                if ($password_valid) {
                     
                     // Ambil detail lengkap
                     $detail = $this->M_Akun->get_user_details($user['id'], $user['role']);
