@@ -121,11 +121,25 @@ class M_laporan_opt extends CI_Model {
         return $this->db->count_all_results();
     }
 
-    public function get_dosen_pembimbing_list($keyword, $limit, $offset, $prodi = null) {
+    public function get_dosen_pembimbing_list($keyword, $limit, $offset, $prodi = null, $sort_by = 'nama', $sort_order = 'asc') {
         $this->db->select('A.id, A.nama, D.nidk');
         $this->_filter_dosen($keyword, $prodi);
-        $this->db->order_by('A.nama', 'ASC');
-        if ($limit) $this->db->limit($limit, $offset);
+
+        $valid_sort_columns = [
+            'nama' => 'A.nama',
+            'nidk' => 'D.nidk',
+        ];
+        $sort_order = strtolower($sort_order) === 'desc' ? 'DESC' : 'ASC';
+
+        if (isset($valid_sort_columns[$sort_by])) {
+            $this->db->order_by($valid_sort_columns[$sort_by], $sort_order);
+        } else {
+            $this->db->order_by('A.nama', $sort_order);
+        }
+
+        if ($limit) {
+            $this->db->limit($limit, $offset);
+        }
         return $this->db->get()->result_array();
     }
 

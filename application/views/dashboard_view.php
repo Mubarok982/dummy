@@ -110,6 +110,82 @@
                         </div>
                     <?php endif; ?>
 
+                    <!-- Mahasiswa Siap Sempro -->
+                    <?php if (!empty($mahasiswa_siap_sempro)): ?>
+                    <div class="col-12 mt-4">
+                        <div class="card card-outline card-primary shadow-sm">
+                            <div class="card-header">
+                                <h3 class="card-title"><i class="fas fa-graduation-cap mr-2"></i>Data Sempro Mahasiswa Bimbingan</h3>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-striped mb-0">
+                                        <thead class="bg-light">
+                                            <tr>
+                                                <th class="text-center" style="width: 5%">No</th>
+                                                <th style="width: 20%">Mahasiswa</th>
+                                                <th style="width: 30%">Judul Skripsi</th>
+                                                <th style="width: 15%">Tanggal Daftar</th>
+                                                <th style="width: 15%">File BAB 3</th>
+                                                <th class="text-center" style="width: 15%">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php $no = 1; foreach ($mahasiswa_siap_sempro as $mhs): ?>
+                                            <tr>
+                                                <td class="text-center"><?php echo $no++; ?></td>
+                                                <td>
+                                                    <strong><?php echo $mhs['nama_mhs']; ?></strong><br>
+                                                    <small class="text-muted"><?php echo $mhs['npm']; ?></small>
+                                                </td>
+                                                <td><?php echo $mhs['judul']; ?></td>
+                                                <td><?php echo date('d M Y', strtotime($mhs['tgl_daftar_sempro'])); ?></td>
+                                                <td>
+                                                    <?php if (!empty($mhs['file_bab3'])): ?>
+                                                        <a href="<?php echo base_url('uploads/progres/' . $mhs['file_bab3']); ?>" 
+                                                           target="_blank" class="btn btn-sm btn-outline-primary">
+                                                            <i class="fas fa-file-pdf"></i> Lihat PDF
+                                                        </a>
+                                                    <?php else: ?>
+                                                        <span class="text-muted">-</span>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <td class="text-center">
+                                                    <a href="<?php echo base_url('dosen/progres_detail/' . $mhs['id_skripsi']); ?>" 
+                                                       class="btn btn-sm btn-success">
+                                                        <i class="fas fa-eye"></i> Detail
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <div class="col-12 mt-4">
+                        <div class="card card-outline card-info shadow-sm">
+                            <div class="card-body d-flex flex-wrap align-items-center justify-content-between">
+                                <div>
+                                    <h5 class="font-weight-bold mb-1"><i class="fas fa-hdd mr-1"></i> Plotting Jadwal Sempro</h5>
+                                    <p class="mb-0 text-muted">Silakan klik link Google Drive yang disediakan operator untuk melihat jadwal seminar proposal.</p>
+                                </div>
+                                <?php if (!empty($google_drive_dosen)): ?>
+                                    <a href="<?php echo $google_drive_dosen; ?>" target="_blank" class="btn btn-info btn-sm shadow-sm">
+                                        <i class="fas fa-external-link-alt mr-1"></i> Buka Google Drive
+                                    </a>
+                                <?php else: ?>
+                                    <button type="button" class="btn btn-secondary btn-sm shadow-sm" disabled>
+                                        <i class="fas fa-exclamation-circle mr-1"></i> Belum Tersedia
+                                    </button>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+
                 <?php elseif ($role == 'mahasiswa'): ?>
 
                     <div class="row w-100 m-0">
@@ -174,6 +250,86 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="row mt-3 w-100 m-0">
+                        <div class="col-12 p-0">
+                            <div class="card card-outline card-info shadow-sm">
+                                <div class="card-body d-flex flex-wrap align-items-center justify-content-between">
+                                    <div>
+                                        <h5 class="font-weight-bold mb-1"><i class="fas fa-calendar-alt mr-1"></i> Form Jadwal Sempro</h5>
+                                        <p class="mb-0 text-muted">Silakan gunakan link Google Form yang disediakan operator untuk pendaftaran jadwal seminar proposal.</p>
+                                    </div>
+                                    <?php if (!empty($google_form_sempro)): ?>
+                                        <a href="<?php echo $google_form_sempro; ?>" target="_blank" class="btn btn-info btn-sm shadow-sm">
+                                            <i class="fas fa-external-link-alt mr-1"></i> Buka Google Form
+                                        </a>
+                                    <?php else: ?>
+                                        <button type="button" class="btn btn-secondary btn-sm shadow-sm" disabled>
+                                            <i class="fas fa-exclamation-circle mr-1"></i> Belum Tersedia
+                                        </button>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3 w-100 m-0">
+                        <div class="col-12 p-0">
+                            <div class="card card-outline card-info shadow-sm">
+                                <div class="card-body d-flex flex-wrap align-items-center justify-content-between">
+                                    <div>
+                                        <h5 class="font-weight-bold mb-1"><i class="fas fa-calendar-alt mr-1"></i> Plotting Jadwal Sempro</h5>
+                                        <p class="mb-0 text-muted">Silakan klik link Google Drive yang disediakan operator untuk melihat jadwal seminar proposal.</p>
+                                    </div>
+                                    <?php if (!empty($google_drive_sempro)): ?>
+                                        <a href="<?php echo $google_drive_sempro; ?>" target="_blank" class="btn btn-info btn-sm shadow-sm">
+                                            <i class="fas fa-external-link-alt mr-1"></i> Buka Google Drive
+                                        </a>
+                                    <?php else: ?>
+                                        <button type="button" class="btn btn-secondary btn-sm shadow-sm" disabled>
+                                            <i class="fas fa-exclamation-circle mr-1"></i> Belum Tersedia
+                                        </button>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <?php if (!empty($google_drive_dosen)): ?>
+                    <div class="row mt-3 w-100 m-0">
+                        <div class="col-12 p-0">
+                            <div class="card card-outline card-primary shadow-sm">
+                                <div class="card-body d-flex flex-wrap align-items-center justify-content-between">
+                                    <div>
+                                        <h5 class="font-weight-bold mb-1"><i class="fas fa-hdd mr-1"></i> Google Drive Plotting</h5>
+                                        <p class="mb-0 text-muted">Akses Google Drive untuk dokumen plotting jadwal sempro.</p>
+                                    </div>
+                                    <a href="<?php echo $google_drive_dosen; ?>" target="_blank" class="btn btn-primary btn-sm shadow-sm">
+                                        <i class="fas fa-external-link-alt mr-1"></i> Buka Drive
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($sempro_schedule_pdf)): ?>
+                    <div class="row mt-3 w-100 m-0">
+                        <div class="col-12 p-0">
+                            <div class="card card-outline card-success shadow-sm">
+                                <div class="card-body d-flex flex-wrap align-items-center justify-content-between">
+                                    <div>
+                                        <h5 class="font-weight-bold mb-1"><i class="fas fa-file-pdf mr-1"></i> Plotting Jadwal Sempro</h5>
+                                        <p class="mb-0 text-muted">Lihat jadwal plotting seminar proposal yang telah disusun oleh operator.</p>
+                                    </div>
+                                    <a href="<?php echo $sempro_schedule_pdf; ?>" target="_blank" class="btn btn-success btn-sm shadow-sm">
+                                        <i class="fas fa-external-link-alt mr-1"></i> Lihat Jadwal PDF
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
 
                     <div class="row mt-2 w-100 m-0">
                         <div class="col-12 p-0">

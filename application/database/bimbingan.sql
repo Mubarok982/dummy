@@ -501,6 +501,9 @@ CREATE TABLE `skripsi` (
   `status_acc_kaprodi` enum('menunggu','diterima','ditolak') DEFAULT 'menunggu',
   `tgl_pengajuan_judul` date NOT NULL,
   `skema` enum('Reguler','Penyetaraan') NOT NULL,
+  `alasan_p1` text DEFAULT NULL,
+  `alasan_p2` text DEFAULT NULL,
+  `jadwal_sempro_pdf` varchar(255) DEFAULT NULL,
   `naskah` text DEFAULT NULL,
   `nilai_akhir` decimal(5,2) DEFAULT NULL,
   `status_sempro` enum('Menunggu Syarat','Siap Sempro','Disetujui Sempro') DEFAULT 'Menunggu Syarat'
@@ -573,6 +576,30 @@ CREATE TABLE `syarat_sempro` (
 
 INSERT INTO `syarat_sempro` (`id`, `naskah`, `id_ujian_skripsi`, `fotokopi_daftar_nilai`, `fotokopi_krs`, `buku_kendali_bimbingan`, `lembar_revisi_ba_dan_tanda_terima_laporan_kp`, `bukti_seminar_teman`, `status`, `catatan`) VALUES
 (1, '', 1, NULL, NULL, NULL, NULL, NULL, 0, NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `dashboard_settings`
+--
+
+CREATE TABLE `dashboard_settings` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `setting_key` varchar(100) NOT NULL,
+  `setting_value` text DEFAULT NULL,
+  `label` varchar(255) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `dashboard_settings`
+--
+
+INSERT INTO `dashboard_settings` (`id`, `setting_key`, `setting_value`, `label`, `description`, `updated_at`) VALUES
+(1, 'google_form_sempro', NULL, 'Link Google Form Jadwal Sempro', 'Link Google Form untuk pendaftaran jadwal seminar proposal mahasiswa.', CURRENT_TIMESTAMP()),
+(2, 'google_drive_dosen', NULL, 'Link Google Drive Dosen', 'Link Google Drive yang dapat diakses oleh semua dosen.', CURRENT_TIMESTAMP()),
+(3, 'sempro_schedule_pdf', NULL, 'PDF Plotting Jadwal Sempro', 'URL atau path ke PDF yang menampilkan plotting jadwal sempro.', CURRENT_TIMESTAMP());
 
 -- --------------------------------------------------------
 

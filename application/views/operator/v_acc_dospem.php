@@ -75,10 +75,10 @@
                             <thead class="bg-light text-center">
                                 <tr>
                                     <th style="width: 5%">No</th>
-                                    <th style="width: 20%">Mahasiswa</th>
-                                    <th style="width: 25%">Judul Skripsi</th>
+                                    <th class="sortable" data-sort="nama_mahasiswa" style="width: 20%">Mahasiswa</th>
+                                    <th class="sortable" data-sort="judul" style="width: 25%">Judul Skripsi</th>
                                     <th style="width: 15%">Usulan Pembimbing</th>
-                                    <th style="width: 10%">Tgl Pengajuan</th>
+                                    <th class="sortable" data-sort="tgl_pengajuan_judul" style="width: 10%">Tgl Pengajuan</th>
                                     <th style="width: 15%">Aksi</th>
                                     <th style="width: 10%">Edit</th>
                                 </tr>

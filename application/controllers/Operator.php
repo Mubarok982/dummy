@@ -18,6 +18,9 @@ class Operator extends CI_Controller {
         // Load Semua Model yang Dibutuhkan di Sini
         $this->load->model('M_Data');
         $this->load->model('M_Log');
+        $this->load->model('operator/M_skripsi_opt');
+        $this->load->model('operator/M_laporan_opt');
+        $this->load->model('operator/M_akun_opt');
         $this->load->model('M_Mahasiswa');
         $this->load->model('operator/M_skripsi_opt');
         $this->load->model('operator/M_akun_opt');
@@ -529,20 +532,29 @@ class Operator extends CI_Controller {
         // 2. APPLY SORTING
         // ==========================================================
         usort($filtered_data, function($a, $b) use ($sort_by, $sort_order) {
-            // Special numeric compare for 'bab'
-            if ($sort_by === 'bab') {
-                $va = isset($a['bab']) ? (int)$a['bab'] : 0;
-                $vb = isset($b['bab']) ? (int)$b['bab'] : 0;
-                return ($sort_order == 'desc') ? ($vb <=> $va) : ($va <=> $vb);
+            $valid_sort = ['nama', 'npm', 'prodi', 'angkatan', 'judul', 'nama_p1', 'tgl_daftar_sempro', 'status_sempro', 'status_acc_kaprodi', 'id_skripsi'];
+            if (!in_array($sort_by, $valid_sort)) {
+                $sort_by = 'id_skripsi';
             }
 
-            $val_a = strtolower($a[$sort_by] ?? '');
-            $val_b = strtolower($b[$sort_by] ?? '');
-            if ($sort_order == 'desc') {
-                return strcmp($val_b, $val_a);
+            $val_a = $a[$sort_by] ?? '';
+            $val_b = $b[$sort_by] ?? '';
+
+            if ($sort_by == 'tgl_daftar_sempro') {
+                $val_a = strtotime($val_a) ?: 0;
+                $val_b = strtotime($val_b) ?: 0;
+            } elseif (is_numeric($val_a) && is_numeric($val_b)) {
+                $val_a = (int) $val_a;
+                $val_b = (int) $val_b;
             } else {
-                return strcmp($val_a, $val_b);
+                $val_a = strtolower((string)$val_a);
+                $val_b = strtolower((string)$val_b);
             }
+
+            if ($val_a === $val_b) {
+                return 0;
+            }
+            return ($sort_order == 'desc') ? (($val_a < $val_b) ? 1 : -1) : (($val_a < $val_b) ? -1 : 1);
         });
 
         // ==========================================================
@@ -957,6 +969,8 @@ class Operator extends CI_Controller {
         $keyword = $this->input->get('keyword');
         $status = $this->input->get('status');
         $prodi = $is_kaprodi ? $kaprodi_prodi : $this->input->get('prodi');
+        $sort_by = $this->input->get('sort_by') ?: 'id_skripsi';
+        $sort_order = $this->input->get('sort_order') ?: 'desc';
 
         // Ambil semua data judul sekaligus tanpa batas (untuk disaring secara manual)
         // Pastikan model M_Data memiliki fungsi get_all_acc_judul() yang tidak memakai limit
@@ -1005,11 +1019,35 @@ class Operator extends CI_Controller {
         $filtered_data = array_values($temp_mhs);
 
         // ==========================================================
-        // 2. SORTING: Data Terbaru Selalu di Atas
+        // 2. SORTING
         // ==========================================================
-        usort($filtered_data, function($a, $b) {
-            // Urutkan berdasarkan id_skripsi secara Descending (Paling besar/baru di atas)
-            return $b['id_skripsi'] - $a['id_skripsi'];
+        usort($filtered_data, function($a, $b) use ($sort_by, $sort_order) {
+            $valid_sort = ['npm', 'nama', 'judul', 'status_acc_kaprodi', 'tgl_pengajuan_judul', 'id_skripsi'];
+            if (!in_array($sort_by, $valid_sort)) {
+                $sort_by = 'id_skripsi';
+            }
+
+            $val_a = $a[$sort_by] ?? '';
+            $val_b = $b[$sort_by] ?? '';
+
+            if ($sort_by == 'tgl_pengajuan_judul') {
+                $val_a = strtotime($val_a) ?: 0;
+                $val_b = strtotime($val_b) ?: 0;
+            } elseif (is_numeric($val_a) && is_numeric($val_b)) {
+                $val_a = (int) $val_a;
+                $val_b = (int) $val_b;
+            } else {
+                $val_a = strtolower((string) $val_a);
+                $val_b = strtolower((string) $val_b);
+            }
+
+            if ($val_a === $val_b) {
+                return 0;
+            }
+            if ($sort_order == 'desc') {
+                return ($val_a < $val_b) ? 1 : -1;
+            }
+            return ($val_a < $val_b) ? -1 : 1;
         });
 
         // ==========================================================
@@ -1046,6 +1084,8 @@ class Operator extends CI_Controller {
         // Load dynamic filter options
         $data['list_prodi'] = $is_kaprodi ? [] : $this->M_Data->get_all_prodi();
         $data['list_status_acc'] = $this->M_Data->get_unique_status_acc_kaprodi();
+        $data['sort_by'] = $sort_by;
+        $data['sort_order'] = $sort_order;
 
         $this->load->view('template/header', $data);
         $this->load->view('template/sidebar', $data);
@@ -1087,6 +1127,8 @@ class Operator extends CI_Controller {
         // Get filter parameters
         $keyword = $this->input->get('keyword');
         $prodi = $is_kaprodi ? $kaprodi_prodi : $this->input->get('prodi');
+        $sort_by = $this->input->get('sort_by') ?: 'tgl_pengajuan_judul';
+        $sort_order = $this->input->get('sort_order') ?: 'asc';
 
         // Pagination
         $this->load->library('pagination');
@@ -1103,7 +1145,7 @@ class Operator extends CI_Controller {
         $page = $this->input->get('page') ? $this->input->get('page') : 0;
         
         // Get paginated data
-        $data['pengajuan'] = $this->M_skripsi_opt->get_pengajuan_dospem_paginated($keyword, $prodi, $config['per_page'], $page);
+        $data['pengajuan'] = $this->M_skripsi_opt->get_pengajuan_dospem_paginated($keyword, $prodi, $config['per_page'], $page, $sort_by, $sort_order);
         
         $data['pagination'] = $this->pagination->create_links();
         $data['total_rows'] = $config['total_rows'];
@@ -1111,6 +1153,8 @@ class Operator extends CI_Controller {
 
         $data['keyword'] = $keyword;
         $data['prodi'] = $prodi;
+        $data['sort_by'] = $sort_by;
+        $data['sort_order'] = $sort_order;
         $data['is_kaprodi'] = $is_kaprodi;
         $data['kaprodi_prodi'] = $kaprodi_prodi;
 
@@ -1121,6 +1165,33 @@ class Operator extends CI_Controller {
         $this->load->view('template/sidebar', $data);
         $this->load->view('operator/v_acc_dospem', $data);
         $this->load->view('template/footer');
+    }
+
+    public function dashboard_links()
+    {
+        $data['title'] = 'Pengaturan Link Dashboard';
+        $data['google_form_sempro'] = $this->M_Data->get_dashboard_setting('google_form_sempro');
+        $data['google_drive_dosen'] = $this->M_Data->get_dashboard_setting('google_drive_dosen');
+        $data['sempro_schedule_pdf'] = $this->M_Data->get_dashboard_setting('sempro_schedule_pdf');
+
+        $this->load->view('template/header', $data);
+        $this->load->view('template/sidebar', $data);
+        $this->load->view('operator/v_dashboard_links', $data);
+        $this->load->view('template/footer');
+    }
+
+    public function update_dashboard_links()
+    {
+        $google_form_sempro = $this->input->post('google_form_sempro', true);
+        $google_drive_dosen = $this->input->post('google_drive_dosen', true);
+        $sempro_schedule_pdf = $this->input->post('sempro_schedule_pdf', true);
+
+        $this->M_Data->upsert_dashboard_setting('google_form_sempro', $google_form_sempro, 'Link Google Form Jadwal Sempro', 'Link Google Form untuk pendaftaran jadwal seminar proposal mahasiswa.');
+        $this->M_Data->upsert_dashboard_setting('google_drive_dosen', $google_drive_dosen, 'Link Google Drive', 'Link Google Drive yang dapat diakses oleh dosen dan mahasiswa.');
+        $this->M_Data->upsert_dashboard_setting('sempro_schedule_pdf', $sempro_schedule_pdf, 'PDF Plotting Jadwal Sempro', 'URL atau path ke PDF yang menampilkan plotting jadwal sempro.');
+
+        $this->session->set_flashdata('pesan_sukses', 'Pengaturan link dashboard berhasil disimpan.');
+        redirect('operator/dashboard_links');
     }
 
     public function proses_acc_dospem($id_skripsi, $aksi)
@@ -1338,6 +1409,8 @@ class Operator extends CI_Controller {
         $kaprodi_prodi = $is_kaprodi ? $this->session->userdata('prodi') : null;
 
         $keyword = $this->input->get('keyword');
+        $sort_by = $this->input->get('sort_by') ?: 'nama';
+        $sort_order = $this->input->get('sort_order') ?: 'asc';
 
         // Config Pagination
         $config['base_url'] = base_url('operator/kinerja_dosen');
@@ -1351,7 +1424,14 @@ class Operator extends CI_Controller {
         $this->pagination->initialize($config);
 
         $page = $this->input->get('page') ? $this->input->get('page') : 0;
-        $data['dosen_list'] = $this->M_laporan_opt->get_dosen_pembimbing_list($keyword, $config['per_page'], $page, $kaprodi_prodi);
+        $fetch_all_for_sort = ($sort_by == 'total_aksi');
+
+        if ($fetch_all_for_sort) {
+            $all_dosen = $this->M_laporan_opt->get_dosen_pembimbing_list($keyword, null, null, $kaprodi_prodi, 'nama', 'asc');
+            $data['dosen_list'] = $all_dosen;
+        } else {
+            $data['dosen_list'] = $this->M_laporan_opt->get_dosen_pembimbing_list($keyword, $config['per_page'], $page, $kaprodi_prodi, $sort_by, $sort_order);
+        }
 
         // Hitung total aktivitas
         foreach ($data['dosen_list'] as $key => $dosen) {
@@ -1360,6 +1440,16 @@ class Operator extends CI_Controller {
             $total = 0;
             foreach($aktivitas as $act) { $total += $act['total_aksi']; }
             $data['dosen_list'][$key]['total_aksi'] = $total;
+        }
+
+        if ($fetch_all_for_sort) {
+            usort($data['dosen_list'], function($a, $b) use ($sort_order) {
+                if ($sort_order == 'desc') {
+                    return ($b['total_aksi'] ?? 0) <=> ($a['total_aksi'] ?? 0);
+                }
+                return ($a['total_aksi'] ?? 0) <=> ($b['total_aksi'] ?? 0);
+            });
+            $data['dosen_list'] = array_slice($data['dosen_list'], $page, $config['per_page']);
         }
 
         // --- KIRIM DATA UNTUK FILTER ---

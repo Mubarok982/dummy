@@ -49,6 +49,11 @@ class Dashboard extends CI_Controller {
             $data['dosen_col_class'] = 'col-lg-4 col-sm-6';
         }
 
+        // Global dashboard settings
+        $data['google_form_sempro'] = $this->M_Data->get_dashboard_setting('google_form_sempro');
+        $data['google_drive_dosen'] = $this->M_Data->get_dashboard_setting('google_drive_dosen');
+        $data['sempro_schedule_pdf'] = $this->M_Data->get_dashboard_setting('sempro_schedule_pdf');
+
         // 3. LOGIKA BERDASARKAN ROLE
         if ($role == 'operator' || $role == 'tata_usaha') {
             $data['statistik']['total_mhs'] = $this->M_Data->count_mahasiswa();
@@ -58,6 +63,7 @@ class Dashboard extends CI_Controller {
 
         } elseif ($role == 'dosen') {
             $data['statistik']['total_bimbingan'] = $this->M_Dosen->count_total_bimbingan($id_user);
+            $data['mahasiswa_siap_sempro'] = $this->M_Dosen->get_mahasiswa_siap_sempro_by_dosen($id_user);
             $data['unread_chat'] = $this->M_Chat->count_unread_messages($id_user);
 
         } elseif ($role == 'mahasiswa') {

@@ -93,11 +93,11 @@
                                 <thead>
                                 <tr class="text-center">
                                         <th style="width: 5%;">No</th>
-                                        <th style="width: 8%;">NPM</th>
-                                        <th class="text-left" style="width: 15%;">Nama Mahasiswa</th>
-                                        <th class="text-left" style="width: 25%;">Judul Skripsi</th>
+                                        <th class="sortable" data-sort="npm" style="width: 8%;">NPM</th>
+                                        <th class="sortable text-left" data-sort="nama" style="width: 15%;">Nama Mahasiswa</th>
+                                        <th class="sortable text-left" data-sort="judul" style="width: 25%;">Judul Skripsi</th>
                                         <th class="text-left" style="width: 25%;">Pembimbing</th>
-                                        <th style="width: 10%;">Status</th>
+                                        <th class="sortable" data-sort="status_acc_kaprodi" style="width: 10%;">Status</th>
                                         <th style="width: 12%;">Aksi</th>
                                     </tr>
                                 </thead>

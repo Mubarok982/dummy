@@ -38,11 +38,11 @@
                 <div class="card-body">
                     <form method="GET" action="<?php echo base_url('operator/mahasiswa_siap_sempro'); ?>" class="mb-3">
                         <div class="row">
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label>Pencarian</label>
                                 <input type="text" name="keyword" class="form-control" placeholder="Cari nama/NPM/tema/judul..." value="<?php echo $keyword; ?>">
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label>Prodi</label>
                                 <select name="prodi" class="form-control">
                                     <option value="all">Semua Prodi</option>
@@ -54,10 +54,21 @@
                                 </select>
                             </div>
                             <div class="col-md-2">
+                                <label>Angkatan</label>
+                                <select name="angkatan" class="form-control">
+                                    <option value="all">Semua Angkatan</option>
+                                    <?php if(isset($list_angkatan)): ?>
+                                        <?php foreach ($list_angkatan as $angkatan_option): ?>
+                                            <option value="<?php echo $angkatan_option['angkatan']; ?>" <?php echo (isset($angkatan) && $angkatan == $angkatan_option['angkatan']) ? 'selected' : ''; ?>><?php echo $angkatan_option['angkatan']; ?></option>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
                                 <label>&nbsp;</label>
                                 <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-search mr-1"></i> Filter</button>
                             </div>
-                            <?php if(isset($keyword) && $keyword || (isset($prodi) && $prodi != 'all')): ?>
+                            <?php if(isset($keyword) && $keyword || (isset($prodi) && $prodi != 'all') || (isset($angkatan) && $angkatan != 'all')): ?>
                             <div class="col-md-2">
                                 <label>&nbsp;</label>
                                 <a href="<?php echo base_url('operator/mahasiswa_siap_sempro'); ?>" class="btn btn-secondary btn-block"><i class="fas fa-undo"></i> Reset</a>
@@ -75,8 +86,8 @@
                                     <th class="sortable" data-sort="prodi" style="width: 15%">Program Studi</th>
                                     <th class="sortable" data-sort="judul" style="width: 25%">Judul Skripsi</th>
                                     <th class="sortable" data-sort="nama_p1" style="width: 15%">Pembimbing</th>
-                                    <th class="sortable" data-sort="tgl_daftar" style="width: 10%">Tanggal Daftar</th>
-                                    <th class="sortable" data-sort="status_ujian" style="width: 10%">Status</th>
+                                    <th class="sortable" data-sort="tgl_daftar_sempro" style="width: 10%">Tanggal Daftar</th>
+                                    <th class="sortable" data-sort="status_sempro" style="width: 10%">Status</th>
                                 </tr>
                             </thead>
                             <tbody>

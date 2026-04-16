@@ -238,14 +238,17 @@ public function progres_detail($id_skripsi)
             $skripsi_info = $this->M_Dosen->get_skripsi_details($id_skripsi);
             
             if (!empty($skripsi_info['telepon'])) {
-                $pesan_wa  = "*UPDATE BIMBINGAN SKRIPSI*\n\n";
-                $pesan_wa .= "Halo " . $skripsi_info['nama_mhs'] . ",\n";
-                $pesan_wa .= "Dosen pembimbing Anda baru saja mengoreksi progres Anda.\n\n";
-                $pesan_wa .= "Hasil: *" . strtoupper($nilai_text) . "*\n";
+                $pesan_wa  = "🔔 *Update Bimbingan Skripsi*\n\n";
+                $pesan_wa .= "Assalamualaikum " . $skripsi_info['nama_mhs'] . ",\n\n";
+                $pesan_wa .= "Dosen Pembimbing telah memberikan penilaian terhadap progres Anda.\n\n";
+                $pesan_wa .= "📊 *Hasil Penilaian:* " . strtoupper($nilai_text) . "\n";
                 if(isset($cek_plagiat['status_plagiasi']) && $cek_plagiat['status_plagiasi'] == 'Tolak'){
-                    $pesan_wa .= "Status Plagiasi: *DITOLAK ADMIN*\n";
+                    $pesan_wa .= "⚠️ *Status Plagiarisme:* DITOLAK OLEH ADMIN\n";
                 }
-                $pesan_wa .= "Silakan cek website untuk detailnya.";
+                $pesan_wa .= "\nSilakan login ke sistem WBS untuk melihat detail koreksi dan komentar dari Dosen Pembimbing.\n\n";
+                $pesan_wa .= "Terima kasih atas partisipasi Anda.\n";
+                $pesan_wa .= "Wassalamualaikum Wr. Wb.\n\n";
+                $pesan_wa .= "_Pesan otomatis dari Sistem Monitoring Skripsi_";
                 
                 kirim_wa_fonnte($skripsi_info['telepon'], $pesan_wa);
             }

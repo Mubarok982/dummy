@@ -62,6 +62,12 @@
           </a>
       </li>
       <li class="nav-item">
+          <a href="<?= base_url('operator/dashboard_links') ?>" class="nav-link <?= ($this->uri->segment(2) == 'dashboard_links') ? 'active' : '' ?>">
+              <i class="nav-icon fas fa-link"></i>
+              <p>Plotting Jadwal Sempro</p>
+          </a>
+      </li>
+      <li class="nav-item">
             <a href="<?php echo base_url('operator/mahasiswa_siap_sempro'); ?>" class="nav-link <?php echo ($this->uri->segment(2) == 'mahasiswa_siap_sempro') ? 'active' : ''; ?>">
               <i class="nav-icon fas fa-user-graduate"></i>
               <p>Siap Sempro</p>
@@ -124,6 +130,14 @@
             class="nav-link <?php echo ($this->uri->segment(2) == 'acc_judul') ? 'active' : ''; ?>">
             <i class="nav-icon fas fa-check-double text-warning"></i>
             <p>ACC Judul & Dospem</p>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="<?php echo base_url('operator/dashboard_links'); ?>"
+            class="nav-link <?php echo ($this->uri->segment(2) == 'dashboard_links') ? 'active' : ''; ?>">
+            <i class="nav-icon fas fa-check-double text-warning"></i>
+            <p>Plotting Jadwal Sempro</p>
           </a>
         </li>
 

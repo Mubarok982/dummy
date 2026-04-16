@@ -448,15 +448,18 @@ public function upload_progres_bab()
             $kontak = $this->M_Mahasiswa->get_kontak_pembimbing_by_skripsi($skripsi['id']);
 
             if ($kontak) {
-                $pesan_wa  = "*NOTIFIKASI BIMBINGAN SKRIPSI*\n\n";
-                $pesan_wa .= "Halo Bapak/Ibu Dosen,\n";
-                $pesan_wa .= "Mahasiswa bimbingan Anda telah mengunggah progres baru.\n\n";
-                $pesan_wa .= "Nama: *$nama*\n";
-                $pesan_wa .= "NPM: $npm\n";
-                $pesan_wa .= "File: *BAB $bab ($jenis_upload)*\n";
-                $pesan_wa .= "Waktu: " . date('d-m-Y H:i') . "\n\n";
-                $pesan_wa .= "Silakan login ke sistem WBS untuk memeriksa dan memberikan koreksi.\n";
-                $pesan_wa .= "Terima kasih.";
+                $pesan_wa  = "🔔 *Notifikasi Bimbingan Skripsi*\n\n";
+                $pesan_wa .= "Assalamualaikum Bapak/Ibu Dosen Pembimbing,\n\n";
+                $pesan_wa .= "Mahasiswa yang Bapak/Ibu bimbing telah mengunggah file progres terbaru.\n\n";
+                $pesan_wa .= "📝 *Detail Progres:*\n";
+                $pesan_wa .= "👨‍🎓 Nama Mahasiswa: $nama\n";
+                $pesan_wa .= "🆔 NPM: $npm\n";
+                $pesan_wa .= "📄 File: BAB $bab ($jenis_upload)\n";
+                $pesan_wa .= "🕒 Waktu Upload: " . date('d-m-Y H:i') . "\n\n";
+                $pesan_wa .= "Mohon Bapak/Ibu dapat memberikan koreksi dan penilaian melalui sistem WBS.\n\n";
+                $pesan_wa .= "Terima kasih atas perhatian dan bimbingannya.\n";
+                $pesan_wa .= "Wassalamualaikum Wr. Wb.\n\n";
+                $pesan_wa .= "_Pesan otomatis dari Sistem Monitoring Skripsi_";
 
                 // AMBIL STATUS NOTIFIKASI DARI DATABASE (Default: 1/ON)
                 $notif_p1_aktif = isset($skripsi['notif_p1']) ? $skripsi['notif_p1'] : 1;

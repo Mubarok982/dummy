@@ -147,7 +147,7 @@ class M_skripsi_opt extends CI_Model {
         return $this->db->count_all_results();
     }
 
-    public function get_pengajuan_dospem_paginated($keyword = null, $prodi = null, $limit = 15, $offset = 0)
+    public function get_pengajuan_dospem_paginated($keyword = null, $prodi = null, $limit = 15, $offset = 0, $sort_by = 'tgl_pengajuan_judul', $sort_order = 'asc')
     {
         $this->db->select('S.*, A_MHS.nama AS nama_mahasiswa, DM.npm, A1.nama AS nama_p1, A2.nama AS nama_p2, DM.prodi');
         $this->db->from('skripsi S');
@@ -171,8 +171,12 @@ class M_skripsi_opt extends CI_Model {
         if ($prodi) {
             $this->db->where('DM.prodi', $prodi);
         }
-        
-        $this->db->order_by('S.tgl_pengajuan_judul', 'ASC');
+
+        $valid_sort_columns = ['nama_mahasiswa' => 'A_MHS.nama', 'npm' => 'DM.npm', 'judul' => 'S.judul', 'prodi' => 'DM.prodi', 'tgl_pengajuan_judul' => 'S.tgl_pengajuan_judul'];
+        $sort_column = isset($valid_sort_columns[$sort_by]) ? $valid_sort_columns[$sort_by] : 'S.tgl_pengajuan_judul';
+        $sort_order = strtolower($sort_order) === 'desc' ? 'DESC' : 'ASC';
+        $this->db->order_by($sort_column, $sort_order);
+
         $this->db->limit($limit, $offset);
         return $this->db->get()->result_array();
     }

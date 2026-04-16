@@ -1007,6 +1007,36 @@ class M_Data extends CI_Model
         return $this->db->get()->result_array();
     }
 
+    public function get_dashboard_setting($key)
+    {
+        $this->db->select('setting_value');
+        $this->db->from('dashboard_settings');
+        $this->db->where('setting_key', $key);
+        $row = $this->db->get()->row_array();
+        return $row ? $row['setting_value'] : null;
+    }
+
+    public function upsert_dashboard_setting($key, $value, $label = null, $description = null)
+    {
+        $exists = $this->db->get_where('dashboard_settings', ['setting_key' => $key])->row_array();
+        $data = ['setting_value' => $value];
+
+        if ($label !== null) {
+            $data['label'] = $label;
+        }
+        if ($description !== null) {
+            $data['description'] = $description;
+        }
+
+        if ($exists) {
+            $this->db->where('setting_key', $key);
+            return $this->db->update('dashboard_settings', $data);
+        }
+
+        $data['setting_key'] = $key;
+        return $this->db->insert('dashboard_settings', $data);
+    }
+
     // Count untuk Plagiarisme
     public function count_plagiarisme($keyword = null, $status = null)
     {

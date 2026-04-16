@@ -74,11 +74,11 @@
                             <thead class="bg-light">
                                 <tr class="text-center">
                                     <th style="width: 5%;">No</th>
-                                    <th style="width: 20%;">Mahasiswa</th>
-                                    <th style="width: 25%;">Judul Skripsi</th>
+                                    <th style="width: 20%;" class="sortable" data-sort="nama_mhs">Mahasiswa</th>
+                                    <th style="width: 25%;" class="sortable" data-sort="judul">Judul Skripsi</th>
                                     <th style="width: 8%;">BAB</th>
-                                    <th style="width: 12%;">Tgl Upload</th>
-                                    <th style="width: 12%;">Tgl Verifikasi</th>
+                                    <th style="width: 12%;" class="sortable" data-sort="tgl_upload">Tgl Upload</th>
+                                    <th style="width: 12%;" class="sortable" data-sort="tgl_verifikasi">Tgl Verifikasi</th>
                                     <th style="width: 8%;">File</th>
                                     <th style="width: 10%;">Aksi</th>
                                 </tr>

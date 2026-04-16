@@ -69,9 +69,9 @@
                                 <thead class="bg-light">
                                     <tr class="text-center">
                                         <th style="width: 5%;">No</th>
-                                        <th style="width: 35%;" class="text-left">Nama Dosen</th>
-                                        <th style="width: 20%;">NIDK</th>
-                                        <th style="width: 20%;">Total Aktivitas Koreksi</th>
+                                        <th style="width: 35%;" class="text-left sortable" data-sort="nama">Nama Dosen</th>
+                                        <th style="width: 20%;" class="sortable" data-sort="nidk">NIDK</th>
+                                        <th style="width: 20%;" class="sortable" data-sort="total_aksi">Total Aktivitas Koreksi</th>
                                         <th style="width: 20%;">Riwayat</th>
                                     </tr>
                                 </thead>

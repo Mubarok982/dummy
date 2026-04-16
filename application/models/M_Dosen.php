@@ -674,5 +674,29 @@ public function get_bimbingan_list($id_dosen, $keyword = null, $prodi = null, $a
         echo "Data tidak ditemukan";
     }
 }
+
+    // Get mahasiswa siap sempro yang dibimbing oleh dosen tertentu
+    public function get_mahasiswa_siap_sempro_by_dosen($id_dosen)
+    {
+        $this->db->select('
+            s.id AS id_skripsi,
+            m.npm,
+            a.nama AS nama_mhs,
+            s.judul,
+            p.file AS file_bab3,
+            u.tanggal_daftar AS tgl_daftar_sempro
+        ');
+        $this->db->from('skripsi s');
+        $this->db->join('data_mahasiswa m', 's.id_mahasiswa = m.id');
+        $this->db->join('mstr_akun a', 'm.id = a.id');
+        $this->db->join('progres_skripsi p', 'p.id_skripsi = s.id AND p.bab = 3 AND p.progres_dosen1 = 100 AND p.progres_dosen2 = 100', 'inner');
+        $this->db->join('ujian_skripsi u', 'u.id_skripsi = s.id AND u.id_jenis_ujian_skripsi IN (1,5)', 'left');
+        $this->db->where("(s.pembimbing1 = $id_dosen OR s.pembimbing2 = $id_dosen)");
+        $this->db->where('u.status', 'Berlangsung');
+        $this->db->order_by('u.tanggal_daftar', 'DESC');
+        $this->db->limit(5); // Tampilkan maksimal 5
+
+        return $this->db->get()->result_array();
+    }
 }
 
