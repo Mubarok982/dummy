@@ -273,28 +273,6 @@
                         </div>
                     </div>
 
-                    <div class="row mt-3 w-100 m-0">
-                        <div class="col-12 p-0">
-                            <div class="card card-outline card-info shadow-sm">
-                                <div class="card-body d-flex flex-wrap align-items-center justify-content-between">
-                                    <div>
-                                        <h5 class="font-weight-bold mb-1"><i class="fas fa-calendar-alt mr-1"></i> Plotting Jadwal Sempro</h5>
-                                        <p class="mb-0 text-muted">Silakan klik link Google Drive yang disediakan operator untuk melihat jadwal seminar proposal.</p>
-                                    </div>
-                                    <?php if (!empty($google_drive_sempro)): ?>
-                                        <a href="<?php echo $google_drive_sempro; ?>" target="_blank" class="btn btn-info btn-sm shadow-sm">
-                                            <i class="fas fa-external-link-alt mr-1"></i> Buka Google Drive
-                                        </a>
-                                    <?php else: ?>
-                                        <button type="button" class="btn btn-secondary btn-sm shadow-sm" disabled>
-                                            <i class="fas fa-exclamation-circle mr-1"></i> Belum Tersedia
-                                        </button>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <?php if (!empty($google_drive_dosen)): ?>
                     <div class="row mt-3 w-100 m-0">
                         <div class="col-12 p-0">
