@@ -111,9 +111,25 @@
                                             <?php echo !empty($row['tgl_upload']) ? date('d M Y', strtotime($row['tgl_upload'])) . '<br>' . date('H:i', strtotime($row['tgl_upload'])) : '-'; ?>
                                         </td>
 
-                                        <td class="text-center align-middle">
-                                            <a href="<?php echo base_url('uploads/progres/' . $row['progres_file']); ?>" target="_blank" class="btn btn-sm btn-outline-danger shadow-sm font-weight-bold" title="Buka Dokumen PDF">
-                                                <i class="fas fa-file-pdf mr-1"></i> Buka
+                                       <td class="text-center align-middle">
+                                            <?php 
+                                                $file_path = $row['progres_file'];
+                                                $is_url = filter_var($file_path, FILTER_VALIDATE_URL);
+                                                
+                                                if ($is_url) {
+                                                    $link_href = $file_path;
+                                                    $btn_class = "btn-outline-primary";
+                                                    $icon_btn  = "fab fa-google-drive";
+                                                    $title_btn = "Buka Link Google Drive";
+                                                } else {
+                                                    $link_href = base_url('uploads/progres/' . $file_path);
+                                                    $btn_class = "btn-outline-danger";
+                                                    $icon_btn  = "fas fa-file-pdf";
+                                                    $title_btn = "Buka Dokumen PDF";
+                                                }
+                                            ?>
+                                            <a href="<?= $link_href ?>" target="_blank" class="btn btn-sm <?= $btn_class ?> shadow-sm font-weight-bold" title="<?= $title_btn ?>">
+                                                <i class="<?= $icon_btn ?> mr-1"></i> Buka
                                             </a>
                                         </td>
 

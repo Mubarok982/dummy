@@ -220,12 +220,12 @@
                                     </h3>
                                 </div>
                                 
-                                <?php echo form_open_multipart('mahasiswa/upload_progres_bab'); ?>
+                                <?php echo form_open('mahasiswa/upload_progres_bab'); ?>
                                 <div class="card-body">
                                     
                                     <div class="callout callout-info">
                                         <h5>Target: <b>BAB <?= isset($target_bab) ? $target_bab : 1 ?></b> <?= (isset($is_revisi) && $is_revisi) ? '(Revisi)' : '' ?></h5>
-                                        <p><?= isset($pesan_info) ? $pesan_info : 'Silakan upload file untuk melanjutkan progres.' ?></p>
+                                        <p><?= isset($pesan_info) ? $pesan_info : 'Silakan cantumkan link dokumen untuk melanjutkan progres.' ?></p>
                                     </div>
 
                                     <input type="hidden" name="bab" value="<?= isset($target_bab) ? $target_bab : 1 ?>">
@@ -267,20 +267,26 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="form-group">
-                                        <label>File Laporan (PDF)</label>
-                                        <div class="custom-file">
-                                            <input type="file" class="custom-file-input" id="file_progres" name="file_progres" required accept=".pdf">
-                                            <label class="custom-file-label" for="file_progres">Pilih file...</label>
+                                    
+                                    <div class="form-group mb-4">
+                                        <label class="font-weight-bold">Link Dokumen (Google Drive) <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text bg-light"><i class="fab fa-google-drive text-primary"></i></span>
+                                            </div>
+                                            <input type="url" name="link_drive" class="form-control" placeholder="Paste link Google Drive di sini..." required>
                                         </div>
-                                        <small class="text-muted mt-2 d-block">
-                                            Format file: <code>.pdf</code>. Ukuran maks: 5MB.
-                                        </small>
+                                        
+                                        <div class="alert alert-warning mt-2 mb-0 py-2 px-3 shadow-sm border-warning" style="font-size: 0.85rem; border-left: 4px solid #ffc107;">
+                                            <i class="fas fa-exclamation-triangle mr-1 text-danger"></i> <b>PERHATIAN:</b> 
+                                            Pastikan akses GDrive Anda diatur ke <strong>"Anyone with the link"</strong> (Siapa saja yang memiliki link). Jika terkunci, dosen <b>TIDAK AKAN BISA</b> mengoreksi dokumen Anda!
+                                        </div>
                                     </div>
+                                    
                                 </div>
                                 <div class="card-footer bg-white">
                                     <button type="submit" class="btn btn-success float-right font-weight-bold px-4 shadow-sm">
-                                        <i class="fas fa-paper-plane mr-1"></i> Kirim File
+                                        <i class="fas fa-paper-plane mr-1"></i> Kirim Dokumen
                                     </button>
                                 </div>
                                 <?php echo form_close(); ?>
@@ -307,12 +313,9 @@
                                     </thead>
                                     <tbody>
                                         <?php 
-                                        // AMBIL SEMUA RIWAYAT, URUTKAN DARI YANG PALING BARU DIUPLOAD KE PALING LAMA
                                         $semua_riwayat = [];
                                         if(isset($progres_riwayat) && !empty($progres_riwayat)) {
                                             $semua_riwayat = $progres_riwayat;
-                                            
-                                            // Sortir data berdasarkan waktu upload (created_at) dari yang terbaru ke terlama
                                             usort($semua_riwayat, function($a, $b) {
                                                 return strtotime($b->created_at) - strtotime($a->created_at);
                                             });
@@ -323,7 +326,6 @@
                                             <?php foreach ($semua_riwayat as $pr): 
                                                 $format_tgl = date('d M Y H:i', strtotime($pr->created_at));
                                                 
-                                                // Cek apakah ini progres dari judul skripsi yang aktif saat ini, atau judul lama
                                                 $is_old_title = ($pr->id_skripsi != $skripsi['id']);
                                                 $row_class = $is_old_title ? 'bg-light text-muted' : '';
 
@@ -375,11 +377,26 @@
                                                         <span class="badge <?= $badge_class ?>"><?= $badge_status ?></span>
                                                     </td>
                                                     <td><?= $komentar ?></td>
+                                                    
                                                     <td>
-                                                        <a href="<?= base_url('uploads/progres/' . $pr->file) ?>" target="_blank" class="btn btn-sm <?= $is_old_title ? 'btn-secondary' : 'btn-info' ?> shadow-sm">
-                                                            <i class="fas fa-file-pdf"></i>
+                                                        <?php 
+                                                            $file_path = $pr->file;
+                                                            $is_url = filter_var($file_path, FILTER_VALIDATE_URL);
+                                                            if ($is_url) {
+                                                                $link_href = $file_path;
+                                                                $icon_btn = "fa-google-drive text-white";
+                                                                $color_btn = $is_old_title ? 'btn-secondary' : 'btn-primary';
+                                                            } else {
+                                                                $link_href = base_url('uploads/progres/' . $file_path);
+                                                                $icon_btn = "fa-file-pdf";
+                                                                $color_btn = $is_old_title ? 'btn-secondary' : 'btn-info';
+                                                            }
+                                                        ?>
+                                                        <a href="<?= $link_href ?>" target="_blank" class="btn btn-sm <?= $color_btn ?> shadow-sm" title="Buka Dokumen">
+                                                            <i class="<?= $is_url ? 'fab' : 'fas' ?> <?= $icon_btn ?>"></i>
                                                         </a>
                                                     </td>
+                                                    
                                                 </tr>
                                             <?php endforeach; ?>
                                         <?php else: ?>
@@ -412,15 +429,6 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        var fileInput = document.getElementById('file_progres');
-        if(fileInput){
-            fileInput.addEventListener('change', function (e) {
-                if(e.target.files.length > 0){
-                    e.target.nextElementSibling.innerText = e.target.files[0].name;
-                }
-            });
-        }
-
         var checkboxJudul = document.getElementById('gunakan_judul_lama');
         var judulSection = document.getElementById('judul_section');
 

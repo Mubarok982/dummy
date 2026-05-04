@@ -94,13 +94,12 @@
                                             $progres_field = $is_p1 ? 'progres_dosen1' : 'progres_dosen2';
                                             $nilai_field = $is_p1 ? 'nilai_dosen1' : 'nilai_dosen2';
 
-                                            // --- DETEKSI FILE REVISI: tampilkan hanya jika memang ada versi sebelumnya ---
+                                            // --- DETEKSI FILE REVISI ---
+                                            // Karena file diganti link GDrive (tidak ada kata '_REVISI' di file name), kita gunakan database count
                                             $is_revisi_file = false;
-                                            if (!empty($p['file']) && stripos($p['file'], '_REVISI') !== false) {
-                                                $version_count = $this->M_Dosen->count_progres_versions($skripsi['npm'], $p['bab']);
-                                                if ($version_count > 1) {
-                                                    $is_revisi_file = true;
-                                                }
+                                            $version_count = $this->M_Dosen->count_progres_versions($skripsi['npm'], $p['bab']);
+                                            if ($version_count > 1) {
+                                                $is_revisi_file = true;
                                             }
                                         ?>
                                         <tr>
@@ -169,8 +168,22 @@
                                             </td>
 
                                             <td class="align-middle text-center">
-                                                <a href="<?php echo base_url('uploads/progres/' . $p['file']); ?>" target="_blank" class="btn btn-default btn-sm shadow-sm border" title="Unduh File">
-                                                    <i class="fas fa-file-pdf text-danger"></i>
+                                                <?php 
+                                                    $file_path = $p['file'];
+                                                    $is_url = filter_var($file_path, FILTER_VALIDATE_URL);
+                                                    
+                                                    if ($is_url) {
+                                                        $link_href = $file_path;
+                                                        $icon_btn = "fab fa-google-drive text-primary";
+                                                        $title_btn = "Buka Link GDrive";
+                                                    } else {
+                                                        $link_href = base_url('uploads/progres/' . $file_path);
+                                                        $icon_btn = "fas fa-file-pdf text-danger";
+                                                        $title_btn = "Unduh File PDF";
+                                                    }
+                                                ?>
+                                                <a href="<?= $link_href ?>" target="_blank" class="btn btn-default btn-sm shadow-sm border" title="<?= $title_btn ?>">
+                                                    <i class="<?= $icon_btn ?> fa-lg"></i>
                                                 </a>
                                             </td>
                                             

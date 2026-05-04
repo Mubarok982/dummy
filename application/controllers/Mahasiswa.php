@@ -340,8 +340,7 @@ public function bimbingan()
         $this->load->view('mahasiswa/v_bimbingan', $data);
         $this->load->view('template/footer');
     }
-    
-public function upload_progres_bab()
+    public function upload_progres_bab()
     {
         $id_mahasiswa = $this->session->userdata('id');
         $skripsi = $this->M_Mahasiswa->get_skripsi_by_mhs($id_mahasiswa);
@@ -349,24 +348,20 @@ public function upload_progres_bab()
         if (!$skripsi || $skripsi['status_acc_kaprodi'] != 'diterima') {
             $this->session->set_flashdata('pesan_error', 'Gagal: Judul belum disetujui Kaprodi.');
             redirect('mahasiswa/bimbingan');
+            return;
         }
 
         // ========== HANDLE UPDATE JUDUL DARI FORM BIMBINGAN ==========
         $gunakan_judul_lama = $this->input->post('gunakan_judul_lama');
         
         if (!$gunakan_judul_lama) {
-            // User ingin mengubah judul/tema saat proses bimbingan
             $judul_baru = trim($this->input->post('judul'));
             $tema_baru = trim($this->input->post('tema'));
             
-            // Cek apakah ada perbedaan (case-insensitive)
             $judul_berubah = strtolower($judul_baru) !== strtolower($skripsi['judul']);
             $tema_berubah = strtolower($tema_baru) !== strtolower($skripsi['tema']);
             
-            // HANYA update jika ada perbedaan
             if ((!empty($judul_baru) && $judul_berubah) || (!empty($tema_baru) && $tema_berubah)) {
-                
-                // Gunakan fungsi histori agar ID tidak berubah dan histori otomatis tersimpan
                 $data_update = [
                     'judul' => $judul_baru,
                     'tgl_pengajuan_judul' => date('Y-m-d H:i:s'),
@@ -378,149 +373,131 @@ public function upload_progres_bab()
                 $this->session->set_flashdata('pesan_sukses', 'Judul/Tema berhasil diubah. Data lama tersimpan di riwayat. Perubahan berlaku untuk upload progres berikutnya.');
                 $this->M_Log->record('Judul', 'Mengubah judul skripsi via Bimbingan: ' . $judul_baru . ' - Tema: ' . $tema_baru);
                 
-                // Ambil data skripsi terbaru setelah update
                 $skripsi = $this->M_Mahasiswa->get_skripsi_by_mhs($id_mahasiswa);
             }
         }
         // =================================================
 
-        // JIKA TIDAK GANTI JUDUL, LANJUTKAN UPLOAD SEPERTI BIASA
         $npm  = $this->session->userdata('npm');
         $nama = $this->session->userdata('nama'); 
         $bab  = $this->input->post('bab');
         $is_revisi = $this->input->post('is_revisi'); 
 
-        $clean_nama = str_replace([' ', '.', ','], '_', $nama);
-        $nama_file  = 'Progres_' . $clean_nama . '_' . $npm . '_BAB' . $bab;
+        // 1. TANGKAP & VALIDASI LINK GOOGLE DRIVE (MENGGANTIKAN FUNGSI UPLOAD)
+        $link_drive = trim($this->input->post('link_drive', true));
         
-        if ($is_revisi == '1') {
-            $nama_file .= '_REVISI';
+        if (empty($link_drive) || !filter_var($link_drive, FILTER_VALIDATE_URL)) {
+             $this->session->set_flashdata('pesan_error', 'Gagal: Format Link Google Drive tidak valid. Pastikan link diawali dengan http:// atau https://');
+             redirect('mahasiswa/bimbingan');
+             return; 
         }
+
+        $status_plagiasi_awal = ($bab == 1) ? 'Menunggu' : '-';
+
+        // 2. MASUKKAN KE DATABASE (KOLOM 'file' DIISI DENGAN URL)
+        $progres_data = [
+            'npm'                => $npm,
+            'id_skripsi'         => $skripsi['id'], 
+            'bab'                => $bab,
+            'judul_saat_upload'  => $skripsi['judul'],  // SNAPSHOT: Judul saat upload
+            'tema_saat_upload'   => $skripsi['tema'],   // SNAPSHOT: Tema saat upload
+            'file'               => $link_drive,        // -> PERUBAHAN DISINI (SIMPAN LINK)
+            'progres_dosen1'     => 0,          
+            'progres_dosen2'     => 0,          
+            'nilai_dosen1'       => 'Menunggu', 
+            'nilai_dosen2'       => 'Menunggu', 
+            'created_at'         => date('Y-m-d H:i:s'),
+            'tgl_upload'         => date('Y-m-d H:i:s'),
+            'status_plagiasi'    => $status_plagiasi_awal, 
+            'persentase_kemiripan'=> 0
+        ];
         
-        $nama_file .= '_' . time();
+        $this->M_Mahasiswa->insert_progres($progres_data);
+        $id_baru = $this->db->insert_id();
 
-        $config['upload_path']   = './uploads/progres/';
-        $config['allowed_types'] = 'pdf'; 
-        $config['max_size']      = 5120; 
-        $config['file_name']     = $nama_file;
-        $config['overwrite']     = true;
+        $jenis_upload = ($is_revisi == '1') ? "Revisi" : "Baru";
+        $keterangan_log = "Kirim Link GDrive Progres $jenis_upload BAB $bab";
+        $this->M_Log->record('Progres', $keterangan_log, $id_baru);
+        
+        // 3. EKSEKUSI PENGIRIMAN WHATSAPP FONNTE (Tetap Sama Seperti Punya Mas)
+        $this->load->helper('fonnte');
 
-        $this->load->library('upload', $config);
+        $kontak = $this->M_Mahasiswa->get_kontak_pembimbing_by_skripsi($skripsi['id']);
 
-        if (!$this->upload->do_upload('file_progres')) {
-            $this->session->set_flashdata('pesan_error', strip_tags($this->upload->display_errors()));
-            redirect('mahasiswa/bimbingan');
-        } else {
-            $file_data = $this->upload->data();
-            
-            $status_plagiasi_awal = ($bab == 1) ? 'Menunggu' : '-';
+        if ($kontak) {
+            $pesan_wa  = "🔔 *Notifikasi Bimbingan Skripsi*\n\n";
+            $pesan_wa .= "Assalamualaikum Bapak/Ibu Dosen Pembimbing,\n\n";
+            $pesan_wa .= "Mahasiswa yang Bapak/Ibu bimbing telah mengirimkan link progres terbaru.\n\n";
+            $pesan_wa .= "📝 *Detail Progres:*\n";
+            $pesan_wa .= "👨‍🎓 Nama Mahasiswa: $nama\n";
+            $pesan_wa .= "🆔 NPM: $npm\n";
+            $pesan_wa .= "📄 Link: BAB $bab ($jenis_upload)\n";
+            $pesan_wa .= "🕒 Waktu Upload: " . date('d-m-Y H:i') . "\n\n";
+            $pesan_wa .= "Mohon Bapak/Ibu dapat memberikan koreksi dan penilaian melalui sistem WBS.\n\n";
+            $pesan_wa .= "Terima kasih atas perhatian dan bimbingannya.\n";
+            $pesan_wa .= "Wassalamualaikum Wr. Wb.\n\n";
+            $pesan_wa .= "_Pesan otomatis dari Sistem Monitoring Skripsi_";
 
-            // Masukkan ke ID Skripsi yang aktif (lama)
-            $progres_data = [
-                'npm'                => $npm,
-                'id_skripsi'         => $skripsi['id'], 
-                'bab'                => $bab,
-                'judul_saat_upload'  => $skripsi['judul'],  // SNAPSHOT: Judul saat upload
-                'tema_saat_upload'   => $skripsi['tema'],   // SNAPSHOT: Tema saat upload
-                'file'               => $file_data['file_name'], 
-                'progres_dosen1'     => 0,          
-                'progres_dosen2'     => 0,          
-                'nilai_dosen1'       => 'Menunggu', 
-                'nilai_dosen2'       => 'Menunggu', 
-                'created_at'         => date('Y-m-d H:i:s'),
-                'tgl_upload'         => date('Y-m-d H:i:s'),
-                'status_plagiasi'    => $status_plagiasi_awal, 
-                'persentase_kemiripan'=> 0
-            ];
-            
-            $this->M_Mahasiswa->insert_progres($progres_data);
-            $id_baru = $this->db->insert_id();
+            $notif_p1_aktif = isset($skripsi['notif_p1']) ? $skripsi['notif_p1'] : 1;
+            $notif_p2_aktif = isset($skripsi['notif_p2']) ? $skripsi['notif_p2'] : 1;
 
-            $jenis_upload = ($is_revisi == '1') ? "Revisi" : "Baru";
-            $keterangan_log = "Unggah Progres $jenis_upload BAB $bab";
-            $this->M_Log->record('Progres', $keterangan_log, $id_baru);
-            
-            // ==============================================================
-            // EKSEKUSI PENGIRIMAN WHATSAPP FONNTE DENGAN LOGIKA MUTE (ON/OFF)
-            // ==============================================================
-            $this->load->helper('fonnte');
-
-            $kontak = $this->M_Mahasiswa->get_kontak_pembimbing_by_skripsi($skripsi['id']);
-
-            if ($kontak) {
-                $pesan_wa  = "🔔 *Notifikasi Bimbingan Skripsi*\n\n";
-                $pesan_wa .= "Assalamualaikum Bapak/Ibu Dosen Pembimbing,\n\n";
-                $pesan_wa .= "Mahasiswa yang Bapak/Ibu bimbing telah mengunggah file progres terbaru.\n\n";
-                $pesan_wa .= "📝 *Detail Progres:*\n";
-                $pesan_wa .= "👨‍🎓 Nama Mahasiswa: $nama\n";
-                $pesan_wa .= "🆔 NPM: $npm\n";
-                $pesan_wa .= "📄 File: BAB $bab ($jenis_upload)\n";
-                $pesan_wa .= "🕒 Waktu Upload: " . date('d-m-Y H:i') . "\n\n";
-                $pesan_wa .= "Mohon Bapak/Ibu dapat memberikan koreksi dan penilaian melalui sistem WBS.\n\n";
-                $pesan_wa .= "Terima kasih atas perhatian dan bimbingannya.\n";
-                $pesan_wa .= "Wassalamualaikum Wr. Wb.\n\n";
-                $pesan_wa .= "_Pesan otomatis dari Sistem Monitoring Skripsi_";
-
-                // AMBIL STATUS NOTIFIKASI DARI DATABASE (Default: 1/ON)
-                $notif_p1_aktif = isset($skripsi['notif_p1']) ? $skripsi['notif_p1'] : 1;
-                $notif_p2_aktif = isset($skripsi['notif_p2']) ? $skripsi['notif_p2'] : 1;
-
-                // CEK P1: Jika Notif Aktif (1) DAN ada nomor HP, barulah kirim
-                if ($notif_p1_aktif == 1 && !empty($kontak['hp_p1'])) {
-                    kirim_wa_fonnte($kontak['hp_p1'], $pesan_wa);
-                }
-
-                // CEK P2: Jika Notif Aktif (1) DAN ada nomor HP, barulah kirim
-                if ($notif_p2_aktif == 1 && !empty($kontak['hp_p2'])) {
-                    kirim_wa_fonnte($kontak['hp_p2'], $pesan_wa);
-                }
+            if ($notif_p1_aktif == 1 && !empty($kontak['hp_p1'])) {
+                kirim_wa_fonnte($kontak['hp_p1'], $pesan_wa);
             }
-            
-            $this->session->set_flashdata('pesan_sukses', "File $keterangan_log Berhasil diunggah & Notifikasi dikirim ke Dosen.");
-            redirect('mahasiswa/bimbingan');
+            if ($notif_p2_aktif == 1 && !empty($kontak['hp_p2'])) {
+                kirim_wa_fonnte($kontak['hp_p2'], $pesan_wa);
+            }
         }
+        
+        $this->session->set_flashdata('pesan_sukses', "$keterangan_log berhasil & Notifikasi dikirim ke Dosen.");
+        redirect('mahasiswa/bimbingan');
     }
 
     public function upload_draft()
     {
         $npm = $this->session->userdata('npm');
-        $nama = $this->session->userdata('nama');
         $bab = $this->input->post('bab');
+        
+        // TANGKAP LINK GOOGLE DRIVE DRAFT
+        $link_drive = trim($this->input->post('link_drive', true));
 
-        $config['upload_path']   = './uploads/progres/';
-        $config['allowed_types'] = 'pdf';
-        $config['max_size']      = 2048;
-        $config['file_name']     = 'Draft_' . str_replace(' ', '_', $nama) . '_' . $npm . '_BAB' . $bab . '_' . time();
-
-        $this->load->library('upload', $config);
-
-        if (!$this->upload->do_upload('draft_file')) {
-            $this->session->set_flashdata('pesan_error', strip_tags($this->upload->display_errors()));
-            redirect('mahasiswa/bimbingan');
-        } else {
-            $file_name = $this->upload->data('file_name');
-            $data_db = [
-                'npm' => $npm,
-                'bab' => $bab,
-                'file' => $file_name, 
-                'created_at' => date('Y-m-d H:i:s'),
-                'tgl_upload' => date('Y-m-d H:i:s'),
-            ];
-
-            $this->M_Mahasiswa->simpan_draft_skripsi($data_db);
-            $this->session->set_flashdata('pesan_sukses', 'Draft revisi berhasil dikirim.');
-            redirect('mahasiswa/bimbingan');
+        if (empty($link_drive) || !filter_var($link_drive, FILTER_VALIDATE_URL)) {
+             $this->session->set_flashdata('pesan_error', 'Gagal: Link Google Drive tidak valid.');
+             redirect('mahasiswa/bimbingan');
+             return; 
         }
+
+        $data_db = [
+            'npm' => $npm,
+            'bab' => $bab,
+            'file' => $link_drive,  // -> SIMPAN LINK DISINI
+            'created_at' => date('Y-m-d H:i:s'),
+            'tgl_upload' => date('Y-m-d H:i:s'),
+        ];
+
+        $this->M_Mahasiswa->simpan_draft_skripsi($data_db);
+        $this->session->set_flashdata('pesan_sukses', 'Link Draft Skripsi berhasil dikirim.');
+        redirect('mahasiswa/bimbingan');
     }
 
     public function lihat_file($file) 
     {
-        $path = FCPATH . 'uploads/progres/' . $file;
-        if (file_exists($path)) {
-            header('Content-Type: application/pdf');
-            readfile($path);
+        // FUNGSI INI DIBUAT PINTAR (MENANGANI FILE LAMA & LINK BARU)
+        
+        // Cek apakah parameternya berupa URL? (Terjadi jika link ter-encode di URL)
+        $decoded_file = urldecode($file);
+        if (filter_var($decoded_file, FILTER_VALIDATE_URL)) {
+            // Jika itu URL, langsung redirect (bawa) user ke GDrive tersebut
+            redirect($decoded_file);
         } else {
-            show_404();
+            // Jika bukan URL, berarti itu nama file PDF lama, baca dari server lokal
+            $path = FCPATH . 'uploads/progres/' . $file;
+            if (file_exists($path)) {
+                header('Content-Type: application/pdf');
+                readfile($path);
+            } else {
+                show_404();
+            }
         }
     }
 

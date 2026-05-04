@@ -135,10 +135,26 @@
                                                 <?php endif; ?>
                                             </td>
 
-                                            <td class="text-center align-middle">
+                                           <td class="text-center align-middle">
                                                 <?php if (!empty($revisi['file'])): ?>
-                                                    <a href="<?php echo base_url('uploads/progres/' . $revisi['file']); ?>" target="_blank" class="btn btn-sm btn-outline-danger shadow-sm">
-                                                        <i class="fas fa-file-pdf mr-1"></i> PDF
+                                                    <?php 
+                                                        $file_path = $revisi['file'];
+                                                        $is_url = filter_var($file_path, FILTER_VALIDATE_URL);
+                                                        
+                                                        if ($is_url) {
+                                                            $link_href = $file_path;
+                                                            $btn_class = "btn-outline-primary";
+                                                            $icon_btn  = "fab fa-google-drive";
+                                                            $teks_btn  = "Buka";
+                                                        } else {
+                                                            $link_href = base_url('uploads/progres/' . $file_path);
+                                                            $btn_class = "btn-outline-danger";
+                                                            $icon_btn  = "fas fa-file-pdf";
+                                                            $teks_btn  = "PDF";
+                                                        }
+                                                    ?>
+                                                    <a href="<?= $link_href ?>" target="_blank" class="btn btn-sm <?= $btn_class ?> shadow-sm" title="Buka Dokumen">
+                                                        <i class="<?= $icon_btn ?> mr-1"></i> <?= $teks_btn ?>
                                                     </a>
                                                 <?php else: ?>
                                                     -
