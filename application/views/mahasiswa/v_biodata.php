@@ -47,20 +47,7 @@
                             <?php endif; ?>
 
                             <hr>
-                            
-                            <div class="text-center">
-                                <h6 class="text-muted text-sm font-weight-bold mb-2">TANDA TANGAN SAYA</h6>
-                                <?php 
-                                $ttd_path = FCPATH . 'uploads/ttd/' . $user['ttd'];
-                                if($user['ttd'] && file_exists($ttd_path)): 
-                                ?>
-                                    <img src="<?php echo base_url('uploads/ttd/'.$user['ttd']); ?>" class="img-fluid border p-2 bg-light" style="max-height: 80px;">
-                                    <br>
-                                    <small class="text-muted font-italic">Tersimpan</small>
-                                <?php else: ?>
-                                    <span class="badge badge-warning">Belum ada TTD</span>
-                                <?php endif; ?>
-                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -147,24 +134,6 @@
                                         <small class="text-muted mt-1 d-block">
                                             <i class="fas fa-info-circle mr-1"></i> Format: JPG, PNG, WEBP. Maksimal: <b>5 MB</b>.
                                         </small>
-                                    </div>
-                                </div>
-
-                                <div class="form-group row">
-                                    <label class="col-sm-3 col-form-label">Buat Tanda Tangan</label>
-                                    <div class="col-sm-9">
-                                        <div style="border: 2px dashed #ccc; background-color: #f9f9f9; border-radius: 5px; touch-action: none;">
-                                            <canvas id="signature-pad" class="signature-pad" width="450" height="200" style="width: 100%;"></canvas>
-                                        </div>
-                                        
-                                        <div class="mt-2 d-flex justify-content-between align-items-center">
-                                            <small class="text-muted"><i class="fas fa-pen-alt mr-1"></i> Silakan coret/gambar tanda tangan di kotak atas.</small>
-                                            <button type="button" class="btn btn-outline-danger btn-sm" id="clear-signature">
-                                                <i class="fas fa-eraser mr-1"></i> Hapus Coretan
-                                            </button>
-                                        </div>
-
-                                        <input type="hidden" name="ttd_base64" id="ttd_base64">
                                     </div>
                                 </div>
 

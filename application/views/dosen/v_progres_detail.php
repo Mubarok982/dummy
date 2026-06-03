@@ -38,18 +38,65 @@
                         </div>
                     <?php endif; ?>
 
+                    <?php
+                    // ========================================================================
+                    // PERBAIKAN BUG: COPY ARRAY AGAR DATA TIDAK HILANG SAAT DI-LOOPING DUA KALI
+                    // ========================================================================
+                    $progres_aman = [];
+                    if (!empty($progres)) {
+                        foreach ($progres as $item) {
+                            // Konversi menjadi bentuk array murni agar aman diakses
+                            $progres_aman[] = is_object($item) ? (array)$item : $item;
+                        }
+                    }
+
+                    // --- LOGIKA MENGHITUNG PERSENTASE PROGRES ---
+                    $bab_acc = 0;
+                    foreach ($progres_aman as $prg) {
+                        // Hitung persentase berdasarkan ACC Dosen yang sedang login
+                        $acc_saya = $is_p1 ? (isset($prg['progres_dosen1']) && $prg['progres_dosen1'] == 100) : (isset($prg['progres_dosen2']) && $prg['progres_dosen2'] == 100);
+                        
+                        if ($acc_saya) {
+                            if (isset($prg['bab']) && $prg['bab'] > $bab_acc) {
+                                $bab_acc = $prg['bab'];
+                            }
+                        }
+                    }
+                    
+                    // Tentukan max bab berdasarkan prodi
+                    $prodi_mhs = isset($skripsi['prodi']) ? $skripsi['prodi'] : '';
+                    $max_bab = (stripos($prodi_mhs, 'D3') !== false || stripos($prodi_mhs, 'Diploma 3') !== false) ? 5 : 6;
+                    
+                    // Hitung Persen
+                    $persentase = ($max_bab > 0) ? round(($bab_acc / $max_bab) * 100) : 0;
+                    
+                    // Tentukan warna bar
+                    $progress_color = 'bg-danger';
+                    if ($persentase >= 50 && $persentase < 100) $progress_color = 'bg-warning';
+                    if ($persentase == 100) $progress_color = 'bg-success';
+                    ?>
+
                     <div class="callout callout-info shadow-sm bg-white border-left-info">
                         <div class="row">
-                            <div class="col-md-8">
-                                <h5 class="text-primary font-weight-bold"><i class="fas fa-book-reader mr-1"></i> <?php echo !empty($progres['judul_saat_upload']) ? $progres['judul_saat_upload'] : $skripsi['judul']; ?></h5>
+                            <div class="col-md-7">
+                                <h5 class="text-primary font-weight-bold"><i class="fas fa-book-reader mr-1"></i> <?php echo !empty($progres_aman[0]['judul_saat_upload']) ? $progres_aman[0]['judul_saat_upload'] : $skripsi['judul']; ?></h5>
                                 <p class="mb-0 text-muted">
                                     <strong>Mahasiswa:</strong> <?php echo $skripsi['nama_mhs']; ?> <span class="badge badge-light border ml-1"><?php echo $skripsi['npm']; ?></span>
                                 </p>
                             </div>
-                            <div class="col-md-4 text-md-right align-self-center mt-3 mt-md-0">
-                                <span class="badge badge-warning text-md p-2 shadow-sm">
+
+                            <div class="col-md-5 text-md-right align-self-center mt-3 mt-md-0">
+                                <span class="badge badge-warning text-md p-2 shadow-sm d-inline-block mb-2">
                                     <i class="fas fa-user-tag mr-1"></i> Anda sebagai: Pembimbing <?php echo $is_p1 ? '1' : '2'; ?>
                                 </span>
+                                
+                                <div class="text-right mt-1">
+                                    <small class="font-weight-bold text-muted">Progres ACC Anda: <span class="text-dark"><?= $persentase ?>%</span> (Bab <?= $bab_acc ?> dari <?= $max_bab ?>)</small>
+                                    <div class="progress mt-1 shadow-sm" style="height: 10px; border-radius: 5px;">
+                                        <div class="progress-bar <?= $progress_color ?> progress-bar-striped progress-bar-animated" role="progressbar" style="width: <?= $persentase ?>%;" aria-valuenow="<?= $persentase ?>" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
                     </div>
@@ -75,7 +122,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php if (empty($progres)): ?>
+                                    <?php if (empty($progres_aman)): ?>
                                         <tr>
                                             <td colspan="8" class="text-center py-5 text-muted">
                                                 <i class="fas fa-folder-open fa-3x mb-3 text-gray-300"></i><br>
@@ -83,7 +130,7 @@
                                             </td>
                                         </tr>
                                     <?php else: ?>
-                                        <?php foreach ($progres as $p): 
+                                        <?php foreach ($progres_aman as $p): 
                                             // --- LOGIC PLAGIASI ---
                                             $plagiat = $this->M_Dosen->get_plagiarisme_result($p['id']); 
                                             $plagiat_status = isset($plagiat['status_plagiasi']) ? $plagiat['status_plagiasi'] : 'Menunggu';
@@ -95,7 +142,6 @@
                                             $nilai_field = $is_p1 ? 'nilai_dosen1' : 'nilai_dosen2';
 
                                             // --- DETEKSI FILE REVISI ---
-                                            // Karena file diganti link GDrive (tidak ada kata '_REVISI' di file name), kita gunakan database count
                                             $is_revisi_file = false;
                                             $version_count = $this->M_Dosen->count_progres_versions($skripsi['npm'], $p['bab']);
                                             if ($version_count > 1) {
@@ -115,7 +161,7 @@
                                                 <?php endif; ?>
                                             </td>
                                             <td class="align-middle">
-                                                <strong><?php echo !empty($progres['judul_saat_upload']) ? $progres['judul_saat_upload'] : $skripsi['judul'];?></strong>
+                                                <strong><?php echo !empty($p['judul_saat_upload']) ? $p['judul_saat_upload'] : $skripsi['judul'];?></strong>
                                             </td>
                                             
                                             <td class="align-middle text-center text-muted small">
@@ -138,11 +184,8 @@
 
                                             <td class="align-middle text-center">
                                                 <?php
-                                                // Gabungkan status P1/P2 menjadi Status Bimbingan (sama dengan tampilan mahasiswa)
                                                 $status_bimbingan = "BIMBINGAN";
                                                 $status_sempro_db = isset($skripsi['status_sempro']) ? $skripsi['status_sempro'] : '';
-                                                $prodi_mhs = isset($skripsi['prodi']) ? $skripsi['prodi'] : '';
-                                                $max_bab = (stripos($prodi_mhs, 'D3') !== false || stripos($prodi_mhs, 'Diploma 3') !== false) ? 5 : 6;
 
                                                 if ($status_sempro_db == 'Menunggu Plagiarisme') {
                                                     $status_bimbingan = "MENUNGGU CEK PLAGIARISME";
@@ -191,7 +234,6 @@
                                                 <?php 
                                                 $disabled = '';
                                                 $tooltip = '';
-                                                // Disable tombol jika Bab 1 belum lulus plagiasi
                                                 if ($p['bab'] == 1 && $plagiat_status == 'Menunggu') {
                                                     $disabled = 'disabled';
                                                     $tooltip = 'title="Menunggu hasil Cek Plagiarisme dari Admin"';
@@ -282,8 +324,8 @@
 
                     <?php
                     $is_ready_sempro = FALSE;
-                    if (!empty($progres)) {
-                        $last_bab = end($progres); 
+                    if (!empty($progres_aman)) {
+                        $last_bab = end($progres_aman); 
                         if ($last_bab['bab'] == 3 && $last_bab['progres_dosen1'] == 100 && $last_bab['progres_dosen2'] == 100) {
                             $is_ready_sempro = TRUE;
                         }
